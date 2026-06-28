@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import { ActivityHeartbeat } from "@/components/activity-heartbeat";
 import { authOptions } from "@/lib/auth";
 import "./globals.css";
 
@@ -25,9 +26,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 Public combos
               </Link>
               {session ? (
-                <Link className="button" href="/dashboard">
-                  Dashboard
-                </Link>
+                <>
+                  {session.user.role === "ADMIN" ? (
+                    <Link className="button secondary" href="/admin">Admin</Link>
+                  ) : null}
+                  <Link className="button" href="/dashboard">Dashboard</Link>
+                </>
               ) : (
                 <Link className="button" href="/auth/signin">
                   Sign in
@@ -35,6 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               )}
             </div>
           </nav>
+          <ActivityHeartbeat />
           {children}
         </main>
       </body>

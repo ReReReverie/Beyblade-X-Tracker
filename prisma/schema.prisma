@@ -30,6 +30,17 @@ enum Role {
   ADMIN
 }
 
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ReportKind {
+  BUG
+  REQUEST
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -47,6 +58,8 @@ model User {
   parts    Part[]
   combos   Combo[]
   battles  Battle[]
+  stars    ComboStar[]
+  reports  Report[]
 
   @@index([createdAt])
   @@index([username])
@@ -143,9 +156,55 @@ model Combo {
   battlesA   Battle[]     @relation("BattleComboA")
   battlesB   Battle[]     @relation("BattleComboB")
   wins       Battle[]     @relation("BattleWinner")
+  stars      ComboStar[]
 
   @@index([ownerId])
   @@index([visibility])
+  @@index([createdAt])
+}
+
+model ComboStar {
+  id        String   @id @default(cuid())
+  comboId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([comboId, userId])
+  @@index([comboId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model VisitorActivity {
+  id        String   @id @default(cuid())
+  visitorId String   @unique
+  userId    String?
+  path      String
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([lastSeen])
+  @@index([userId])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reporterId String?
+  kind       ReportKind
+  status     ReportStatus @default(OPEN)
+  title      String
+  details    String
+  path       String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  reporter User? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([kind])
   @@index([createdAt])
 }
 

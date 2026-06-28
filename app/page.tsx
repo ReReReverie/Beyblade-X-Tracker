@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
 import { WRGraph } from "@/components/wr-graph";
+import { StarButton } from "@/components/star-button";
+import { authOptions } from "@/lib/auth";
 import { battlesForCombo } from "@/lib/battle-history";
 import { pct } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -8,10 +11,13 @@ import { comboCondition, comboWeight } from "@/lib/stats";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const session = await getServerSession(authOptions);
   const combos = await prisma.combo.findMany({
     where: { visibility: "PUBLIC" },
     include: {
       parts: { include: { part: true } },
+      owner: { select: { name: true, username: true } },
+      stars: { select: { userId: true } },
       wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
       battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
       battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
@@ -57,10 +63,16 @@ export default async function Home() {
             return (
               <Link className="card" key={combo.id} href={`/combos/${combo.id}`}>
                 <h3>{combo.name}</h3>
+                <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
                 <p className="meta">
                   {comboWeight(combo).toFixed(2)} g - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
                 </p>
                 <WRGraph comboId={combo.id} battles={battlesForCombo(combo.id, battleHistory)} />
+                <StarButton
+                  comboId={combo.id}
+                  initialCount={combo.stars.length}
+                  initiallyStarred={combo.stars.some((star) => star.userId === session?.user?.id)}
+                />
               </Link>
             );
           })}

@@ -356,17 +356,18 @@ textarea {
 
 .wr-graph {
   height: auto;
+  overflow: visible;
   width: 100%;
 }
 
 .wr-graph__grid {
   stroke: #d2d2d2;
-  stroke-width: 2.5;
+  stroke-width: 1.5;
 }
 
 .wr-graph__base {
   stroke: #303030;
-  stroke-width: 3;
+  stroke-width: 2;
 }
 
 .wr-graph__xlabel,
@@ -385,7 +386,7 @@ textarea {
   fill: none;
   stroke-linecap: square;
   stroke-linejoin: miter;
-  stroke-width: 7;
+  stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
 }
 
@@ -433,8 +434,7 @@ textarea {
   display: grid;
   gap: var(--gap);
   grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
-  height: calc(100svh - 128px);
-  min-height: 620px;
+  min-height: calc(100svh - 128px);
 }
 
 .combo-detail__left,
@@ -449,7 +449,7 @@ textarea {
 .combo-detail__left .band {
   align-content: start;
   display: grid;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .combo-detail__right {
@@ -465,6 +465,38 @@ textarea {
 
 .part-card .photo {
   aspect-ratio: 1;
+}
+
+.star-wrap {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.star-button {
+  background: var(--base);
+  color: var(--ink);
+}
+
+.star-button--on {
+  background: var(--safety);
+  color: var(--base);
+}
+
+.admin-layout {
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+}
+
+.admin-feed {
+  align-content: start;
+  display: grid;
+  gap: var(--gap);
+}
+
+.admin-feed .card:hover {
+  transform: none;
 }
 
 @media (max-width: 820px) {
