@@ -1,0 +1,44 @@
+import { NextResponse } from "next/server";
+import { PartType } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { requireUserId } from "@/lib/session";
+import { partSchema } from "@/lib/validation";
+
+export async function POST(request: Request) {
+  try {
+    const ownerId = await requireUserId();
+    const body = await request.json().catch(() => null);
+    const parsed = partSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid part data." }, { status: 400 });
+    }
+
+    const part = await prisma.part.create({
+      data: { ...parsed.data, ownerId }
+    });
+
+    return NextResponse.json({ part });
+  } catch {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get("type") as PartType | null;
+  const page = Math.max(Number(searchParams.get("page") || 1), 1);
+  const take = Math.min(Number(searchParams.get("take") || 24), 48);
+
+  const parts = await prisma.part.findMany({
+    where: {
+      visibility: "PUBLIC",
+      ...(type ? { type } : {})
+    },
+    include: { photos: { where: { visibility: "PUBLIC" }, take: 1 } },
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * take,
+    take
+  });
+
+  return NextResponse.json({ parts, page, take });
+}

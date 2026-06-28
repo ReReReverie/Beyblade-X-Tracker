@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: beyblade-x-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: beyblade_x
+      POSTGRES_USER: beyuser
+      POSTGRES_PASSWORD: beypass
+    ports:
+      - "5432:5432"
+    volumes:
+      - beyblade_x_pgdata:/var/lib/postgresql/data
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "work_mem=4MB", "-c", "max_connections=30"]
+    mem_limit: 384m
+
+volumes:
+  beyblade_x_pgdata:

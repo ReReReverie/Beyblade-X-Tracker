@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Beyblade X Tracker",
+  description: "Track Beyblade X combo weights, condition, sources, photos, and win-loss records."
+};
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions);
+
+  return (
+    <html lang="en">
+      <body>
+        <main className="shell">
+          <nav className="nav">
+            <Link className="brand" href="/">
+              Beyblade X Tracker
+            </Link>
+            <div className="navlinks">
+              <Link className="button secondary" href="/combos">
+                Public combos
+              </Link>
+              {session ? (
+                <Link className="button" href="/dashboard">
+                  Dashboard
+                </Link>
+              ) : (
+                <Link className="button" href="/auth/signin">
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </nav>
+          {children}
+        </main>
+      </body>
+    </html>
+  );
+}
