@@ -562,9 +562,15 @@ textarea {
   bottom: 0.8rem;
   display: grid;
   gap: 0.35rem;
-  justify-items: start;
+  justify-items: end;
   position: absolute;
-  left: 0.8rem;
+  right: 0.8rem;
+  text-align: right;
+}
+
+.part-row:has(.delete-control--compact),
+.compact-card:has(.delete-control--compact) {
+  padding-bottom: 4.1rem;
 }
 
 .button-small {
