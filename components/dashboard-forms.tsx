@@ -71,10 +71,11 @@ export function PartForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/parts", Object.fromEntries(form));
-      event.currentTarget.reset();
+      formElement.reset();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -104,10 +105,11 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/combos", Object.fromEntries(form));
-      event.currentTarget.reset();
+      formElement.reset();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -129,17 +131,53 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   );
 }
 
-export function BattleForm({ combos }: { combos: Option[] }) {
+export function DeckForm({ combos }: { combos: Option[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    try {
+      await postJson("/api/decks", Object.fromEntries(form));
+      formElement.reset();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed.");
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <h2>Build deck</h2>
+      <label>Name<input name="name" required /></label>
+      <label>Combo 1<select name="comboOneId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Combo 2<select name="comboTwoId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Combo 3<select name="comboThreeId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
+      <label>Notes<textarea name="notes" /></label>
+      {error ? <p className="danger">{error}</p> : null}
+      <button type="submit">Save deck</button>
+    </form>
+  );
+}
+
+export function BattleForm({ combos, decks }: { combos: Option[]; decks: Option[] }) {
+  const router = useRouter();
+  const [format, setFormat] = useState("ONE_V_ONE");
+  const [error, setError] = useState("");
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       await postJson("/api/battles", Object.fromEntries(form));
-      event.currentTarget.reset();
+      formElement.reset();
+      setFormat("ONE_V_ONE");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -149,9 +187,20 @@ export function BattleForm({ combos }: { combos: Option[] }) {
   return (
     <form onSubmit={submit}>
       <h2>Log battle</h2>
-      <label>Combo A<select name="comboAId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-      <label>Combo B<select name="comboBId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-      <label>Winner<select name="winnerId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Format<select name="format" value={format} onChange={(event) => setFormat(event.target.value)}><option value="ONE_V_ONE">1v1 combo</option><option value="THREE_V_THREE">3v3 deck</option></select></label>
+      {format === "ONE_V_ONE" ? (
+        <>
+          <label>Combo A<select name="comboAId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Combo B<select name="comboBId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Winner<select name="winnerId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+        </>
+      ) : (
+        <>
+          <label>Deck A<select name="deckAId">{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+          <label>Deck B<select name="deckBId">{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+          <label>Winner<select name="deckWinnerId">{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+        </>
+      )}
       <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
       <label>Notes<textarea name="notes" /></label>
       {error ? <p className="danger">{error}</p> : null}
@@ -168,7 +217,8 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     try {
       const file = form.get("file");
       if (file instanceof File) {
@@ -180,7 +230,7 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
       }
       const response = await fetch("/api/upload", { method: "POST", body: form });
       if (!response.ok) throw new Error((await response.json()).error || "Upload failed.");
-      event.currentTarget.reset();
+      formElement.reset();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");

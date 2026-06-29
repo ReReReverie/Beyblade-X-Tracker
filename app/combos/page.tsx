@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CombosPage() {
   const session = await getServerSession(authOptions);
+<<<<<<< HEAD
   const combos = await prisma.combo.findMany({
     where: { visibility: "PUBLIC" },
     include: {
@@ -28,6 +29,36 @@ export default async function CombosPage() {
     orderBy: { createdAt: "desc" },
     take: 36
   });
+=======
+  const [combos, decks] = await Promise.all([
+    prisma.combo.findMany({
+      where: { visibility: "PUBLIC" },
+      include: {
+        parts: { include: { part: true }, orderBy: { role: "asc" } },
+        photos: { where: { visibility: "PUBLIC" }, take: 1 },
+        owner: { select: { name: true, username: true } },
+        stars: { select: { userId: true } },
+        wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
+        battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
+        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 36
+    }),
+    prisma.deck.findMany({
+      where: { visibility: "PUBLIC" },
+      include: {
+        owner: { select: { name: true, username: true } },
+        slots: { include: { combo: true }, orderBy: { slot: "asc" } },
+        wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
+        battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
+        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 18
+    })
+  ]);
+>>>>>>> 7382218520c51f199422a1513e6c96252694c92f
   const comboIds = combos.map((combo) => combo.id);
   const battleHistory = comboIds.length
     ? await prisma.battle.findMany({
@@ -40,6 +71,27 @@ export default async function CombosPage() {
   return (
     <div className="list">
       <h1>Public combos</h1>
+      {decks.length ? (
+        <section>
+          <h2>Public decks</h2>
+          <div className="grid">
+            {decks.map((deck) => {
+              const wins = deck.wins.length;
+              const total = deck.battlesA.length + deck.battlesB.length;
+              return (
+                <div className="card" key={deck.id}>
+                  <span className="tag tag--filled">3v3 deck</span>
+                  <h2>{deck.name}</h2>
+                  <p className="meta">Creator: {deck.owner.name || deck.owner.username || "Unknown"}</p>
+                  <p className="meta">{wins}-{total - wins} ({pct(wins, total)})</p>
+                  <p className="meta">{deck.slots.map((slot) => slot.combo.name).join(" / ")}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+      <h2>Public 1v1 combos</h2>
       <div className="grid">
         {combos.map((combo) => {
           const wins = combo.wins.length;
