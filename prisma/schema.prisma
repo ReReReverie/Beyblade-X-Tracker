@@ -41,6 +41,11 @@ enum ReportKind {
   REQUEST
 }
 
+enum BattleFormat {
+  ONE_V_ONE
+  THREE_V_THREE
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -57,6 +62,7 @@ model User {
   sessions Session[]
   parts    Part[]
   combos   Combo[]
+  decks    Deck[]
   battles  Battle[]
   stars    ComboStar[]
   reports  Report[]
@@ -157,10 +163,45 @@ model Combo {
   battlesB   Battle[]     @relation("BattleComboB")
   wins       Battle[]     @relation("BattleWinner")
   stars      ComboStar[]
+  deckSlots  DeckSlot[]
 
   @@index([ownerId])
   @@index([visibility])
   @@index([createdAt])
+}
+
+model Deck {
+  id         String     @id @default(cuid())
+  ownerId    String
+  name       String
+  visibility Visibility @default(PUBLIC)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  slots    DeckSlot[]
+  battlesA Battle[]   @relation("BattleDeckA")
+  battlesB Battle[]   @relation("BattleDeckB")
+  wins     Battle[]   @relation("BattleDeckWinner")
+
+  @@index([ownerId])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
+model DeckSlot {
+  id      String @id @default(cuid())
+  deckId  String
+  comboId String
+  slot    Int
+
+  deck  Deck  @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Restrict)
+
+  @@unique([deckId, slot])
+  @@unique([deckId, comboId])
+  @@index([comboId])
 }
 
 model ComboStar {
@@ -241,23 +282,34 @@ model ComboPhoto {
 model Battle {
   id         String     @id @default(cuid())
   ownerId    String
-  comboAId   String
-  comboBId   String
-  winnerId   String
+  format     BattleFormat @default(ONE_V_ONE)
+  comboAId   String?
+  comboBId   String?
+  winnerId   String?
+  deckAId    String?
+  deckBId    String?
+  deckWinnerId String?
   visibility Visibility @default(PUBLIC)
   playedAt   DateTime   @default(now())
   notes      String?
   createdAt  DateTime   @default(now())
 
   owner  User  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  comboA Combo @relation("BattleComboA", fields: [comboAId], references: [id], onDelete: Restrict)
-  comboB Combo @relation("BattleComboB", fields: [comboBId], references: [id], onDelete: Restrict)
-  winner Combo @relation("BattleWinner", fields: [winnerId], references: [id], onDelete: Restrict)
+  comboA Combo? @relation("BattleComboA", fields: [comboAId], references: [id], onDelete: Restrict)
+  comboB Combo? @relation("BattleComboB", fields: [comboBId], references: [id], onDelete: Restrict)
+  winner Combo? @relation("BattleWinner", fields: [winnerId], references: [id], onDelete: Restrict)
+  deckA Deck? @relation("BattleDeckA", fields: [deckAId], references: [id], onDelete: Restrict)
+  deckB Deck? @relation("BattleDeckB", fields: [deckBId], references: [id], onDelete: Restrict)
+  deckWinner Deck? @relation("BattleDeckWinner", fields: [deckWinnerId], references: [id], onDelete: Restrict)
 
   @@index([ownerId])
+  @@index([format])
   @@index([visibility])
   @@index([comboAId])
   @@index([comboBId])
   @@index([winnerId])
+  @@index([deckAId])
+  @@index([deckBId])
+  @@index([deckWinnerId])
   @@index([playedAt])
 }

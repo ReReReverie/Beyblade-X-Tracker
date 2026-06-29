@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { WRGraph } from "@/components/wr-graph";
+import { ComboDetailTabs } from "@/components/combo-detail-tabs";
+import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { StarButton } from "@/components/star-button";
 import { authOptions } from "@/lib/auth";
 import { formatManufacturer, formatPartType, pct } from "@/lib/format";
@@ -13,7 +14,7 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
   const session = await getServerSession(authOptions);
   const { id } = await params;
   const combo = await prisma.combo.findFirst({
-    where: { id, visibility: "PUBLIC" },
+    where: { id, OR: [{ visibility: "PUBLIC" }, { ownerId: session?.user?.id || "" }] },
     include: {
       parts: { include: { part: { include: { photos: { where: { visibility: "PUBLIC" }, take: 1 } } } } },
       owner: { select: { name: true, username: true } },
@@ -31,6 +32,7 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
   const total = combo.battlesA.length + combo.battlesB.length;
   const battleHistory = await prisma.battle.findMany({
     where: { visibility: "PUBLIC", OR: [{ comboAId: combo.id }, { comboBId: combo.id }] },
+    include: { comboA: { select: { name: true } }, comboB: { select: { name: true } }, winner: { select: { name: true } } },
     orderBy: { playedAt: "desc" },
     take: 120
   });
@@ -45,7 +47,10 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
           <p>
             {comboWeight(combo).toFixed(2)} g total - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
           </p>
-          <WRGraph comboId={combo.id} battles={battleHistory} />
+          {combo.ownerId === session?.user?.id ? (
+            <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
+          ) : null}
+          <ComboDetailTabs comboId={combo.id} battles={battleHistory} />
           <StarButton
             comboId={combo.id}
             initialCount={combo.stars.length}
