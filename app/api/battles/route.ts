@@ -17,10 +17,13 @@ export async function POST(request: Request) {
     }
 
     const combos = await prisma.combo.findMany({
-      where: { ownerId, id: { in: [parsed.data.comboAId, parsed.data.comboBId] } }
+      where: {
+        id: { in: [parsed.data.comboAId, parsed.data.comboBId] },
+        OR: [{ ownerId }, { visibility: "PUBLIC" }]
+      }
     });
     if (combos.length !== 2) {
-      return NextResponse.json({ error: "Choose two owned combos." }, { status: 400 });
+      return NextResponse.json({ error: "Choose two public or owned combos." }, { status: 400 });
     }
 
     const battle = await prisma.battle.create({
@@ -28,7 +31,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ battle });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    console.error("Battle create failed", error);
+    return NextResponse.json({ error: "Could not save battle." }, { status: 500 });
   }
 }

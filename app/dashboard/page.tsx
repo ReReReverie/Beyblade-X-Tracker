@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { WRGraph } from "@/components/wr-graph";
+import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { BattleForm, ComboForm, PartForm, PhotoForm } from "@/components/dashboard-forms";
 import { authOptions } from "@/lib/auth";
 import { battlesForCombo } from "@/lib/battle-history";
@@ -15,7 +16,7 @@ export default async function DashboardPage() {
   if (!session?.user?.id) redirect("/auth/signin");
 
   const userId = session.user.id;
-  const [parts, combos, battles] = await Promise.all([
+  const [parts, combos, followedCombos, battles] = await Promise.all([
     prisma.part.findMany({
       where: { ownerId: userId },
       include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
@@ -24,6 +25,22 @@ export default async function DashboardPage() {
     }),
     prisma.combo.findMany({
       where: { ownerId: userId },
+      include: {
+        parts: { include: { part: true }, orderBy: { role: "asc" } },
+        photos: { take: 1, orderBy: { createdAt: "desc" } },
+        wins: { select: { id: true } },
+        battlesA: { select: { id: true } },
+        battlesB: { select: { id: true } }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 40
+    }),
+    prisma.combo.findMany({
+      where: {
+        visibility: "PUBLIC",
+        stars: { some: { userId } },
+        NOT: { ownerId: userId }
+      },
       include: {
         parts: { include: { part: true }, orderBy: { role: "asc" } },
         photos: { take: 1, orderBy: { createdAt: "desc" } },
@@ -45,7 +62,7 @@ export default async function DashboardPage() {
   const blades = parts.filter((part) => part.type === "BLADE");
   const ratchets = parts.filter((part) => part.type === "RATCHET");
   const bits = parts.filter((part) => part.type === "BIT");
-  const options = combos.map((combo) => ({ id: combo.id, name: combo.name }));
+  const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
   const partOptions = parts.map((part) => ({ id: part.id, name: `${part.name} (${formatPartType(part.type)})` }));
 
   return (
@@ -100,12 +117,34 @@ export default async function DashboardPage() {
                     <p className="meta">
                       {comboWeight(combo).toFixed(2)} g - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
                     </p>
+                    <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
                     <WRGraph comboId={combo.id} battles={battlesForCombo(combo.id, battles)} />
                   </div>
                 );
               })}
             </div>
           </section>
+          {followedCombos.length ? (
+            <section>
+              <h2>Followed combos</h2>
+              <div className="grid">
+                {followedCombos.map((combo) => {
+                  const wins = combo.wins.length;
+                  const total = combo.battlesA.length + combo.battlesB.length;
+                  return (
+                    <div className="card" key={combo.id}>
+                      {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
+                      <h3>{combo.name}</h3>
+                      <p className="meta">
+                        {comboWeight(combo).toFixed(2)} g - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+                      </p>
+                      <WRGraph comboId={combo.id} battles={battlesForCombo(combo.id, battles)} />
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
           <section>
             <h2>Recent battles</h2>
             <div className="list">

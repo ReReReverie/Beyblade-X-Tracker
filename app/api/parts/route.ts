@@ -18,8 +18,12 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ part });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    console.error("Part create failed", error);
+    return NextResponse.json({ error: "Could not save part." }, { status: 500 });
   }
 }
 

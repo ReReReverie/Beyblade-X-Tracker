@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { z } from "zod";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { comboSchema } from "@/lib/validation";
+
+const updateComboSchema = z.object({
+  id: z.string().min(1),
+  visibility: z.enum(["PUBLIC", "PRIVATE"])
+});
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +31,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Choose one owned blade, ratchet, and bit." }, { status: 400 });
     }
 
+    const duplicateCandidates = await prisma.combo.findMany({
+      where: {
+        OR: [{ visibility: "PUBLIC" }, { ownerId }],
+        parts: {
+          some: { partId: { in: [parsed.data.bladeId, parsed.data.ratchetId, parsed.data.bitId] } }
+        }
+      },
+      include: { parts: true },
+      take: 20
+    });
+    const duplicate = duplicateCandidates.find((combo) => {
+      const partIds = new Set(combo.parts.map((part) => part.partId));
+      return (
+        partIds.size === 3 &&
+        partIds.has(parsed.data.bladeId) &&
+        partIds.has(parsed.data.ratchetId) &&
+        partIds.has(parsed.data.bitId)
+      );
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        { error: "That combo already exists. Follow the existing combo and add battle results there." },
+        { status: 409 }
+      );
+    }
+
     const combo = await prisma.combo.create({
       data: {
         ownerId,
@@ -41,9 +75,31 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ combo });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    console.error("Combo create failed", error);
+    return NextResponse.json({ error: "Could not save combo." }, { status: 500 });
   }
+}
+
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  const parsed = updateComboSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid combo update." }, { status: 400 });
+
+  const combo = await prisma.combo.findFirst({ where: { id: parsed.data.id, ownerId: session.user.id } });
+  if (!combo) return NextResponse.json({ error: "Combo not found." }, { status: 404 });
+
+  const updated = await prisma.combo.update({
+    where: { id: parsed.data.id },
+    data: { visibility: parsed.data.visibility }
+  });
+
+  return NextResponse.json({ combo: updated });
 }
 
 export async function GET(request: Request) {
