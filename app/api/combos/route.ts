@@ -123,3 +123,24 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ combos, page, take });
 }
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing combo." }, { status: 400 });
+
+  const combo = await prisma.combo.findFirst({
+    where: { id, ownerId: session.user.id },
+    include: { battlesA: { take: 1 }, battlesB: { take: 1 }, wins: { take: 1 }, deckSlots: { take: 1 } }
+  });
+  if (!combo) return NextResponse.json({ error: "Combo not found." }, { status: 404 });
+  if (combo.battlesA.length || combo.battlesB.length || combo.wins.length || combo.deckSlots.length) {
+    return NextResponse.json({ error: "Delete battles or decks using this combo first." }, { status: 409 });
+  }
+
+  await prisma.combo.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

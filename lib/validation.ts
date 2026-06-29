@@ -1,4 +1,4 @@
-import { Manufacturer, PartType, Visibility } from "@prisma/client";
+import { BattleFormat, Manufacturer, PartType, Visibility } from "@prisma/client";
 import { z } from "zod";
 
 export const visibilitySchema = z.nativeEnum(Visibility).default("PUBLIC");
@@ -23,9 +23,22 @@ export const comboSchema = z.object({
 });
 
 export const battleSchema = z.object({
-  comboAId: z.string().min(1),
-  comboBId: z.string().min(1),
-  winnerId: z.string().min(1),
+  format: z.nativeEnum(BattleFormat).default("ONE_V_ONE"),
+  comboAId: z.string().optional(),
+  comboBId: z.string().optional(),
+  winnerId: z.string().optional(),
+  deckAId: z.string().optional(),
+  deckBId: z.string().optional(),
+  deckWinnerId: z.string().optional(),
+  visibility: visibilitySchema,
+  notes: z.string().trim().max(1000).optional()
+});
+
+export const deckSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  comboOneId: z.string().min(1),
+  comboTwoId: z.string().min(1),
+  comboThreeId: z.string().min(1),
   visibility: visibilitySchema,
   notes: z.string().trim().max(1000).optional()
 });

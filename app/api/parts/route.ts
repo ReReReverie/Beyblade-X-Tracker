@@ -46,3 +46,27 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ parts, page, take });
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const ownerId = await requireUserId();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing part." }, { status: 400 });
+
+    const part = await prisma.part.findFirst({ where: { id, ownerId }, include: { comboParts: { take: 1 } } });
+    if (!part) return NextResponse.json({ error: "Part not found." }, { status: 404 });
+    if (part.comboParts.length) {
+      return NextResponse.json({ error: "Delete combos using this part first." }, { status: 409 });
+    }
+
+    await prisma.part.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    console.error("Part delete failed", error);
+    return NextResponse.json({ error: "Could not delete part." }, { status: 500 });
+  }
+}

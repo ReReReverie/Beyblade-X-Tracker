@@ -6,9 +6,9 @@ import { pct } from "@/lib/format";
 import type { BattlePoint } from "@/lib/battle-history";
 
 type BattleRow = BattlePoint & {
-  comboA: { name: string };
-  comboB: { name: string };
-  winner: { name: string };
+  comboA: { name: string } | null;
+  comboB: { name: string } | null;
+  winner: { name: string } | null;
 };
 
 export function ComboDetailTabs({ comboId, battles }: { comboId: string; battles: BattleRow[] }) {
@@ -34,9 +34,9 @@ export function ComboDetailTabs({ comboId, battles }: { comboId: string; battles
             const wins = battles.filter((item) => item.playedAt <= battle.playedAt && item.winnerId === comboId).length;
             return (
               <div className="history-row" key={battle.id}>
-                <strong>{battle.comboA.name} vs {battle.comboB.name}</strong>
+                <strong>{battle.comboA?.name || "Combo A"} vs {battle.comboB?.name || "Combo B"}</strong>
                 <span className={won ? "tag tag--filled" : "tag"}>{won ? "Win" : "Loss"}</span>
-                <p className="meta">Winner: {battle.winner.name} - Running {wins}-{total - wins} ({pct(wins, total)})</p>
+                <p className="meta">Winner: {battle.winner?.name || "Unknown"} - Running {wins}-{total - wins} ({pct(wins, total)})</p>
               </div>
             );
           }) : <p className="meta">No public battle results yet.</p>}

@@ -342,6 +342,21 @@ textarea {
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
 }
 
+.dashboard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dashboard-tab {
+  min-width: 116px;
+}
+
+.dashboard-tab--active {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
 .part-row {
   align-items: center;
   display: grid;
@@ -384,6 +399,32 @@ textarea {
   display: grid;
   gap: 0.35rem;
   margin: 0.8rem 0;
+}
+
+.delete-control--compact {
+  bottom: 0.8rem;
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+  position: absolute;
+  left: 0.8rem;
+}
+
+.button-small {
+  box-shadow: 4px 4px 0 var(--ink);
+  font-size: 0.62rem;
+  min-height: 34px;
+  padding: 0.42rem 0.65rem;
+}
+
+.button-small:hover {
+  box-shadow: 6px 6px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.button-danger {
+  background: #ff0000;
+  color: #ffffff;
 }
 
 .detail-tabs {
