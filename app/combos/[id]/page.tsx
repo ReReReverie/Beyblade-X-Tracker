@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { ComboComments } from "@/components/combo-comments";
+import { PutComboButton } from "@/components/put-combo-button";
 import { WRGraph } from "@/components/wr-graph";
 import { StarButton } from "@/components/star-button";
 import { authOptions } from "@/lib/auth";
@@ -19,6 +21,12 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
       owner: { select: { name: true, username: true } },
       photos: { where: { visibility: "PUBLIC" }, take: 4 },
       stars: { select: { userId: true } },
+      puts: { select: { userId: true } },
+      comments: {
+        include: { author: { select: { name: true, username: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 50
+      },
       wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
       battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
       battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
@@ -51,6 +59,12 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
             initialCount={combo.stars.length}
             initiallyStarred={combo.stars.some((star) => star.userId === session?.user?.id)}
           />
+          <PutComboButton
+            comboId={combo.id}
+            initialCount={combo.puts.length}
+            initiallyPut={combo.puts.some((put) => put.userId === session?.user?.id)}
+          />
+          <ComboComments comboId={combo.id} comments={combo.comments} signedIn={Boolean(session?.user?.id)} />
         </div>
       </section>
       <section className="combo-detail__right list">

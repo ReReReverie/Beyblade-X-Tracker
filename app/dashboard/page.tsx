@@ -49,33 +49,37 @@ export default async function DashboardPage() {
   const partOptions = parts.map((part) => ({ id: part.id, name: `${part.name} (${formatPartType(part.type)})` }));
 
   return (
-    <div className="list">
-      <section className="band">
-        <h1>Dashboard</h1>
-        <p>
-          Manage your measured parts, photos, combos, and match logs.
-          {session.user.role === "ADMIN" ? " Signed in as admin." : ""}
-        </p>
+    <div className="dashboard">
+      <section className="dashboard-head">
+        <div>
+          <span className="tag tag--filled">Dashboard</span>
+          <h1>Garage</h1>
+          {session.user.role === "ADMIN" ? <p className="meta">Signed in as admin.</p> : null}
+        </div>
+        <div className="dashboard-stats">
+          <div><strong>{parts.length}</strong><span>Parts</span></div>
+          <div><strong>{combos.length}</strong><span>Combos</span></div>
+          <div><strong>{battles.length}</strong><span>Battles</span></div>
+        </div>
       </section>
-      <section className="tabs">
-        <div className="list">
-          <div className="card"><PartForm /></div>
-          <div className="card">
+      <section className="dashboard-tools">
+          <div className="card dashboard-card"><PartForm /></div>
+          <div className="card dashboard-card">
             <ComboForm
               blades={blades.map((p) => ({ id: p.id, name: p.name }))}
               ratchets={ratchets.map((p) => ({ id: p.id, name: p.name }))}
               bits={bits.map((p) => ({ id: p.id, name: p.name }))}
             />
           </div>
-          <div className="card"><BattleForm combos={options} /></div>
-          <div className="card"><PhotoForm parts={partOptions} combos={options} /></div>
-        </div>
-        <div className="list">
-          <section>
+          <div className="card dashboard-card"><BattleForm combos={options} /></div>
+          <div className="card dashboard-card"><PhotoForm parts={partOptions} combos={options} /></div>
+      </section>
+      <section className="dashboard-content">
+          <section className="dashboard-panel">
             <h2>Your parts</h2>
-            <div className="list">
+            <div className="compact-list">
               {parts.map((part) => (
-                <div className="card part-row" key={part.id}>
+                <div className="compact-row" key={part.id}>
                   <div>
                     <strong>{part.name}</strong>
                     <p className="meta">
@@ -87,14 +91,14 @@ export default async function DashboardPage() {
               ))}
             </div>
           </section>
-          <section>
+          <section className="dashboard-panel">
             <h2>Your combos</h2>
-            <div className="grid">
+            <div className="compact-grid">
               {combos.map((combo) => {
                 const wins = combo.wins.length;
                 const total = combo.battlesA.length + combo.battlesB.length;
                 return (
-                  <div className="card" key={combo.id}>
+                  <div className="compact-card" key={combo.id}>
                     {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                     <h3>{combo.name}</h3>
                     <p className="meta">
@@ -106,18 +110,17 @@ export default async function DashboardPage() {
               })}
             </div>
           </section>
-          <section>
+          <section className="dashboard-panel">
             <h2>Recent battles</h2>
-            <div className="list">
+            <div className="compact-list">
               {battles.slice(0, 30).map((battle) => (
-                <div className="card" key={battle.id}>
+                <div className="compact-row" key={battle.id}>
                   <strong>{battle.comboA.name} vs {battle.comboB.name}</strong>
                   <p className="meta">Winner: {battle.winner.name} - {formatVisibility(battle.visibility)}</p>
                 </div>
               ))}
             </div>
           </section>
-        </div>
       </section>
     </div>
   );

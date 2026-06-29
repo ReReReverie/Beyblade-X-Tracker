@@ -29,3 +29,12 @@ export const battleSchema = z.object({
   visibility: visibilitySchema,
   notes: z.string().trim().max(1000).optional()
 });
+
+export const comboCommentSchema = z.object({
+  comboId: z.string().min(1),
+  body: z.string().trim().min(1).max(1000)
+});
+
+export const comboActionSchema = z.object({
+  comboId: z.string().min(1)
+});

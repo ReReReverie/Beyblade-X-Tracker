@@ -59,6 +59,8 @@ model User {
   combos   Combo[]
   battles  Battle[]
   stars    ComboStar[]
+  puts     ComboPut[]
+  comments ComboComment[]
   reports  Report[]
 
   @@index([createdAt])
@@ -157,6 +159,8 @@ model Combo {
   battlesB   Battle[]     @relation("BattleComboB")
   wins       Battle[]     @relation("BattleWinner")
   stars      ComboStar[]
+  puts       ComboPut[]
+  comments   ComboComment[]
 
   @@index([ownerId])
   @@index([visibility])
@@ -176,6 +180,36 @@ model ComboStar {
   @@index([comboId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model ComboPut {
+  id        String   @id @default(cuid())
+  comboId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([comboId, userId])
+  @@index([comboId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ComboComment {
+  id        String   @id @default(cuid())
+  comboId   String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  combo  Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([comboId, createdAt])
+  @@index([authorId])
 }
 
 model VisitorActivity {

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
+const defaultMaxUploadMb = 1;
 
 export async function POST(request: Request) {
   try {
@@ -20,9 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing upload details." }, { status: 400 });
     }
 
-    const maxBytes = Number(process.env.MAX_UPLOAD_MB || 5) * 1024 * 1024;
+    const maxUploadMb = Number(process.env.MAX_UPLOAD_MB || defaultMaxUploadMb);
+    const maxBytes = maxUploadMb * 1024 * 1024;
     if (!allowed.has(file.type) || file.size > maxBytes) {
-      return NextResponse.json({ error: "Use JPG, PNG, or WEBP images up to 5 MB." }, { status: 400 });
+      return NextResponse.json({ error: `Use JPG, PNG, or WEBP images up to ${maxUploadMb} MB.` }, { status: 400 });
     }
 
     const ownsTarget =

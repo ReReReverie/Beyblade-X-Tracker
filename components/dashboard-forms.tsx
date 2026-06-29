@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Option = { id: string; name: string };
+const maxUploadBytes = 1 * 1024 * 1024;
 
 async function postJson(url: string, data: unknown) {
   const response = await fetch(url, {
@@ -14,6 +15,52 @@ async function postJson(url: string, data: unknown) {
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.error || "Save failed.");
+  }
+}
+
+async function compressImage(file: File) {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+
+  const image = new Image();
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Could not read image."));
+      image.src = objectUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+
+    const name = file.name.replace(/\.[^.]+$/, "") || "upload";
+    const maxSides = [1600, 1280, 1024, 800];
+    const qualities = [0.82, 0.72, 0.62, 0.52];
+    let bestBlob: Blob | null = null;
+
+    for (const maxSide of maxSides) {
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const width = Math.max(1, Math.round(image.width * scale));
+      const height = Math.max(1, Math.round(image.height * scale));
+      canvas.width = width;
+      canvas.height = height;
+      context.clearRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+
+      for (const quality of qualities) {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+        if (!blob) continue;
+        if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
+        if (blob.size <= maxUploadBytes) return new File([blob], `${name}.webp`, { type: "image/webp" });
+      }
+    }
+
+    if (bestBlob && bestBlob.size < file.size) return new File([bestBlob], `${name}.webp`, { type: "image/webp" });
+    return file;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
   }
 }
 
@@ -123,6 +170,14 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     setError("");
     const form = new FormData(event.currentTarget);
     try {
+      const file = form.get("file");
+      if (file instanceof File) {
+        const compressed = await compressImage(file);
+        if (compressed.size > maxUploadBytes) {
+          throw new Error("Image is still over 1 MB after compression.");
+        }
+        form.set("file", compressed);
+      }
       const response = await fetch("/api/upload", { method: "POST", body: form });
       if (!response.ok) throw new Error((await response.json()).error || "Upload failed.");
       event.currentTarget.reset();
@@ -141,6 +196,7 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
       <label>Target<select name="targetId">{targets.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
       <label>Image<input name="file" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
+      <p className="meta">Images are compressed to WebP before upload. Max 1 MB.</p>
       {error ? <p className="danger">{error}</p> : null}
       <button type="submit">Upload photo</button>
     </form>
