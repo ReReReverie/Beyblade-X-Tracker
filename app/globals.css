@@ -342,7 +342,6 @@ textarea {
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
 }
 
-<<<<<<< HEAD
 .dashboard {
   display: grid;
   gap: 1rem;
@@ -498,7 +497,8 @@ textarea {
   display: grid;
   gap: 0.5rem;
   grid-template-columns: minmax(0, 1fr) auto;
-=======
+}
+
 .dashboard-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -512,7 +512,6 @@ textarea {
 .dashboard-tab--active {
   outline: 3px solid var(--ink);
   outline-offset: 3px;
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
 }
 
 .part-row {

@@ -165,12 +165,9 @@ model Combo {
   battlesB   Battle[]     @relation("BattleComboB")
   wins       Battle[]     @relation("BattleWinner")
   stars      ComboStar[]
-<<<<<<< HEAD
   puts       ComboPut[]
   comments   ComboComment[]
-=======
   deckSlots  DeckSlot[]
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
 
   @@index([ownerId])
   @@index([visibility])

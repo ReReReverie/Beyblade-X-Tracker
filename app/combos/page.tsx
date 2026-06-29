@@ -13,23 +13,6 @@ export const dynamic = "force-dynamic";
 
 export default async function CombosPage() {
   const session = await getServerSession(authOptions);
-<<<<<<< HEAD
-  const combos = await prisma.combo.findMany({
-    where: { visibility: "PUBLIC" },
-    include: {
-      parts: { include: { part: true }, orderBy: { role: "asc" } },
-      photos: { where: { visibility: "PUBLIC" }, take: 1 },
-      owner: { select: { name: true, username: true } },
-      stars: { select: { userId: true } },
-      puts: { select: { userId: true } },
-      wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
-      battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
-      battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
-    },
-    orderBy: { createdAt: "desc" },
-    take: 36
-  });
-=======
   const [combos, decks] = await Promise.all([
     prisma.combo.findMany({
       where: { visibility: "PUBLIC" },
@@ -38,6 +21,7 @@ export default async function CombosPage() {
         photos: { where: { visibility: "PUBLIC" }, take: 1 },
         owner: { select: { name: true, username: true } },
         stars: { select: { userId: true } },
+        puts: { select: { userId: true } },
         wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
         battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
         battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
@@ -58,7 +42,6 @@ export default async function CombosPage() {
       take: 18
     })
   ]);
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
   const comboIds = combos.map((combo) => combo.id);
   const battleHistory = comboIds.length
     ? await prisma.battle.findMany({

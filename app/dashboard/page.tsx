@@ -103,11 +103,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div><strong>{battles.length}</strong><span>Battles</span></div>
         </div>
       </section>
-<<<<<<< HEAD
-      <section className="dashboard-tools">
-          <div className="card dashboard-card"><PartForm /></div>
-          <div className="card dashboard-card">
-=======
       <nav className="dashboard-tabs" aria-label="Dashboard sections">
         {tabLinks.map((tab) => (
           <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={`/dashboard?tab=${tab.id}`} key={tab.id}>
@@ -119,36 +114,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <section className="grid">
           <div className="card"><PartForm /></div>
           <div className="card">
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
             <ComboForm
               blades={blades.map((p) => ({ id: p.id, name: p.name }))}
               ratchets={ratchets.map((p) => ({ id: p.id, name: p.name }))}
               bits={bits.map((p) => ({ id: p.id, name: p.name }))}
             />
           </div>
-<<<<<<< HEAD
-          <div className="card dashboard-card"><BattleForm combos={options} /></div>
-          <div className="card dashboard-card"><PhotoForm parts={partOptions} combos={options} /></div>
-      </section>
-      <section className="dashboard-content">
-          <section className="dashboard-panel">
-            <h2>Your parts</h2>
-            <div className="compact-list">
-              {parts.map((part) => (
-                <div className="compact-row" key={part.id}>
-                  <div>
-                    <strong>{part.name}</strong>
-                    <p className="meta">
-                      {formatPartType(part.type)} - {formatManufacturer(part.manufacturer)} - {Number(part.weightGrams).toFixed(2)} g - {Number(part.conditionRating)}/10 - {formatVisibility(part.visibility)}
-                    </p>
-                  </div>
-                  <span className="pill">{part.photos.length} photo</span>
-                </div>
-              ))}
-            </div>
-          </section>
-          <section className="dashboard-panel">
-=======
           <div className="card"><DeckForm combos={combos.map((combo) => ({ id: combo.id, name: combo.name }))} /></div>
           <div className="card"><BattleForm combos={options} decks={deckOptions} /></div>
           <div className="card"><PhotoForm parts={partOptions} combos={options} /></div>
@@ -176,18 +147,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {activeTab === "combos" ? (
         <div className="list">
           <section>
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
             <h2>Your combos</h2>
             <div className="compact-grid">
               {combos.map((combo) => {
                 const wins = combo.wins.length;
                 const total = combo.battlesA.length + combo.battlesB.length;
                 return (
-<<<<<<< HEAD
-                  <div className="compact-card" key={combo.id}>
-=======
                   <CollapsibleComboCard comboId={combo.id} battles={battlesForCombo(combo.id, battles)} key={combo.id}>
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
                     {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                     <h3>{combo.name}</h3>
                     <p className="meta">
@@ -200,15 +166,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               })}
             </div>
           </section>
-<<<<<<< HEAD
-          <section className="dashboard-panel">
-            <h2>Recent battles</h2>
-            <div className="compact-list">
-              {battles.slice(0, 30).map((battle) => (
-                <div className="compact-row" key={battle.id}>
-                  <strong>{battle.comboA.name} vs {battle.comboB.name}</strong>
-                  <p className="meta">Winner: {battle.winner.name} - {formatVisibility(battle.visibility)}</p>
-=======
           <section>
             <h2>Your decks</h2>
             <div className="grid">
@@ -217,14 +174,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   <h3>{deck.name}</h3>
                   <p className="meta">{formatVisibility(deck.visibility)}</p>
                   <p className="meta">{deck.slots.map((slot) => slot.combo.name).join(" / ")}</p>
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
                 </div>
               ))}
             </div>
           </section>
-<<<<<<< HEAD
-      </section>
-=======
         </div>
       ) : null}
       {activeTab === "history" ? (
@@ -278,7 +231,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </section>
         </section>
       ) : null}
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
     </div>
   );
 }

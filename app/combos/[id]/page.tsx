@@ -1,13 +1,9 @@
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
-<<<<<<< HEAD
 import { ComboComments } from "@/components/combo-comments";
-import { PutComboButton } from "@/components/put-combo-button";
-import { WRGraph } from "@/components/wr-graph";
-=======
 import { ComboDetailTabs } from "@/components/combo-detail-tabs";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
->>>>>>> 7382218520c51f199422a1513e6c96252694c92f
+import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
 import { authOptions } from "@/lib/auth";
 import { formatManufacturer, formatPartType, pct } from "@/lib/format";
