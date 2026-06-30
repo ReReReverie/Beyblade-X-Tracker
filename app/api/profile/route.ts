@@ -2,16 +2,17 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { careerEntrySchema, profileUpdateSchema } from "@/lib/validation";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Sign in to view your profile." }, { status: 401 });
 
   const userId = session.user.id;
-  const [user, myCombos, starredCombos, putCombos] = await Promise.all([
+  const [user, myCombos, starredCombos, putCombos, careerEntries] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, username: true, email: true, role: true }
+      select: { id: true, name: true, username: true, email: true, role: true, image: true, bio: true }
     }),
     prisma.combo.findMany({
       where: { ownerId: userId },
@@ -57,7 +58,8 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
       take: 60
-    })
+    }),
+    prisma.careerEntry.findMany({ where: { userId }, orderBy: { playedAt: "desc" }, take: 100 })
   ]);
 
   return NextResponse.json({
@@ -66,7 +68,9 @@ export async function GET() {
       name: user?.name,
       username: user?.username,
       email: user?.email,
-      role: user?.role || session.user.role
+      role: user?.role || session.user.role,
+      image: user?.image,
+      bio: user?.bio
     },
     stats: {
       comboCount: myCombos.length,
@@ -76,6 +80,52 @@ export async function GET() {
     },
     myCombos,
     starredCombos,
-    putCombos
+    putCombos,
+    careerEntries
   });
+}
+
+export async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  const parsed = profileUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid profile data." }, { status: 400 });
+
+  const user = await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      name: parsed.data.name || null,
+      image: parsed.data.image || null,
+      bio: parsed.data.bio || null
+    },
+    select: { id: true, name: true, image: true, bio: true }
+  });
+
+  return NextResponse.json({ user });
+}
+
+export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  const parsed = careerEntrySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Invalid career entry." }, { status: 400 });
+
+  const entry = await prisma.careerEntry.create({
+    data: { userId: session.user.id, ...parsed.data }
+  });
+
+  return NextResponse.json({ entry });
+}
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing career entry." }, { status: 400 });
+
+  await prisma.careerEntry.deleteMany({ where: { id, userId: session.user.id } });
+  return NextResponse.json({ ok: true });
 }

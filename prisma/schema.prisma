@@ -46,6 +46,13 @@ enum BattleFormat {
   THREE_V_THREE
 }
 
+enum FeaturedSlot {
+  DAY
+  WEEK
+  MONTH
+  SPONSOR
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -54,6 +61,7 @@ model User {
   role          Role      @default(USER)
   emailVerified DateTime?
   image         String?
+  bio           String?
   passwordHash  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -67,6 +75,8 @@ model User {
   stars    ComboStar[]
   puts     ComboPut[]
   comments ComboComment[]
+  chatUsages ChatUsage[]
+  careerEntries CareerEntry[]
   reports  Report[]
 
   @@index([createdAt])
@@ -161,6 +171,7 @@ model Combo {
   owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   parts      ComboPart[]
   photos     ComboPhoto[]
+  features   FeaturedCombo[]
   battlesA   Battle[]     @relation("BattleComboA")
   battlesB   Battle[]     @relation("BattleComboB")
   wins       Battle[]     @relation("BattleWinner")
@@ -251,6 +262,57 @@ model ComboComment {
 
   @@index([comboId, createdAt])
   @@index([authorId])
+}
+
+model FeaturedCombo {
+  id          String       @id @default(cuid())
+  comboId     String
+  slot        FeaturedSlot
+  title       String
+  sponsorName String?
+  posterUrl   String?
+  startsAt    DateTime     @default(now())
+  endsAt      DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+
+  @@index([slot, startsAt, endsAt])
+  @@index([comboId])
+  @@index([endsAt])
+}
+
+model ChatUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  day       DateTime
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+  @@index([day])
+}
+
+model CareerEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  tournamentName String
+  placement      String?
+  wins           Int      @default(0)
+  losses         Int      @default(0)
+  draws          Int      @default(0)
+  playedAt       DateTime @default(now())
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
 }
 
 model VisitorActivity {

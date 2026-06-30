@@ -35,26 +35,40 @@ The app runs at http://localhost:3000 by default.
 cp .env.example .env
 ```
 
-2. Start the PostgreSQL container:
+2. Add your hosted Postgres connection string to `.env`:
+
+```bash
+DATABASE_URL="postgresql://user:password@host:5432/database?schema=public"
+```
+
+For Neon, copy the pooled or direct PostgreSQL connection string from the Neon dashboard and use it as `DATABASE_URL`.
+
+For local Docker Postgres instead, use:
+
+```bash
+DATABASE_URL="postgresql://beyuser:beypass@localhost:5432/beyblade_x?schema=public"
+```
+
+3. Start the PostgreSQL container if you are using the local Docker database:
 
 ```bash
 docker compose up -d postgres
 ```
 
-3. Install dependencies:
+4. Install dependencies:
 
 ```bash
 npm install
 ```
 
-4. Apply database migrations and seed the demo data:
+5. Apply database migrations and seed the demo data:
 
 ```bash
 npm run db:migrate
 npm run db:seed
 ```
 
-5. Start the app:
+6. Start the app:
 
 ```bash
 npm run dev
@@ -71,6 +85,16 @@ If you use Google auth, set these values in `.env`:
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 ```
+
+If you enable AI-backed chat, keep provider keys in `.env` only:
+
+```bash
+GROQ_API_KEY=""
+GEMINI_API_KEY=""
+GEMINI_MODEL="gemini-1.5-flash"
+```
+
+Do not put real API keys in `.env.example` or any committed file. Local `.env` files are ignored by Git.
 
 ## API
 

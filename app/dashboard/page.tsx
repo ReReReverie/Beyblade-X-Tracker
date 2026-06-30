@@ -79,7 +79,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const ratchets = parts.filter((part) => part.type === "RATCHET");
   const bits = parts.filter((part) => part.type === "BIT");
   const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
-  const deckOptions = decks.map((deck) => ({ id: deck.id, name: deck.name }));
+  const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
+  const deckOptions = ownedDecks.map((deck) => ({ id: deck.id, name: deck.name }));
   const partOptions = parts.map((part) => ({ id: part.id, name: `${part.name} (${formatPartType(part.type)})` }));
   const tabLinks: Array<{ id: DashboardTab; label: string }> = [
     { id: "log", label: "Log" },
@@ -169,11 +170,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <section>
             <h2>Your decks</h2>
             <div className="grid">
-              {decks.filter((deck) => deck.ownerId === userId).map((deck) => (
+              {ownedDecks.map((deck) => (
                 <div className="card" key={deck.id}>
                   <h3>{deck.name}</h3>
                   <p className="meta">{formatVisibility(deck.visibility)}</p>
-                  <p className="meta">{deck.slots.map((slot) => slot.combo.name).join(" / ")}</p>
+                  <p className="meta">{deck.slots.map((slot) => slot.combo?.name || "Missing combo").join(" / ")}</p>
                 </div>
               ))}
             </div>
