@@ -14,20 +14,31 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ ok: false }, { status: 400 });
 
   const session = await getServerSession(authOptions);
-  await prisma.visitorActivity.upsert({
-    where: { visitorId: parsed.data.visitorId },
-    create: {
-      visitorId: parsed.data.visitorId,
-      path: parsed.data.path,
-      userId: session?.user?.id,
-      lastSeen: new Date()
-    },
-    update: {
-      path: parsed.data.path,
-      userId: session?.user?.id,
-      lastSeen: new Date()
+  try {
+    await prisma.visitorActivity.upsert({
+      where: { visitorId: parsed.data.visitorId },
+      create: {
+        visitorId: parsed.data.visitorId,
+        path: parsed.data.path,
+        userId: session?.user?.id,
+        lastSeen: new Date()
+      },
+      update: {
+        path: parsed.data.path,
+        userId: session?.user?.id,
+        lastSeen: new Date()
+      }
+    });
+  } catch (error) {
+    if (isTerminatedDatabaseConnection(error)) {
+      return NextResponse.json({ ok: false }, { status: 503 });
     }
-  });
+    throw error;
+  }
 
   return NextResponse.json({ ok: true });
+}
+
+function isTerminatedDatabaseConnection(error: unknown) {
+  return error instanceof Error && error.message.includes("terminating connection due to administrator command");
 }
