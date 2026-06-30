@@ -1,7 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import type { Visibility } from "@prisma/client";
+import { uploadImage } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 
@@ -36,18 +35,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Target not found." }, { status: 404 });
     }
 
-    const ext = file.type === "image/png" ? ".png" : file.type === "image/webp" ? ".webp" : ".jpg";
-    const safeName = `${ownerId}-${Date.now()}-${crypto.randomUUID()}${ext}`;
-    const uploadDir = process.env.UPLOAD_DIR || "public/uploads";
-    const absoluteDir = path.join(process.cwd(), uploadDir);
-    const absolutePath = path.join(absoluteDir, safeName);
-
-    await mkdir(absoluteDir, { recursive: true });
-    await writeFile(absolutePath, Buffer.from(await file.arrayBuffer()));
+    const publicId = `${ownerId}-${Date.now()}-${crypto.randomUUID()}`;
+    const upload = await uploadImage(Buffer.from(await file.arrayBuffer()), publicId);
 
     const data = {
       ownerId,
-      url: `/uploads/${safeName}`,
+      url: upload.secure_url,
       fileName: file.name,
       mimeType: file.type,
       sizeBytes: file.size,
@@ -60,7 +53,14 @@ export async function POST(request: Request) {
         : await prisma.comboPhoto.create({ data: { ...data, comboId: targetId } });
 
     return NextResponse.json({ photo });
-  } catch {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    console.error("Upload failed", error);
+    return NextResponse.json({ error: "Upload failed." }, { status: 500 });
   }
 }
+
+export const runtime = "nodejs";
