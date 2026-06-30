@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getServerSession } from "next-auth";
 import { ActivityHeartbeat } from "@/components/activity-heartbeat";
+import { ChatBubble } from "@/components/chat-bubble";
 import { SessionControls } from "@/components/session-controls";
-import { authOptions } from "@/lib/auth";
+import { getSessionUser } from "@/lib/session";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions);
+  const sessionUser = await getSessionUser();
 
   return (
     <html lang="en">
@@ -26,9 +26,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link className="button secondary" href="/combos">
                 Public combos
               </Link>
-              {session ? (
+              {sessionUser ? (
                 <>
-                  {session.user.role === "ADMIN" ? (
+                  {sessionUser.user.role === "ADMIN" ? (
                     <Link className="button secondary" href="/admin">Admin</Link>
                   ) : null}
                   <Link className="button secondary" href="/profile">Profile</Link>
@@ -44,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </nav>
           <ActivityHeartbeat />
           {children}
+          <ChatBubble />
         </main>
       </body>
     </html>

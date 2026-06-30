@@ -1,4 +1,4 @@
-import { BattleFormat, Manufacturer, PartType, Visibility } from "@prisma/client";
+import { BattleFormat, FeaturedSlot, Manufacturer, PartType, Visibility } from "@prisma/client";
 import { z } from "zod";
 
 export const visibilitySchema = z.nativeEnum(Visibility).default("PUBLIC");
@@ -50,4 +50,33 @@ export const comboCommentSchema = z.object({
 
 export const comboActionSchema = z.object({
   comboId: z.string().min(1)
+});
+
+export const featuredComboSchema = z.object({
+  comboId: z.string().min(1),
+  slot: z.nativeEnum(FeaturedSlot),
+  title: z.string().trim().min(1).max(100),
+  sponsorName: z.string().trim().max(100).optional(),
+  posterUrl: z.string().trim().url().max(500).optional().or(z.literal("")),
+  startsAt: z.coerce.date(),
+  endsAt: z.coerce.date()
+}).refine((data) => data.endsAt > data.startsAt, {
+  message: "End time must be after start time.",
+  path: ["endsAt"]
+});
+
+export const profileUpdateSchema = z.object({
+  name: z.string().trim().max(80).optional(),
+  image: z.string().trim().url().max(500).optional().or(z.literal("")),
+  bio: z.string().trim().max(280).optional()
+});
+
+export const careerEntrySchema = z.object({
+  tournamentName: z.string().trim().min(1).max(120),
+  placement: z.string().trim().max(60).optional(),
+  wins: z.coerce.number().int().min(0).max(999).default(0),
+  losses: z.coerce.number().int().min(0).max(999).default(0),
+  draws: z.coerce.number().int().min(0).max(999).default(0),
+  playedAt: z.coerce.date(),
+  notes: z.string().trim().max(1000).optional()
 });

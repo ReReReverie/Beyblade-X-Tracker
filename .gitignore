@@ -1,6 +1,8 @@
 node_modules
 .next
-.env
+*.tsbuildinfo
+.env*
+!.env.example
 public/uploads/*
 !public/uploads/.gitkeep
 prisma/dev.db
