@@ -382,6 +382,8 @@ model Battle {
   comboAId   String?
   comboBId   String?
   winnerId   String?
+  comboARpm  Int?
+  comboBRpm  Int?
   deckAId    String?
   deckBId    String?
   deckWinnerId String?

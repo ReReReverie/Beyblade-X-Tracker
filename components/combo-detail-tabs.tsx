@@ -9,6 +9,8 @@ type BattleRow = BattlePoint & {
   comboA: { name: string } | null;
   comboB: { name: string } | null;
   winner: { name: string } | null;
+  comboARpm: number | null;
+  comboBRpm: number | null;
 };
 
 export function ComboDetailTabs({ comboId, battles }: { comboId: string; battles: BattleRow[] }) {
@@ -37,6 +39,12 @@ export function ComboDetailTabs({ comboId, battles }: { comboId: string; battles
                 <strong>{battle.comboA?.name || "Combo A"} vs {battle.comboB?.name || "Combo B"}</strong>
                 <span className={won ? "tag tag--filled" : "tag"}>{won ? "Win" : "Loss"}</span>
                 <p className="meta">Winner: {battle.winner?.name || "Unknown"} - Running {wins}-{total - wins} ({pct(wins, total)})</p>
+                {battle.comboARpm || battle.comboBRpm ? (
+                  <p className="meta">
+                    RPM: {battle.comboA?.name || "Combo A"} {battle.comboARpm ? battle.comboARpm.toLocaleString() : "N/A"} -{" "}
+                    {battle.comboB?.name || "Combo B"} {battle.comboBRpm ? battle.comboBRpm.toLocaleString() : "N/A"}
+                  </p>
+                ) : null}
               </div>
             );
           }) : <p className="meta">No public battle results yet.</p>}

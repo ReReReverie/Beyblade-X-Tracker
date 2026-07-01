@@ -22,11 +22,18 @@ export const comboSchema = z.object({
   notes: z.string().trim().max(1000).optional()
 });
 
+const optionalRpmSchema = z.preprocess(
+  (value) => (value === "" || value === null ? undefined : value),
+  z.coerce.number().int().positive().max(99999).optional()
+);
+
 export const battleSchema = z.object({
   format: z.nativeEnum(BattleFormat).default("ONE_V_ONE"),
   comboAId: z.string().optional(),
   comboBId: z.string().optional(),
   winnerId: z.string().optional(),
+  comboARpm: optionalRpmSchema,
+  comboBRpm: optionalRpmSchema,
   deckAId: z.string().optional(),
   deckBId: z.string().optional(),
   deckWinnerId: z.string().optional(),

@@ -67,6 +67,8 @@ export async function POST(request: Request) {
         comboAId: parsed.data.comboAId,
         comboBId: parsed.data.comboBId,
         winnerId: parsed.data.winnerId,
+        comboARpm: parsed.data.comboARpm,
+        comboBRpm: parsed.data.comboBRpm,
         visibility: parsed.data.visibility,
         notes: parsed.data.notes
       }

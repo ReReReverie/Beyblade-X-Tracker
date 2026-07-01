@@ -1,0 +1,2 @@
+ALTER TABLE "Battle" ADD COLUMN "comboARpm" INTEGER;
+ALTER TABLE "Battle" ADD COLUMN "comboBRpm" INTEGER;

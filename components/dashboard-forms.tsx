@@ -192,6 +192,8 @@ export function BattleForm({ combos, decks }: { combos: Option[]; decks: Option[
         <>
           <label>Combo A<select name="comboAId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label>Combo B<select name="comboBId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Combo A RPM<input name="comboARpm" type="number" min="1" max="99999" step="1" /></label>
+          <label>Combo B RPM<input name="comboBRpm" type="number" min="1" max="99999" step="1" /></label>
           <label>Winner<select name="winnerId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         </>
       ) : (
