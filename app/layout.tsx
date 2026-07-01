@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ActivityHeartbeat } from "@/components/activity-heartbeat";
 import { ChatBubble } from "@/components/chat-bubble";
 import { SessionControls } from "@/components/session-controls";
+import { SiteFooter } from "@/components/site-footer";
 import { getSessionUser } from "@/lib/session";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </nav>
           <ActivityHeartbeat />
           {children}
+          <SiteFooter />
           <ChatBubble />
         </main>
       </body>

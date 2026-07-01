@@ -927,6 +927,35 @@ textarea {
   width: 0.75rem;
 }
 
+.site-footer {
+  align-items: start;
+  border-top: var(--border);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: var(--gap);
+  padding-top: 1.25rem;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  justify-content: flex-end;
+}
+
+.footer-links a {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer-links a:hover {
+  color: var(--safety);
+}
+
 .chat-page {
   display: grid;
   min-height: 560px;
@@ -1035,5 +1064,13 @@ textarea {
 
   .chat-input {
     grid-template-columns: 1fr;
+  }
+
+  .site-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-links {
+    justify-content: flex-start;
   }
 }

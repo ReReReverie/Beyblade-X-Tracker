@@ -14,6 +14,13 @@ type ComboGuess = {
   visibility?: "PUBLIC" | "PRIVATE";
 };
 
+type ResolvedCombo = {
+  id: string;
+  name: string;
+  created: boolean;
+  createdParts: string[];
+};
+
 function startOfUtcDay(date = new Date()) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
@@ -163,6 +170,99 @@ function comboNameFromText(input: string, blade: Part, ratchet: Part, bit: Part,
   return nameMatch?.[1]?.trim().slice(0, 80) || `${blade.name} / ${ratchet.name} / ${bit.name}`;
 }
 
+function splitBattleInput(input: string) {
+  const match = input.match(/\s+(?:vs\.?|versus)\s+/i);
+  if (!match || match.index === undefined) return null;
+
+  const left = input.slice(0, match.index).trim();
+  const rightAndMeta = input.slice(match.index + match[0].length).trim();
+  const scoreMatch = rightAndMeta.match(/\b(\d+)\s*[-:]\s*(\d+)\b/);
+  const right = scoreMatch
+    ? rightAndMeta.slice(0, scoreMatch.index).trim()
+    : rightAndMeta.trim();
+  const scoreA = scoreMatch ? Number(scoreMatch[1]) : undefined;
+  const scoreB = scoreMatch ? Number(scoreMatch[2]) : undefined;
+  const notes = scoreMatch
+    ? `Created from chat. Score: ${scoreA}-${scoreB}. Input: ${input}`.slice(0, 1000)
+    : `Created from chat: ${input}`.slice(0, 1000);
+
+  if (!left || !right) return null;
+  return { left, right, scoreA, scoreB, notes };
+}
+
+function rpmForSide(input: string, side: "a" | "b") {
+  const label = side === "a" ? "a" : "b";
+  const match = input.match(new RegExp(`(?:combo\\s*)?${label}\\s*rpm\\s*[:\\-]?\\s*(\\d+)`, "i"));
+  return match ? Number(match[1]) : undefined;
+}
+
+async function findOrCreateCombo(userId: string, input: string, parts: Part[], geminiGuess: ComboGuess | null): Promise<ResolvedCombo> {
+  const localGuesses = guessedPartNames(input);
+  const guesses = mergeGuesses(localGuesses, geminiGuess);
+  const createdParts: string[] = [];
+  let blade = pickPart(guesses.blade || input, parts, "BLADE");
+  let ratchet = pickPart(guesses.ratchet || input, parts, "RATCHET");
+  let bit = pickPart(guesses.bit || input, parts, "BIT");
+
+  const missing = [
+    blade ? null : "blade",
+    ratchet ? null : "ratchet",
+    bit ? null : "bit"
+  ].filter(Boolean);
+  if (!blade || !ratchet || !bit) {
+    if (!blade && guesses.blade) {
+      blade = await createPartFromChat(userId, guesses.blade, "BLADE");
+      parts.push(blade);
+      createdParts.push(blade.name);
+    }
+    if (!ratchet && guesses.ratchet) {
+      ratchet = await createPartFromChat(userId, guesses.ratchet, "RATCHET");
+      parts.push(ratchet);
+      createdParts.push(ratchet.name);
+    }
+    if (!bit && guesses.bit) {
+      bit = await createPartFromChat(userId, guesses.bit, "BIT");
+      parts.push(bit);
+      createdParts.push(bit.name);
+    }
+    if (!blade || !ratchet || !bit) {
+      throw new Error(`I could not identify your ${missing.join(", ")}. Try: blade: Phoenix Wing, ratchet: 9-60, bit: Point.`);
+    }
+  }
+
+  const duplicateCandidates = await prisma.combo.findMany({
+    where: {
+      OR: [{ visibility: "PUBLIC" }, { ownerId: userId }],
+      parts: { some: { partId: { in: [blade.id, ratchet.id, bit.id] } } }
+    },
+    include: { parts: true },
+    take: 20
+  });
+  const duplicate = duplicateCandidates.find((combo) => {
+    const partIds = new Set(combo.parts.map((part) => part.partId));
+    return partIds.size === 3 && partIds.has(blade.id) && partIds.has(ratchet.id) && partIds.has(bit.id);
+  });
+  if (duplicate) return { id: duplicate.id, name: duplicate.name, created: false, createdParts };
+
+  const combo = await prisma.combo.create({
+    data: {
+      ownerId: userId,
+      name: comboNameFromText(input, blade, ratchet, bit, guesses.name),
+      visibility: guesses.visibility || "PUBLIC",
+      notes: `Created from chat: ${input}`.slice(0, 1000),
+      parts: {
+        create: [
+          { partId: blade.id, role: "BLADE" },
+          { partId: ratchet.id, role: "RATCHET" },
+          { partId: bit.id, role: "BIT" }
+        ]
+      }
+    }
+  });
+
+  return { id: combo.id, name: combo.name, created: true, createdParts };
+}
+
 async function consumeChat(userId: string) {
   const day = startOfUtcDay();
   const usage = await prisma.chatUsage.upsert({
@@ -194,83 +294,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Daily chat limit reached. Try again tomorrow.", remaining: 0 }, { status: 429 });
     }
 
+    const battleInput = splitBattleInput(message);
     const [parts, geminiGuesses] = await Promise.all([
       prisma.part.findMany({ where: { ownerId: userId } }),
-      guessWithGemini(message)
+      battleInput ? Promise.resolve(null) : guessWithGemini(message)
     ]);
-    const localGuesses = guessedPartNames(message);
-    const guesses = mergeGuesses(localGuesses, geminiGuesses);
-    const createdParts: string[] = [];
-    let blade = pickPart(guesses.blade || message, parts, "BLADE");
-    let ratchet = pickPart(guesses.ratchet || message, parts, "RATCHET");
-    let bit = pickPart(guesses.bit || message, parts, "BIT");
 
-    const missing = [
-      blade ? null : "blade",
-      ratchet ? null : "ratchet",
-      bit ? null : "bit"
-    ].filter(Boolean);
-    if (!blade || !ratchet || !bit) {
-      if (!blade && guesses.blade) {
-        blade = await createPartFromChat(userId, guesses.blade, "BLADE");
-        createdParts.push(blade.name);
+    if (battleInput) {
+      const [comboA, comboB] = await Promise.all([
+        findOrCreateCombo(userId, battleInput.left, parts, null),
+        findOrCreateCombo(userId, battleInput.right, parts, null)
+      ]);
+      if (comboA.id === comboB.id) {
+        return NextResponse.json({ error: "I matched both sides to the same combo. Add more detail for each side.", remaining: usage.remaining }, { status: 400 });
       }
-      if (!ratchet && guesses.ratchet) {
-        ratchet = await createPartFromChat(userId, guesses.ratchet, "RATCHET");
-        createdParts.push(ratchet.name);
+      if (battleInput.scoreA === undefined || battleInput.scoreB === undefined || battleInput.scoreA === battleInput.scoreB) {
+        return NextResponse.json({ error: "Add a non-tied score like 1-0 or 3-2 so I know the winner.", remaining: usage.remaining }, { status: 400 });
       }
-      if (!bit && guesses.bit) {
-        bit = await createPartFromChat(userId, guesses.bit, "BIT");
-        createdParts.push(bit.name);
-      }
-      if (!blade || !ratchet || !bit) {
-        return NextResponse.json({
-          error: `I could not identify your ${missing.join(", ")}. Try: blade: Phoenix Wing, ratchet: 9-60, bit: Point.`,
-          remaining: usage.remaining
-        }, { status: 400 });
-      }
-    }
+      const winnerId = battleInput.scoreA > battleInput.scoreB ? comboA.id : comboB.id;
 
-    const duplicateCandidates = await prisma.combo.findMany({
-      where: {
-        OR: [{ visibility: "PUBLIC" }, { ownerId: userId }],
-        parts: { some: { partId: { in: [blade.id, ratchet.id, bit.id] } } }
-      },
-      include: { parts: true },
-      take: 20
-    });
-    const duplicate = duplicateCandidates.find((combo) => {
-      const partIds = new Set(combo.parts.map((part) => part.partId));
-      return partIds.size === 3 && partIds.has(blade.id) && partIds.has(ratchet.id) && partIds.has(bit.id);
-    });
-    if (duplicate) {
-      return NextResponse.json({
-        error: "That combo already exists. Follow the existing combo and add battle results there.",
-        remaining: usage.remaining
-      }, { status: 409 });
-    }
-
-    const combo = await prisma.combo.create({
-      data: {
-        ownerId: userId,
-        name: comboNameFromText(message, blade, ratchet, bit, guesses.name),
-        visibility: guesses.visibility || "PUBLIC",
-        notes: `Created from chat: ${message}`.slice(0, 1000),
-        parts: {
-          create: [
-            { partId: blade.id, role: "BLADE" },
-            { partId: ratchet.id, role: "RATCHET" },
-            { partId: bit.id, role: "BIT" }
-          ]
+      const battle = await prisma.battle.create({
+        data: {
+          ownerId: userId,
+          format: "ONE_V_ONE",
+          comboAId: comboA.id,
+          comboBId: comboB.id,
+          winnerId,
+          comboARpm: rpmForSide(message, "a"),
+          comboBRpm: rpmForSide(message, "b"),
+          visibility: message.toLowerCase().includes("private") ? "PRIVATE" : "PUBLIC",
+          notes: battleInput.notes
         }
-      },
-      include: { parts: { include: { part: true }, orderBy: { role: "asc" } } }
-    });
+      });
+
+      return NextResponse.json({
+        combo: { id: winnerId },
+        battle,
+        remaining: usage.remaining,
+        message: `Logged battle: ${comboA.name} vs ${comboB.name}. Winner: ${winnerId === comboA.id ? comboA.name : comboB.name}.${[...comboA.createdParts, ...comboB.createdParts].length ? " Created missing parts as private placeholders." : ""}`
+      });
+    }
+
+    const combo = await findOrCreateCombo(userId, message, parts, geminiGuesses);
 
     return NextResponse.json({
       combo,
       remaining: usage.remaining,
-      message: `Created ${combo.name}.${createdParts.length ? ` Also created missing parts: ${createdParts.join(", ")}.` : ""} Add images manually from Dashboard > Log > Add photo.`
+      message: combo.created
+        ? `Created ${combo.name}.${combo.createdParts.length ? ` Also created missing parts: ${combo.createdParts.join(", ")}.` : ""} Add images manually from Dashboard > Log > Add photo.`
+        : `That combo already exists: ${combo.name}. You can now log battles by typing: ${combo.name} vs another combo 1-0.`
     });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {

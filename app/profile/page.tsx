@@ -160,6 +160,13 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
               <p>{myCombos.length} posted combo{myCombos.length === 1 ? "" : "s"} - {putCombos.length} lineup put{putCombos.length === 1 ? "" : "s"}</p>
               <p>{careerEntries.length} tournament record{careerEntries.length === 1 ? "" : "s"} logged.</p>
             </div>
+            <div className="card">
+              <h2>Account data</h2>
+              <p className="danger">Inactive accounts may be deleted after 90 days. Export your data if you want a backup.</p>
+              <a className="button secondary" href="/api/profile/export" download>
+                Export my data
+              </a>
+            </div>
           </div>
         </section>
       ) : null}

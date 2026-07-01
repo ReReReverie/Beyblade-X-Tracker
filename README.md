@@ -26,6 +26,19 @@ The app runs at http://localhost:3000 by default.
 
 - Sign up or sign in from the auth pages.
 - Upload parts, create combos, and record battles from the dashboard.
+- Use the chat page to create combos or log 1v1 battles in one sentence, such as `Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0`.
+
+## Footer links
+
+Footer links are managed in `lib/footer-links.ts`.
+
+To add a link, add another object to the `footerLinks` array:
+
+```ts
+{ href: "/your-page", label: "Your Label" }
+```
+
+Use internal paths like `/reports` for app pages, or a full URL for an external site.
 
 ## Local setup
 
@@ -82,9 +95,19 @@ Default local admin credentials:
 If you use Google auth, set these values in `.env`:
 
 ```bash
+GOOGLE_AUTH_ENABLED="true"
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 ```
+
+Inactive non-admin accounts with no activity heartbeat for 90 days are deleted by the cleanup job. Run the cleanup endpoint daily from Vercel Cron or another scheduler:
+
+```text
+GET /api/cron/cleanup-inactive
+Authorization: Bearer YOUR_CRON_SECRET
+```
+
+Set `CRON_SECRET` in production to protect that endpoint.
 
 If you enable AI-backed chat, keep provider keys in `.env` only:
 

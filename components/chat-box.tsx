@@ -16,8 +16,8 @@ export function ChatBox({ signedIn, initialRemaining }: { signedIn: boolean; ini
       id: 1,
       role: "bot",
       body: signedIn
-        ? "Type a combo using saved or new part names. Example: Phoenix Wing 9-60 Point, name: Attack test."
-        : "Sign in first, then I can create combos from your saved parts."
+        ? "Type a combo or battle. Examples: Phoenix Wing 9-60 Point, name: Attack test. Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0."
+        : "Sign in first, then I can create combos and log battles from your saved parts."
     }
   ]);
   const [text, setText] = useState("");
@@ -48,7 +48,7 @@ export function ChatBox({ signedIn, initialRemaining }: { signedIn: boolean; ini
         {
           id: Date.now() + 1,
           role: "bot",
-          body: response.ok ? result.message : result.error || "I could not create that combo.",
+          body: response.ok ? result.message : result.error || "I could not handle that request.",
           href: response.ok && result.combo?.id ? `/combos/${result.combo.id}` : undefined
         }
       ]);
@@ -74,7 +74,7 @@ export function ChatBox({ signedIn, initialRemaining }: { signedIn: boolean; ini
         <form className="chat-input" onSubmit={submit}>
           <label>
             Message
-            <input disabled={!signedIn || remaining <= 0 || busy} value={text} onChange={(event) => setText(event.target.value)} placeholder="Phoenix Wing 9-60 Point, name: My combo" />
+            <input disabled={!signedIn || remaining <= 0 || busy} value={text} onChange={(event) => setText(event.target.value)} placeholder="Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0" />
           </label>
           <button disabled={!signedIn || remaining <= 0 || busy} type="submit">{busy ? "Creating" : "Send"}</button>
         </form>

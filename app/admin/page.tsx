@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { AdminComboDeleteButton } from "@/components/admin-combo-delete-button";
 import { FeaturedComboDeleteButton } from "@/components/featured-combo-delete-button";
 import { FeaturedComboForm } from "@/components/featured-combo-form";
-import { ReportForm } from "@/components/report-form";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -15,12 +15,11 @@ export default async function AdminPage() {
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   const activeSince = new Date(Date.now() - 2 * 60 * 1000);
-  const [activeUsers, totalUsers, openBugs, openRequests, reports, activity, publicCombos, adminCombos, features] = await Promise.all([
+  const [activeUsers, totalUsers, openBugs, openRequests, activity, publicCombos, adminCombos, features] = await Promise.all([
     prisma.visitorActivity.count({ where: { lastSeen: { gte: activeSince } } }),
     prisma.user.count(),
     prisma.report.count({ where: { kind: "BUG", status: "OPEN" } }),
     prisma.report.count({ where: { kind: "REQUEST", status: "OPEN" } }),
-    prisma.report.findMany({ orderBy: { createdAt: "desc" }, take: 20, include: { reporter: { select: { name: true, username: true, email: true } } } }),
     prisma.visitorActivity.findMany({ orderBy: { lastSeen: "desc" }, take: 20 }),
     prisma.combo.findMany({ where: { visibility: "PUBLIC" }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, name: true } }),
     prisma.combo.findMany({
@@ -48,6 +47,9 @@ export default async function AdminPage() {
         <span className="tag tag--filled">Admin</span>
         <h1>Site control</h1>
         <p>Track active visitors, pending requests, bug reports, and recent paths.</p>
+        <div className="navlinks">
+          <Link className="button secondary" href="/admin/tickets">Tickets</Link>
+        </div>
       </section>
       <section className="grid">
         <div className="stat"><strong>{activeUsers}</strong><span>active now</span></div>
@@ -58,7 +60,6 @@ export default async function AdminPage() {
       <section className="tabs admin-layout">
         <div className="list">
           <div className="card"><FeaturedComboForm combos={publicCombos} /></div>
-          <div className="card"><ReportForm /></div>
         </div>
         <div className="admin-feed">
           <section>
@@ -93,21 +94,6 @@ export default async function AdminPage() {
                     </p>
                   </div>
                   <AdminComboDeleteButton id={combo.id} name={combo.name} />
-                </div>
-              ))}
-            </div>
-          </section>
-          <section>
-            <h2>Pending reports</h2>
-            <div className="list">
-              {reports.map((report) => (
-                <div className="card" key={report.id}>
-                  <span className="tag">{report.kind} - {report.status}</span>
-                  <h3>{report.title}</h3>
-                  <p>{report.details}</p>
-                  <p className="meta">
-                    By {report.reporter?.name || report.reporter?.username || report.reporter?.email || "Guest"} - {report.path || "No path"}
-                  </p>
                 </div>
               ))}
             </div>

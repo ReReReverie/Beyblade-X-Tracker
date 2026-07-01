@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "That email is already registered." }, { status: 409 });
   }
 
-await prisma.user.create({
+  await prisma.user.create({
     data: {
       email,
       name: parsed.data.name,
