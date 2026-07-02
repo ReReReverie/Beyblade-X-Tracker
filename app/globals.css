@@ -544,6 +544,30 @@ textarea {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.catalog-dropdown {
+  border: var(--border-thin);
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+}
+
+.catalog-dropdown summary {
+  cursor: pointer;
+  font-weight: 700;
+  list-style-position: outside;
+}
+
+.catalog-dropdown__body {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.catalog-dropdown__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .dashboard-tabs {
   display: flex;
   flex-wrap: wrap;

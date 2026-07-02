@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import { CatalogImportForm } from "@/components/catalog-import-form";
 import { CollapsibleComboCard } from "@/components/collapsible-combo-card";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { BattleForm, ComboForm, DeckForm, PartForm, PhotoForm } from "@/components/dashboard-forms";
@@ -26,7 +27,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     requestedTab === "parts" || requestedTab === "combos" || requestedTab === "history" || requestedTab === "profile"
       ? requestedTab
       : "log";
-  const [parts, combos, followedCombos, decks, battles] = await Promise.all([
+  const [parts, combos, followedCombos, decks, battles, catalogParts] = await Promise.all([
     prisma.part.findMany({
       where: { ownerId: userId },
       include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
@@ -72,6 +73,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       include: { comboA: true, comboB: true, winner: true, deckA: true, deckB: true, deckWinner: true },
       orderBy: { playedAt: "desc" },
       take: 240
+    }),
+    prisma.partCatalog.findMany({
+      orderBy: [{ metaTier: "asc" }, { type: "asc" }, { name: "asc" }]
     })
   ]);
 
@@ -82,6 +86,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
   const deckOptions = ownedDecks.map((deck) => ({ id: deck.id, name: deck.name }));
   const partOptions = parts.map((part) => ({ id: part.id, name: `${part.name} (${formatPartType(part.type)})` }));
+  const ownedCatalogIds = parts.flatMap((part) => (part.catalogPartId ? [part.catalogPartId] : []));
+  const catalogForUi = catalogParts.map((part) => ({
+    id: part.id,
+    name: part.name,
+    type: part.type,
+    weightGrams: part.weightGrams.toString(),
+    metaTier: part.metaTier
+  }));
   const tabLinks: Array<{ id: DashboardTab; label: string }> = [
     { id: "log", label: "Log" },
     { id: "parts", label: "Parts" },
@@ -113,7 +125,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </nav>
       {activeTab === "log" ? (
         <section className="grid">
-          <div className="card"><PartForm /></div>
+          <div className="card">
+            <CatalogImportForm catalogParts={catalogForUi} ownedCatalogIds={ownedCatalogIds} />
+            <PartForm />
+          </div>
           <div className="card">
             <ComboForm
               blades={blades.map((p) => ({ id: p.id, name: p.name }))}

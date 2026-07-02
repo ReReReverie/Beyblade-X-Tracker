@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import { prisma } from "../lib/prisma";
+import { seedCatalog } from "./seed-catalog";
 
 async function main() {
   const username = process.env.DEFAULT_ADMIN_USERNAME || "admin";
@@ -23,7 +24,19 @@ async function main() {
     }
   });
 
+  const catalog = await seedCatalog();
+
+  const demoUser = await prisma.user.findUnique({ where: { email: "demo@local.test" } });
+  if (demoUser) {
+    await prisma.battle.deleteMany({ where: { ownerId: demoUser.id } });
+    await prisma.combo.deleteMany({ where: { ownerId: demoUser.id } });
+    await prisma.part.deleteMany({ where: { ownerId: demoUser.id } });
+    await prisma.user.delete({ where: { id: demoUser.id } });
+    console.log("Removed legacy demo user data.");
+  }
+
   console.log(`Default admin ready: ${username}`);
+  console.log(`Meta parts catalog: ${catalog.total} entries (${catalog.created} new, ${catalog.updated} updated)`);
 }
 
 main()

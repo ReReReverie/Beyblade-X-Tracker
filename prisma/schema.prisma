@@ -119,9 +119,30 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model PartCatalog {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  name         String
+  type         PartType
+  manufacturer Manufacturer @default(TAKARA_TOMY)
+  weightGrams  Decimal      @db.Decimal(6, 2)
+  imageUrl     String?
+  metaTier     String?
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  parts Part[]
+
+  @@unique([name, type])
+  @@index([type])
+  @@index([metaTier])
+}
+
 model Part {
   id              String       @id @default(cuid())
   ownerId         String
+  catalogPartId   String?
   name            String
   type            PartType
   manufacturer    Manufacturer @default(UNKNOWN)
@@ -132,11 +153,13 @@ model Part {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  photos     PartPhoto[]
-  comboParts ComboPart[]
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  catalogPart PartCatalog? @relation(fields: [catalogPartId], references: [id], onDelete: SetNull)
+  photos      PartPhoto[]
+  comboParts  ComboPart[]
 
   @@index([ownerId, type])
+  @@index([catalogPartId])
   @@index([visibility])
   @@index([manufacturer])
   @@index([createdAt])

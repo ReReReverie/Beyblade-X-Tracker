@@ -74,12 +74,17 @@ docker compose up -d postgres
 npm install
 ```
 
-5. Apply database migrations and seed the demo data:
+5. Apply database migrations and seed the catalog:
 
 ```bash
 npm run db:migrate
+npm run db:deploy
 npm run db:seed
 ```
+
+`db:seed` creates the default admin account and loads the competitive meta parts catalog.
+
+If you deploy to Vercel or another host, ensure `DATABASE_URL` is set and migrations run (`npm run db:deploy` is included in the production build).
 
 6. Start the app:
 
