@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { PartType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
-import { partSchema } from "@/lib/validation";
+import { partSchema, updatePartSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +24,42 @@ export async function POST(request: Request) {
     }
     console.error("Part create failed", error);
     return NextResponse.json({ error: "Could not save part." }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const ownerId = await requireUserId();
+    const body = await request.json().catch(() => null);
+    const parsed = updatePartSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid update data." }, { status: 400 });
+    }
+
+    const { id, ...data } = parsed.data;
+
+    const existing = await prisma.part.findFirst({
+      where: { id, ownerId }
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Part not found or unauthorized." }, { status: 404 });
+    }
+
+    const updated = await prisma.part.update({
+      where: { id },
+      data: {
+        ...data,
+        notes: data.notes === null ? null : data.notes
+      }
+    });
+
+    return NextResponse.json({ part: updated });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    console.error("Part update failed", error);
+    return NextResponse.json({ error: "Could not update part." }, { status: 500 });
   }
 }
 

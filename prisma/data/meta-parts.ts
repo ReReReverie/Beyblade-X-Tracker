@@ -374,5 +374,307 @@ export const metaParts: MetaPartSeed[] = [
     weightGrams: "2.17",
     metaTier: "B",
     notes: "Balanced movement bit. Common in Hasbro defense builds."
+  },
+  // ── Extra competitive blades ────────────────────────────────────────────────
+  {
+    slug: "cobalt-drake",
+    name: "Cobalt Drake",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "38.00",
+    metaTier: "S",
+    notes: "Extremely heavy right-spin attacker, rare prize part. Dominant on 9-60 Flat or Rush."
+  },
+  {
+    slug: "phoenix-rudder",
+    name: "Phoenix Rudder",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "35.50",
+    metaTier: "A",
+    notes: "Stamina/defense UX blade with a smooth perimeter. Outstanding performance on 9-60 Glide or Hexa."
+  },
+  {
+    slug: "hells-chain",
+    name: "Hells Chain",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "34.50",
+    metaTier: "A",
+    notes: "Highly balanced 5-sided blade. Popular on 5-60 Point/Taper setups."
+  },
+  {
+    slug: "dran-dagger",
+    name: "Dran Dagger",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "35.10",
+    metaTier: "A",
+    notes: "6-winged attacker with high burst power. Excels on 3-60 Flat or Rush."
+  },
+  {
+    slug: "whales-wave",
+    name: "Whales Wave",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "36.50",
+    metaTier: "A",
+    notes: "Aggressive UX blade with strong smash attack. Best on 1-60/3-60 Flat or Low Rush."
+  },
+  {
+    slug: "leon-claw",
+    name: "Leon Claw",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "31.80",
+    metaTier: "B",
+    notes: "Lightweight blade with upper attack shape. Mostly used in niche combo testing."
+  },
+  {
+    slug: "viper-tail",
+    name: "Viper Tail",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "34.00",
+    metaTier: "A",
+    notes: "Downforce attacker/defender. Excellent destabilizer on 5-60 Orb/Needle."
+  },
+  {
+    slug: "knight-shield",
+    name: "Knight Shield",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "32.50",
+    metaTier: "B",
+    notes: "Classic defensive blade. Pairs well with 3-80/4-80 Needle for defense."
+  },
+  {
+    slug: "knight-lance",
+    name: "Knight Lance",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "33.50",
+    metaTier: "B",
+    notes: "Counter-attack specialist. Used on 4-80 Point or High Needle."
+  },
+  {
+    slug: "lightning-l-drago",
+    name: "Lightning L-Drago",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "36.80",
+    metaTier: "A",
+    notes: "Left-spin remake. Powerful smash attack on 1-60 Flat or Rush."
+  },
+
+  // ── Extra competitive ratchets ──────────────────────────────────────────────
+  {
+    slug: "ratchet-2-60",
+    name: "2-60",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.20",
+    metaTier: "A",
+    notes: "Low profile, 2-sided ratchet. Concentrates weight on two opposite sides."
+  },
+  {
+    slug: "ratchet-3-70",
+    name: "3-70",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.50",
+    metaTier: "B",
+    notes: "Medium height, 3-sided ratchet."
+  },
+  {
+    slug: "ratchet-5-70",
+    name: "5-70",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.60",
+    metaTier: "B",
+    notes: "Medium height, 5-sided ratchet."
+  },
+  {
+    slug: "ratchet-9-70",
+    name: "9-70",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.70",
+    metaTier: "A",
+    notes: "Medium height, 9-sided burst resistant ratchet."
+  },
+  {
+    slug: "ratchet-1-80",
+    name: "1-80",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.55",
+    metaTier: "B",
+    notes: "Tall height, single-point weight distribution."
+  },
+  {
+    slug: "ratchet-2-80",
+    name: "2-80",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.40",
+    metaTier: "B",
+    notes: "Tall height, 2-sided ratchet."
+  },
+  {
+    slug: "ratchet-4-80",
+    name: "4-80",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.60",
+    metaTier: "B",
+    notes: "Tall height, 4-sided ratchet."
+  },
+  {
+    slug: "ratchet-5-80",
+    name: "5-80",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.70",
+    metaTier: "B",
+    notes: "Tall height, 5-sided ratchet."
+  },
+  {
+    slug: "ratchet-9-80",
+    name: "9-80",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "6.85",
+    metaTier: "B",
+    notes: "Tall height, 9-sided burst resistant ratchet."
+  },
+  {
+    slug: "ratchet-1-50",
+    name: "1-50",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "5.80",
+    metaTier: "A",
+    notes: "Ultra low profile ratchet. Promotes low-height smash attacks."
+  },
+
+  // ── Extra competitive bits ──────────────────────────────────────────────────
+  {
+    slug: "bit-needle",
+    name: "Needle",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.00",
+    metaTier: "B",
+    notes: "Classic defensive bit with a sharp tip. Moderate stamina, high stadium center control."
+  },
+  {
+    slug: "bit-high-flat",
+    name: "High Flat",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.30",
+    metaTier: "B",
+    notes: "Tall attack bit. Increases height for downward smash attacks."
+  },
+  {
+    slug: "bit-high-taper",
+    name: "High Taper",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.28",
+    metaTier: "B",
+    notes: "Tall balance bit. Slightly raised height version of Taper."
+  },
+  {
+    slug: "bit-high-needle",
+    name: "High Needle",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.10",
+    metaTier: "B",
+    notes: "Tall defense bit. Elevated sharp tip."
+  },
+  {
+    slug: "bit-gear-flat",
+    name: "Gear Flat",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.45",
+    metaTier: "A",
+    notes: "Attack bit with gear teeth all the way. Drives intense X-Dashes."
+  },
+  {
+    slug: "bit-gear-ball",
+    name: "Gear Ball",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.30",
+    metaTier: "A",
+    notes: "Stamina bit with gear teeth. Allows fast stamina recovery."
+  },
+  {
+    slug: "bit-gear-needle",
+    name: "Gear Needle",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.20",
+    metaTier: "B",
+    notes: "Defense bit with gear teeth. Moderate mobility."
+  },
+  {
+    slug: "bit-metal-needle",
+    name: "Metal Needle",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.90",
+    metaTier: "B",
+    notes: "Defensive bit with a solid metal tip. Highly resistant to stadium exits."
+  },
+  {
+    slug: "bit-disc-ball",
+    name: "Disc Ball",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.60",
+    metaTier: "A",
+    notes: "Stamina bit with a wide disk shield. Excellent Life After Death (LAD)."
+  },
+  {
+    slug: "bit-glide",
+    name: "Glide",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.30",
+    metaTier: "B",
+    notes: "Stamina bit with a free-spinning component. Good for spin equalization."
+  },
+  {
+    slug: "bit-wide-ball",
+    name: "Wide Ball",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.25",
+    metaTier: "A",
+    notes: "Stamina bit with a wider sphere. Great stability."
+  },
+  {
+    slug: "bit-rubber-flat",
+    name: "Rubber Flat",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.15",
+    metaTier: "A",
+    notes: "Attack bit with rubber tip. Extreme speed but drains stamina rapidly."
+  },
+  {
+    slug: "bit-extreme",
+    name: "Extreme",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "2.35",
+    metaTier: "S",
+    notes: "Premier aggressive attack bit. Highest speed X-Dashes."
   }
 ];

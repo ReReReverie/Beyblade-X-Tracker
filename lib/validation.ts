@@ -13,6 +13,17 @@ export const partSchema = z.object({
   notes: z.string().trim().max(1000).optional()
 });
 
+export const updatePartSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(80).optional(),
+  type: z.nativeEnum(PartType).optional(),
+  manufacturer: z.nativeEnum(Manufacturer).optional(),
+  weightGrams: z.coerce.number().positive().max(999.99).optional(),
+  conditionRating: z.coerce.number().min(0).max(10).optional(),
+  visibility: visibilitySchema.optional(),
+  notes: z.string().trim().max(1000).optional().nullable()
+});
+
 export const comboSchema = z.object({
   name: z.string().trim().min(1).max(80),
   bladeId: z.string().min(1),

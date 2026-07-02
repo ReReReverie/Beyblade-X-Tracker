@@ -5,6 +5,7 @@ import { CatalogImportForm } from "@/components/catalog-import-form";
 import { CollapsibleComboCard } from "@/components/collapsible-combo-card";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { BattleForm, ComboForm, DeckForm, PartForm, PhotoForm } from "@/components/dashboard-forms";
+import { PartCard } from "@/components/part-card";
 import { DeleteButton } from "@/components/delete-button";
 import { authOptions } from "@/lib/auth";
 import { battlesForCombo } from "@/lib/battle-history";
@@ -27,57 +28,127 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     requestedTab === "parts" || requestedTab === "combos" || requestedTab === "history" || requestedTab === "profile"
       ? requestedTab
       : "log";
-  const [parts, combos, followedCombos, decks, battles, catalogParts] = await Promise.all([
-    prisma.part.findMany({
-      where: { ownerId: userId },
-      include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
-      orderBy: { createdAt: "desc" },
-      take: 60
-    }),
-    prisma.combo.findMany({
-      where: { ownerId: userId },
-      include: {
-        parts: { include: { part: true }, orderBy: { role: "asc" } },
-        photos: { take: 1, orderBy: { createdAt: "desc" } },
-        wins: { select: { id: true } },
-        battlesA: { select: { id: true } },
-        battlesB: { select: { id: true } }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 40
-    }),
-    prisma.combo.findMany({
-      where: {
-        visibility: "PUBLIC",
-        stars: { some: { userId } },
-        NOT: { ownerId: userId }
-      },
-      include: {
-        parts: { include: { part: true }, orderBy: { role: "asc" } },
-        photos: { take: 1, orderBy: { createdAt: "desc" } },
-        wins: { select: { id: true } },
-        battlesA: { select: { id: true } },
-        battlesB: { select: { id: true } }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 40
-    }),
-    prisma.deck.findMany({
-      where: { OR: [{ ownerId: userId }, { visibility: "PUBLIC" }] },
-      include: { slots: { include: { combo: true }, orderBy: { slot: "asc" } } },
-      orderBy: { createdAt: "desc" },
-      take: 60
-    }),
-    prisma.battle.findMany({
+  const [partsCount, combosCount, battlesCount] = await Promise.all([
+    prisma.part.count({ where: { ownerId: userId } }),
+    prisma.combo.count({ where: { ownerId: userId } }),
+    prisma.battle.count({ where: { ownerId: userId } })
+  ]);
+
+  let parts: any[] = [];
+  let combos: any[] = [];
+  let followedCombos: any[] = [];
+  let decks: any[] = [];
+  let battles: any[] = [];
+  let catalogParts: any[] = [];
+
+  if (activeTab === "log") {
+    [parts, combos, decks, catalogParts] = await Promise.all([
+      prisma.part.findMany({
+        where: { ownerId: userId },
+        include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
+        orderBy: { createdAt: "desc" },
+        take: 60
+      }),
+      prisma.combo.findMany({
+        where: { ownerId: userId },
+        include: {
+          parts: { include: { part: true }, orderBy: { role: "asc" } },
+          photos: { take: 1, orderBy: { createdAt: "desc" } },
+          wins: { select: { id: true } },
+          battlesA: { select: { id: true } },
+          battlesB: { select: { id: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 40
+      }),
+      prisma.deck.findMany({
+        where: { ownerId: userId },
+        include: { slots: { include: { combo: true }, orderBy: { slot: "asc" } } },
+        orderBy: { createdAt: "desc" },
+        take: 60
+      }),
+      prisma.partCatalog.findMany({
+        orderBy: [{ metaTier: "asc" }, { type: "asc" }, { name: "asc" }]
+      })
+    ]);
+  } else if (activeTab === "parts") {
+    [parts, catalogParts] = await Promise.all([
+      prisma.part.findMany({
+        where: { ownerId: userId },
+        include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
+        orderBy: { createdAt: "desc" },
+        take: 60
+      }),
+      prisma.partCatalog.findMany({
+        orderBy: [{ metaTier: "asc" }, { type: "asc" }, { name: "asc" }]
+      })
+    ]);
+  } else if (activeTab === "combos") {
+    [combos, decks, battles] = await Promise.all([
+      prisma.combo.findMany({
+        where: { ownerId: userId },
+        include: {
+          parts: { include: { part: true }, orderBy: { role: "asc" } },
+          photos: { take: 1, orderBy: { createdAt: "desc" } },
+          wins: { select: { id: true } },
+          battlesA: { select: { id: true } },
+          battlesB: { select: { id: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 40
+      }),
+      prisma.deck.findMany({
+        where: { OR: [{ ownerId: userId }, { visibility: "PUBLIC" }] },
+        include: { slots: { include: { combo: true }, orderBy: { slot: "asc" } } },
+        orderBy: { createdAt: "desc" },
+        take: 60
+      }),
+      prisma.battle.findMany({
+        where: { ownerId: userId },
+        include: { comboA: true, comboB: true, winner: true, deckA: true, deckB: true, deckWinner: true },
+        orderBy: { playedAt: "desc" },
+        take: 240
+      })
+    ]);
+  } else if (activeTab === "history") {
+    battles = await prisma.battle.findMany({
       where: { ownerId: userId },
       include: { comboA: true, comboB: true, winner: true, deckA: true, deckB: true, deckWinner: true },
       orderBy: { playedAt: "desc" },
       take: 240
-    }),
-    prisma.partCatalog.findMany({
-      orderBy: [{ metaTier: "asc" }, { type: "asc" }, { name: "asc" }]
-    })
-  ]);
+    });
+  } else if (activeTab === "profile") {
+    [followedCombos, combos] = await Promise.all([
+      prisma.combo.findMany({
+        where: {
+          visibility: "PUBLIC",
+          stars: { some: { userId } },
+          NOT: { ownerId: userId }
+        },
+        include: {
+          parts: { include: { part: true }, orderBy: { role: "asc" } },
+          photos: { take: 1, orderBy: { createdAt: "desc" } },
+          wins: { select: { id: true } },
+          battlesA: { select: { id: true } },
+          battlesB: { select: { id: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 40
+      }),
+      prisma.combo.findMany({
+        where: { ownerId: userId },
+        include: {
+          parts: { include: { part: true }, orderBy: { role: "asc" } },
+          photos: { take: 1, orderBy: { createdAt: "desc" } },
+          wins: { select: { id: true } },
+          battlesA: { select: { id: true } },
+          battlesB: { select: { id: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        take: 40
+      })
+    ]);
+  }
 
   const blades = parts.filter((part) => part.type === "BLADE");
   const ratchets = parts.filter((part) => part.type === "RATCHET");
@@ -111,9 +182,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           {session.user.role === "ADMIN" ? <p className="meta">Signed in as admin.</p> : null}
         </div>
         <div className="dashboard-stats">
-          <div><strong>{parts.length}</strong><span>Parts</span></div>
-          <div><strong>{combos.length}</strong><span>Combos</span></div>
-          <div><strong>{battles.length}</strong><span>Battles</span></div>
+          <div><strong>{partsCount}</strong><span>Parts</span></div>
+          <div><strong>{combosCount}</strong><span>Combos</span></div>
+          <div><strong>{battlesCount}</strong><span>Battles</span></div>
         </div>
       </section>
       <nav className="dashboard-tabs" aria-label="Dashboard sections">
@@ -143,19 +214,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       ) : null}
       {activeTab === "parts" ? (
         <section>
+          <div className="card" style={{ marginBottom: "1.5rem" }}>
+            <CatalogImportForm catalogParts={catalogForUi} ownedCatalogIds={ownedCatalogIds} />
+          </div>
           <h2>Your parts</h2>
           <div className="list">
             {parts.map((part) => (
-              <div className="card part-row" key={part.id}>
-                <div>
-                  <strong>{part.name}</strong>
-                  <p className="meta">
-                    {formatPartType(part.type)} - {formatManufacturer(part.manufacturer)} - {Number(part.weightGrams).toFixed(2)} g - {Number(part.conditionRating)}/10 - {formatVisibility(part.visibility)}
-                  </p>
-                </div>
-                <span className="pill">{part.photos.length} photo</span>
-                <DeleteButton endpoint="parts" id={part.id} label="Delete part" />
-              </div>
+              <PartCard key={part.id} part={part} />
             ))}
           </div>
         </section>
@@ -189,7 +254,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 <div className="card" key={deck.id}>
                   <h3>{deck.name}</h3>
                   <p className="meta">{formatVisibility(deck.visibility)}</p>
-                  <p className="meta">{deck.slots.map((slot) => slot.combo?.name || "Missing combo").join(" / ")}</p>
+                  <p className="meta">{deck.slots.map((slot: any) => slot.combo?.name || "Missing combo").join(" / ")}</p>
                 </div>
               ))}
             </div>
