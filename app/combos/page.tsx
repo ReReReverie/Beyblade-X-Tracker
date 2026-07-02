@@ -141,6 +141,7 @@ export default async function CombosPage() {
         </section>
       ) : null}
       <h2>Public 1v1 combos</h2>
+      {combos.length ? (
       <div className="grid public-combo-grid">
         {combos.map((combo) => {
           const wins = combo.wins.length;
@@ -171,6 +172,9 @@ export default async function CombosPage() {
           );
         })}
       </div>
+      ) : (
+        <p className="meta">No public combos yet. Import parts from the catalog in your dashboard, build a combo, set visibility to Public, and it will appear here.</p>
+      )}
     </div>
   );
 }

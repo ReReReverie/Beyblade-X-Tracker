@@ -18,8 +18,7 @@ export function FeaturedComboForm({ combos }: { combos: ComboOption[] }) {
     try {
       const response = await fetch("/api/featured-combos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.fromEntries(form))
+        body: form
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -39,7 +38,8 @@ export function FeaturedComboForm({ combos }: { combos: ComboOption[] }) {
       <label>Placement<select name="slot"><option value="DAY">Combo of the day</option><option value="WEEK">Combo of the week</option><option value="MONTH">Combo of the month</option><option value="SPONSOR">Sponsored poster</option></select></label>
       <label>Title<input name="title" required placeholder="Sponsored spotlight" /></label>
       <label>Sponsor / poster name<input name="sponsorName" placeholder="Brand, creator, celebrity" /></label>
-      <label>Poster image URL<input name="posterUrl" type="url" placeholder="https://..." /></label>
+      <label>Poster image<input name="poster" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+      <p className="meta">Upload a poster image from your device. Leave empty to use the combo photo.</p>
       <label>Starts<input name="startsAt" type="datetime-local" required /></label>
       <label>Ends<input name="endsAt" type="datetime-local" required /></label>
       {error ? <p className="danger">{error}</p> : null}

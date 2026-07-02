@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { uploadImage } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import { featuredComboSchema } from "@/lib/validation";
+
+const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
+const defaultMaxUploadMb = 1;
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -13,8 +17,18 @@ async function requireAdmin() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin();
-    const parsed = featuredComboSchema.safeParse(await request.json().catch(() => null));
+    const adminId = await requireAdmin();
+    const form = await request.formData();
+    const poster = form.get("poster");
+
+    const parsed = featuredComboSchema.safeParse({
+      comboId: form.get("comboId"),
+      slot: form.get("slot"),
+      title: form.get("title"),
+      sponsorName: form.get("sponsorName") || undefined,
+      startsAt: form.get("startsAt"),
+      endsAt: form.get("endsAt")
+    });
     if (!parsed.success) return NextResponse.json({ error: "Invalid featured combo data." }, { status: 400 });
 
     const combo = await prisma.combo.findFirst({
@@ -23,13 +37,24 @@ export async function POST(request: Request) {
     });
     if (!combo) return NextResponse.json({ error: "Choose a public combo." }, { status: 400 });
 
+    let posterUrl: string | null = null;
+    if (poster instanceof File && poster.size > 0) {
+      const maxUploadMb = Number(process.env.MAX_UPLOAD_MB || defaultMaxUploadMb);
+      const maxBytes = maxUploadMb * 1024 * 1024;
+      if (!allowed.has(poster.type) || poster.size > maxBytes) {
+        return NextResponse.json({ error: `Use JPG, PNG, or WEBP images up to ${maxUploadMb} MB.` }, { status: 400 });
+      }
+      const upload = await uploadImage(Buffer.from(await poster.arrayBuffer()), `featured-${adminId}-${Date.now()}`);
+      posterUrl = upload.secure_url;
+    }
+
     const feature = await prisma.featuredCombo.create({
       data: {
         comboId: parsed.data.comboId,
         slot: parsed.data.slot,
         title: parsed.data.title,
         sponsorName: parsed.data.sponsorName || null,
-        posterUrl: parsed.data.posterUrl || null,
+        posterUrl,
         startsAt: parsed.data.startsAt,
         endsAt: parsed.data.endsAt
       }
@@ -66,3 +91,5 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Could not delete featured combo." }, { status: 500 });
   }
 }
+
+export const runtime = "nodejs";

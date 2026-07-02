@@ -56,6 +56,7 @@ export default async function Home() {
       </section>
       <section>
         <h2>Recent public builds</h2>
+        {combos.length ? (
         <div className="grid">
           {combos.map((combo) => {
             const wins = combo.wins.length;
@@ -77,6 +78,9 @@ export default async function Home() {
             );
           })}
         </div>
+        ) : (
+          <p className="meta">No public combos yet. Be the first to post one from your dashboard.</p>
+        )}
       </section>
     </div>
   );

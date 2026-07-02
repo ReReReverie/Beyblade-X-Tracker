@@ -59,12 +59,15 @@ export const comboActionSchema = z.object({
   comboId: z.string().min(1)
 });
 
+export const catalogImportSchema = z.object({
+  catalogIds: z.array(z.string().min(1)).min(1).max(50)
+});
+
 export const featuredComboSchema = z.object({
   comboId: z.string().min(1),
   slot: z.nativeEnum(FeaturedSlot),
   title: z.string().trim().min(1).max(100),
   sponsorName: z.string().trim().max(100).optional(),
-  posterUrl: z.string().trim().url().max(500).optional().or(z.literal("")),
   startsAt: z.coerce.date(),
   endsAt: z.coerce.date()
 }).refine((data) => data.endsAt > data.startsAt, {
