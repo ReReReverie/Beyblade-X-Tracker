@@ -190,6 +190,9 @@ model Combo {
   notes      String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+    bladePartId  String
+    ratchetPartId String
+    bitPartId    String
 
   owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   parts      ComboPart[]
@@ -206,6 +209,7 @@ model Combo {
   @@index([ownerId])
   @@index([visibility])
   @@index([createdAt])
+    @@unique([ownerId, bladePartId, ratchetPartId, bitPartId])
 }
 
 model Deck {

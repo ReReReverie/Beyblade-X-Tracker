@@ -63,28 +63,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Choose one blade, one ratchet, and one bit from the available catalog." }, { status: 400 });
     }
 
-    const duplicateCandidates = await prisma.combo.findMany({
+    const duplicate = await prisma.combo.findFirst({
       where: {
-        OR: [{ visibility: "PUBLIC" }, { ownerId }],
-        parts: {
-          some: { partId: { in: resolvedPartIds } }
-        }
+        ownerId,
+        AND: [
+          { parts: { some: { partId: resolvedPartIds[0], role: "BLADE" } } },
+          { parts: { some: { partId: resolvedPartIds[1], role: "RATCHET" } } },
+          { parts: { some: { partId: resolvedPartIds[2], role: "BIT" } } }
+        ]
       },
-      include: { parts: true },
-      take: 20
+      select: { id: true }
     });
-    const duplicate = duplicateCandidates.find((combo) => {
-      const partIds = new Set(combo.parts.map((part) => part.partId));
-      return (
-        partIds.size === 3 &&
-        partIds.has(resolvedPartIds[0]) &&
-        partIds.has(resolvedPartIds[1]) &&
-        partIds.has(resolvedPartIds[2])
-      );
-    });
+
     if (duplicate) {
       return NextResponse.json(
-        { error: "That combo already exists. Follow the existing combo and add battle results there." },
+        { error: "That combo already exists for your account. Follow the existing combo and add battle results there." },
         { status: 409 }
       );
     }
@@ -97,6 +90,9 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         visibility: parsed.data.visibility,
         notes: parsed.data.notes,
+        bladePartId: resolvedPartIds[0],
+        ratchetPartId: resolvedPartIds[1],
+        bitPartId: resolvedPartIds[2],
         parts: {
           create: [
             { partId: resolvedPartIds[0], role: "BLADE" },

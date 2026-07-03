@@ -250,6 +250,9 @@ async function findOrCreateCombo(userId: string, input: string, parts: Part[], g
       name: comboNameFromText(input, blade, ratchet, bit, guesses.name),
       visibility: guesses.visibility || "PUBLIC",
       notes: `Created from chat: ${input}`.slice(0, 1000),
+      bladePartId: blade.id,
+      ratchetPartId: ratchet.id,
+      bitPartId: bit.id,
       parts: {
         create: [
           { partId: blade.id, role: "BLADE" },
