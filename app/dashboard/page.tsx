@@ -237,7 +237,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                     <h3>{combo.name}</h3>
                     <p className="meta">
-                      {comboWeight(combo).toFixed(2)} g - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
+                      {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
                     </p>
                     <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
                     <DeleteButton endpoint="combos" id={combo.id} label="Delete" />
@@ -298,7 +298,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                       <h3>{combo.name}</h3>
                       <p className="meta">
-                        {comboWeight(combo).toFixed(2)} g - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+                        {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
                       </p>
                       <span className="pill">Tracked combo</span>
                     </CollapsibleComboCard>

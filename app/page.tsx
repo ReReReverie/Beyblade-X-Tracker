@@ -66,7 +66,7 @@ export default async function Home() {
                 <h3>{combo.name}</h3>
                 <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
                 <p className="meta">
-                  {comboWeight(combo).toFixed(2)} g - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+                  {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
                 </p>
                 <WRGraph comboId={combo.id} battles={battlesForCombo(combo.id, battleHistory)} />
                 <StarButton

@@ -53,7 +53,7 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
           <h1>{combo.name}</h1>
           <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
           <p>
-            {comboWeight(combo).toFixed(2)} g total - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+            {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g total` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
           </p>
           {combo.ownerId === session?.user?.id ? (
             <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
