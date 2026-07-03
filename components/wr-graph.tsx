@@ -1,3 +1,5 @@
+"use client";
+
 import type { BattlePoint } from "@/lib/battle-history";
 import { pct } from "@/lib/format";
 

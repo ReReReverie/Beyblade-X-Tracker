@@ -332,6 +332,48 @@ button.secondary {
   box-shadow: var(--shadow-safety);
 }
 
+.skeleton-card {
+  display: grid;
+  gap: 0.85rem;
+  min-height: 300px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(118, 118, 118, 0.12) 25%, rgba(118, 118, 118, 0.28) 50%, rgba(118, 118, 118, 0.12) 75%);
+  background-size: 200% 100%;
+  border: 1px solid rgba(118, 118, 118, 0.18);
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.skeleton--line {
+  border-radius: 999px;
+  height: 14px;
+}
+
+.skeleton--title {
+  height: 28px;
+  width: 72%;
+}
+
+.skeleton--chart {
+  aspect-ratio: 720 / 360;
+  border-radius: 0;
+}
+
+.skeleton--button {
+  height: 44px;
+  width: 160px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 .meta {
   color: var(--muted);
   font-size: 0.86rem;
