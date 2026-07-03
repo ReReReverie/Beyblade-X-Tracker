@@ -155,6 +155,9 @@ model Part {
 
   owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   catalogPart PartCatalog? @relation(fields: [catalogPartId], references: [id], onDelete: SetNull)
+  combosAsBlade Combo[]     @relation("ComboBlade")
+  combosAsRatchet Combo[]   @relation("ComboRatchet")
+  combosAsBit Combo[]       @relation("ComboBit")
   photos      PartPhoto[]
   comboParts  ComboPart[]
 
@@ -195,6 +198,9 @@ model Combo {
     bitPartId    String
 
   owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bladePart  Part         @relation("ComboBlade", fields: [bladePartId], references: [id], onDelete: Restrict)
+  ratchetPart Part        @relation("ComboRatchet", fields: [ratchetPartId], references: [id], onDelete: Restrict)
+  bitPart    Part         @relation("ComboBit", fields: [bitPartId], references: [id], onDelete: Restrict)
   parts      ComboPart[]
   photos     ComboPhoto[]
   features   FeaturedCombo[]
