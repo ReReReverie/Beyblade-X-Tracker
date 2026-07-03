@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ActivityHeartbeat } from "@/components/activity-heartbeat";
+import { ButtonLoadingOverlay } from "@/components/button-loading-overlay";
 import { ChatBubble } from "@/components/chat-bubble";
 import { SessionControls } from "@/components/session-controls";
 import { SiteFooter } from "@/components/site-footer";
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </nav>
           <ActivityHeartbeat />
+          <ButtonLoadingOverlay />
           {children}
           <SiteFooter />
           <ChatBubble />
