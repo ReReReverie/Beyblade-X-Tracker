@@ -45,15 +45,17 @@ export default async function ComboDetailPage({ params }: { params: Promise<{ id
     take: 120
   });
 
+  const comboWeightValue = comboWeight(combo);
+
   return (
     <div className="combo-detail">
       <section className="combo-detail__left">
         <div className="band">
           <span className="tag tag--filled">Combo report</span>
           <h1>{combo.name}</h1>
-          <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
+          <p className="meta">Creator: {combo.owner?.name || combo.owner?.username || "Unknown"}</p>
           <p>
-            {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g total` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+            {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g total` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
           </p>
           {combo.ownerId === session?.user?.id ? (
             <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />

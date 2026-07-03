@@ -40,13 +40,14 @@ function ComboList({ combos, userId, empty }: { combos: ProfileCombo[]; userId: 
       {combos.map((combo) => {
         const wins = combo.wins.length;
         const total = combo.battlesA.length + combo.battlesB.length;
+        const comboWeightValue = comboWeight(combo);
         return (
           <div className="card" key={combo.id}>
             {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
             <Link href={`/combos/${combo.id}`}><h3>{combo.name}</h3></Link>
             <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
             <p className="meta">
-              {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
+              {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
             </p>
             <p className="meta">
               {combo.parts.map((entry) => `${entry.part.name} (${formatManufacturer(entry.part.manufacturer)})`).join(" / ")}

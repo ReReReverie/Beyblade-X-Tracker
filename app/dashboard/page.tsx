@@ -162,6 +162,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     id: part.id,
     name: part.name,
     type: part.type,
+    manufacturer: part.manufacturer,
     weightGrams: part.weightGrams.toString(),
     metaTier: part.metaTier
   }));
@@ -232,12 +233,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               {combos.map((combo) => {
                 const wins = combo.wins.length;
                 const total = combo.battlesA.length + combo.battlesB.length;
+                const comboWeightValue = comboWeight(combo);
                 return (
                   <CollapsibleComboCard comboId={combo.id} battles={battlesForCombo(combo.id, battles)} key={combo.id}>
                     {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                     <h3>{combo.name}</h3>
                     <p className="meta">
-                      {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
+                      {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
                     </p>
                     <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
                     <DeleteButton endpoint="combos" id={combo.id} label="Delete" />
@@ -293,12 +295,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 {followedCombos.map((combo) => {
                   const wins = combo.wins.length;
                   const total = combo.battlesA.length + combo.battlesB.length;
+                  const comboWeightValue = comboWeight(combo);
                   return (
                     <CollapsibleComboCard comboId={combo.id} battles={battlesForCombo(combo.id, battles)} key={combo.id}>
                       {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                       <h3>{combo.name}</h3>
                       <p className="meta">
-                        {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+                        {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
                       </p>
                       <span className="pill">Tracked combo</span>
                     </CollapsibleComboCard>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatManufacturer } from "@/lib/format";
 
 type CatalogPart = {
   id: string;

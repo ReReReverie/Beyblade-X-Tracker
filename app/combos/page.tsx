@@ -146,13 +146,14 @@ export default async function CombosPage() {
         {combos.map((combo) => {
           const wins = combo.wins.length;
           const total = combo.battlesA.length + combo.battlesB.length;
+          const comboWeightValue = comboWeight(combo);
           return (
             <Link className="card public-combo-card" key={combo.id} href={`/combos/${combo.id}`}>
               {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
               <h2>{combo.name}</h2>
               <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
               <p className="meta">
-                {comboWeight(combo) !== null ? `${comboWeight(combo).toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
+                {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
               </p>
               <p className="meta">
                 {combo.parts.map((entry) => `${entry.part.name} (${formatManufacturer(entry.part.manufacturer)})`).join(" / ")}
