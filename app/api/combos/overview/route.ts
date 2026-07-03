@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 
 const autoSlots = [
@@ -86,7 +87,7 @@ export async function GET() {
     })
     .filter((feature): feature is NonNullable<typeof feature> => Boolean(feature));
 
-  return NextResponse.json({
+  return applyCacheHeaders(NextResponse.json({
     combos: combos.map((combo) => ({
       ...combo,
       initiallyStarred: combo.stars.some((star) => star.userId === session?.user?.id),
@@ -95,5 +96,5 @@ export async function GET() {
     decks,
     features: [...activeFeatures, ...automaticFeatures],
     battleHistory
-  });
+  }), publicCacheControl, "Cookie");
 }

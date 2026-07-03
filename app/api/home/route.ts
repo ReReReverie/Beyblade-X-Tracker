@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -28,11 +29,11 @@ export async function GET() {
       })
     : [];
 
-  return NextResponse.json({
+  return applyCacheHeaders(NextResponse.json({
     combos: combos.map((combo) => ({
       ...combo,
       initiallyStarred: combo.stars.some((star) => star.userId === session?.user?.id)
     })),
     battleHistory
-  });
+  }), publicCacheControl, "Cookie");
 }

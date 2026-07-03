@@ -24,7 +24,14 @@ export function ProfileEditForm({ name, image, bio }: { name?: string | null; im
     setError("");
     const form = new FormData(event.currentTarget);
     try {
-      await sendJson("/api/profile", "PATCH", Object.fromEntries(form));
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        body: form
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Save failed.");
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -32,10 +39,11 @@ export function ProfileEditForm({ name, image, bio }: { name?: string | null; im
   }
 
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} encType="multipart/form-data">
       <h2>Edit profile</h2>
       <label>Display name<input name="name" defaultValue={name || ""} /></label>
-      <label>Profile picture URL<input name="image" type="url" defaultValue={image || ""} placeholder="https://..." /></label>
+      <label>Profile picture file<input name="image" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+      {image ? <p className="meta">Current image is already set. Upload a new file to replace it.</p> : null}
       <label>Short description<textarea name="bio" defaultValue={bio || ""} maxLength={280} /></label>
       {error ? <p className="danger">{error}</p> : null}
       <button type="submit">Save profile</button>

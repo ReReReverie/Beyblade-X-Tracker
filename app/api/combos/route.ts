@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
+import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { enforceComboCreation } from "@/lib/usage";
@@ -152,7 +153,7 @@ export async function GET(request: Request) {
     take
   });
 
-  return NextResponse.json({ combos, page, take });
+  return applyCacheHeaders(NextResponse.json({ combos, page, take }), publicCacheControl);
 }
 
 export async function DELETE(request: Request) {

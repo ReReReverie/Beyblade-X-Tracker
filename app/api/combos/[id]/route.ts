@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,12 +42,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     take: 120
   });
 
-  return NextResponse.json({
+  return applyCacheHeaders(NextResponse.json({
     combo,
     battleHistory,
     signedIn: Boolean(session?.user?.id),
     isOwner: combo.ownerId === session?.user?.id,
     initiallyStarred: combo.stars.some((star) => star.userId === session?.user?.id),
     initiallyPut: combo.puts.some((put) => put.userId === session?.user?.id)
-  });
+  }), publicCacheControl, "Cookie");
 }

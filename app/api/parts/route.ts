@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PartType } from "@prisma/client";
+import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { enforcePartCreation } from "@/lib/usage";
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
     take
   });
 
-  return NextResponse.json({ parts, page, take });
+  return applyCacheHeaders(NextResponse.json({ parts, page, take }), publicCacheControl);
 }
 
 export async function DELETE(request: Request) {
