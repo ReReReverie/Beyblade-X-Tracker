@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { CatalogImportForm } from "@/components/catalog-import-form";
 import { CollapsibleComboCard } from "@/components/collapsible-combo-card";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { BattleForm, ComboForm, DeckForm, PhotoForm } from "@/components/dashboard-forms";
@@ -72,17 +71,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       })
     ]);
   } else if (activeTab === "parts") {
-    [parts, catalogParts] = await Promise.all([
-      prisma.part.findMany({
-        where: { ownerId: userId },
-        include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
-        orderBy: { createdAt: "desc" },
-        take: 60
-      }),
-      prisma.partCatalog.findMany({
-        orderBy: [{ metaTier: "asc" }, { type: "asc" }, { name: "asc" }]
-      })
-    ]);
+    parts = await prisma.part.findMany({
+      where: { ownerId: userId },
+      include: { photos: { take: 1, orderBy: { createdAt: "desc" } } },
+      orderBy: { createdAt: "desc" },
+      take: 60
+    });
   } else if (activeTab === "combos") {
     [combos, decks, battles] = await Promise.all([
       prisma.combo.findMany({
@@ -150,22 +144,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     ]);
   }
 
-  const blades = parts.filter((part) => part.type === "BLADE");
-  const ratchets = parts.filter((part) => part.type === "RATCHET");
-  const bits = parts.filter((part) => part.type === "BIT");
+  const blades = catalogParts.filter((part) => part.type === "BLADE").map((part) => ({ id: part.id, name: `${part.name} (${formatManufacturer(part.manufacturer)})` }));
+  const ratchets = catalogParts.filter((part) => part.type === "RATCHET").map((part) => ({ id: part.id, name: `${part.name} (${formatManufacturer(part.manufacturer)})` }));
+  const bits = catalogParts.filter((part) => part.type === "BIT").map((part) => ({ id: part.id, name: `${part.name} (${formatManufacturer(part.manufacturer)})` }));
   const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
   const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
   const deckOptions = ownedDecks.map((deck) => ({ id: deck.id, name: deck.name }));
   const partOptions = parts.map((part) => ({ id: part.id, name: `${part.name} (${formatPartType(part.type)})` }));
-  const ownedCatalogIds = parts.flatMap((part) => (part.catalogPartId ? [part.catalogPartId] : []));
-  const catalogForUi = catalogParts.map((part) => ({
-    id: part.id,
-    name: part.name,
-    type: part.type,
-    manufacturer: part.manufacturer,
-    weightGrams: part.weightGrams.toString(),
-    metaTier: part.metaTier
-  }));
   const tabLinks: Array<{ id: DashboardTab; label: string }> = [
     { id: "log", label: "Log" },
     { id: "parts", label: "Parts" },
@@ -198,13 +183,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {activeTab === "log" ? (
         <section className="grid">
           <div className="card">
-            <CatalogImportForm catalogParts={catalogForUi} ownedCatalogIds={ownedCatalogIds} />
-          </div>
-          <div className="card">
             <ComboForm
-              blades={blades.map((p) => ({ id: p.id, name: p.name }))}
-              ratchets={ratchets.map((p) => ({ id: p.id, name: p.name }))}
-              bits={bits.map((p) => ({ id: p.id, name: p.name }))}
+              blades={blades}
+              ratchets={ratchets}
+              bits={bits}
             />
           </div>
           <div className="card"><DeckForm combos={combos.map((combo) => ({ id: combo.id, name: combo.name }))} /></div>
@@ -214,9 +196,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       ) : null}
       {activeTab === "parts" ? (
         <section>
-          <div className="card" style={{ marginBottom: "1.5rem" }}>
-            <CatalogImportForm catalogParts={catalogForUi} ownedCatalogIds={ownedCatalogIds} />
-          </div>
           <h2>Your parts</h2>
           <div className="list">
             {parts.map((part) => (

@@ -21,22 +21,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid combo data." }, { status: 400 });
     }
 
-    const selectedParts = await prisma.part.findMany({
+    const partIds = [parsed.data.bladeId, parsed.data.ratchetId, parsed.data.bitId];
+
+    const ownedParts = await prisma.part.findMany({
       where: {
         ownerId,
-        id: { in: [parsed.data.bladeId, parsed.data.ratchetId, parsed.data.bitId] }
+        id: { in: partIds }
       }
     });
 
-    if (selectedParts.length !== 3) {
-      return NextResponse.json({ error: "Choose one owned blade, ratchet, and bit." }, { status: 400 });
+    const catalogParts = await prisma.partCatalog.findMany({
+      where: { id: { in: partIds } }
+    });
+
+    const partsById = new Map<string, { id: string; type: string }>();
+
+    for (const part of ownedParts) {
+      partsById.set(part.id, { id: part.id, type: part.type });
+    }
+
+    for (const catalogPart of catalogParts) {
+      if (!partsById.has(catalogPart.id)) {
+        const created = await prisma.part.create({
+          data: {
+            ownerId,
+            catalogPartId: catalogPart.id,
+            name: catalogPart.name,
+            type: catalogPart.type,
+            manufacturer: catalogPart.manufacturer,
+            weightGrams: catalogPart.weightGrams ?? undefined,
+            conditionRating: 5.0,
+            visibility: "PUBLIC"
+          }
+        });
+        partsById.set(catalogPart.id, { id: created.id, type: created.type });
+      }
+    }
+
+    const resolvedPartIds = partIds.map((id) => partsById.get(id)?.id).filter(Boolean) as string[];
+    if (resolvedPartIds.length !== 3) {
+      return NextResponse.json({ error: "Choose one blade, one ratchet, and one bit from the available catalog." }, { status: 400 });
     }
 
     const duplicateCandidates = await prisma.combo.findMany({
       where: {
         OR: [{ visibility: "PUBLIC" }, { ownerId }],
         parts: {
-          some: { partId: { in: [parsed.data.bladeId, parsed.data.ratchetId, parsed.data.bitId] } }
+          some: { partId: { in: resolvedPartIds } }
         }
       },
       include: { parts: true },
@@ -46,9 +77,9 @@ export async function POST(request: Request) {
       const partIds = new Set(combo.parts.map((part) => part.partId));
       return (
         partIds.size === 3 &&
-        partIds.has(parsed.data.bladeId) &&
-        partIds.has(parsed.data.ratchetId) &&
-        partIds.has(parsed.data.bitId)
+        partIds.has(resolvedPartIds[0]) &&
+        partIds.has(resolvedPartIds[1]) &&
+        partIds.has(resolvedPartIds[2])
       );
     });
     if (duplicate) {
@@ -68,9 +99,9 @@ export async function POST(request: Request) {
         notes: parsed.data.notes,
         parts: {
           create: [
-            { partId: parsed.data.bladeId, role: "BLADE" },
-            { partId: parsed.data.ratchetId, role: "RATCHET" },
-            { partId: parsed.data.bitId, role: "BIT" }
+            { partId: resolvedPartIds[0], role: "BLADE" },
+            { partId: resolvedPartIds[1], role: "RATCHET" },
+            { partId: resolvedPartIds[2], role: "BIT" }
           ]
         }
       },
