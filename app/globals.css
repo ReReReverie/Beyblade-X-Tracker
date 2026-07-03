@@ -314,35 +314,13 @@ button.secondary {
   transform: translate(-4px, -4px);
 }
 
-.card:nth-child(3n),
-.stat:nth-child(2n) {
+.card:nth-child(3n) {
   box-shadow: var(--shadow-safety);
 }
 
 .meta {
   color: var(--muted);
   font-size: 0.86rem;
-}
-
-.stat {
-  background: var(--ink);
-  border: var(--border);
-  box-shadow: var(--shadow);
-  color: var(--base);
-  padding: 1.2rem;
-}
-
-.stat strong {
-  color: var(--base);
-  display: block;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(2rem, 5vw, 4rem);
-  line-height: 0.9;
-}
-
-.stat .meta,
-.stat span {
-  color: rgba(255, 255, 255, 0.58);
 }
 
 form {
@@ -850,10 +828,6 @@ textarea {
 .star-button--on {
   background: var(--safety);
   color: var(--base);
-}
-
-.stats-grid {
-  margin-top: var(--gap);
 }
 
 .profile-head {

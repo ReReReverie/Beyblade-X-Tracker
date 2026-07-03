@@ -51,12 +51,6 @@ export default async function AdminPage() {
           <Link className="button secondary" href="/admin/tickets">Tickets</Link>
         </div>
       </section>
-      <section className="grid">
-        <div className="stat"><strong>{activeUsers}</strong><span>active now</span></div>
-        <div className="stat"><strong>{totalUsers}</strong><span>registered users</span></div>
-        <div className="stat"><strong>{openRequests}</strong><span>open requests</span></div>
-        <div className="stat"><strong>{openBugs}</strong><span>open bugs</span></div>
-      </section>
       <section className="tabs admin-layout">
         <div className="list">
           <div className="card"><FeaturedComboForm combos={publicCombos} /></div>

@@ -34,10 +34,10 @@ export async function POST(request: Request) {
       where: { id: { in: partIds } }
     });
 
-    const partsById = new Map<string, { id: string; type: string }>();
+    const partsById = new Map<string, { id: string; type: string; name: string }>();
 
     for (const part of ownedParts) {
-      partsById.set(part.id, { id: part.id, type: part.type });
+      partsById.set(part.id, { id: part.id, type: part.type, name: part.name });
     }
 
     for (const catalogPart of catalogParts) {
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
             visibility: "PUBLIC"
           }
         });
-        partsById.set(catalogPart.id, { id: created.id, type: created.type });
+        partsById.set(catalogPart.id, { id: created.id, type: created.type, name: created.name });
       }
     }
 
@@ -84,10 +84,11 @@ export async function POST(request: Request) {
 
     await enforceComboCreation(ownerId);
 
+    const comboName = `${partsById.get(resolvedPartIds[0])!.name} / ${partsById.get(resolvedPartIds[1])!.name} / ${partsById.get(resolvedPartIds[2])!.name}`;
     const combo = await prisma.combo.create({
       data: {
         ownerId,
-        name: parsed.data.name,
+        name: comboName,
         visibility: parsed.data.visibility,
         notes: parsed.data.notes,
         bladePartId: resolvedPartIds[0],

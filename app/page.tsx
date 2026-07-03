@@ -48,11 +48,6 @@ export default async function Home() {
             <Link className="button secondary" href="/combos">Browse combos</Link>
           </div>
         </div>
-        <div className="grid">
-          <div className="stat"><strong>{combos.length}</strong><span className="meta">recent public combos</span></div>
-          <div className="stat"><strong>0-10</strong><span className="meta">part condition scale</span></div>
-          <div className="stat"><strong>Hasbro / TT / Fake</strong><span className="meta">source labels per part</span></div>
-        </div>
       </section>
       <section>
         <h2>Recent public builds</h2>

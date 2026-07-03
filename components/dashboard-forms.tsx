@@ -85,7 +85,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   return (
     <form onSubmit={submit}>
       <h2>Build combo</h2>
-      <label>Name<input name="name" required /></label>
+      <p className="meta">Combo names are generated from selected parts automatically.</p>
       <label>Blade<select name="bladeId">{blades.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
       <label>Ratchet<select name="ratchetId">{ratchets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
       <label>Bit<select name="bitId">{bits.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>

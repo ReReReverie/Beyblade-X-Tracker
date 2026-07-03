@@ -16,7 +16,7 @@ export function ChatBox({ signedIn, initialRemaining }: { signedIn: boolean; ini
       id: 1,
       role: "bot",
       body: signedIn
-        ? "Type a combo or battle. Examples: Phoenix Wing 9-60 Point, name: Attack test. Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0."
+        ? "Type a combo or battle. Examples: Phoenix Wing 9-60 Point or Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0."
         : "Sign in first, then I can create combos and log battles from your saved parts."
     }
   ]);

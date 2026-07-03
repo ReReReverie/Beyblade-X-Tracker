@@ -164,10 +164,8 @@ async function createPartFromChat(userId: string, name: string, type: PartType) 
   });
 }
 
-function comboNameFromText(input: string, blade: Part, ratchet: Part, bit: Part, guessedName?: string) {
-  if (guessedName) return guessedName;
-  const nameMatch = input.match(/(?:name|called)\s*[:\-]\s*([^.\n]+)/i);
-  return nameMatch?.[1]?.trim().slice(0, 80) || `${blade.name} / ${ratchet.name} / ${bit.name}`;
+function comboNameFromText(input: string, blade: Part, ratchet: Part, bit: Part) {
+  return `${blade.name} / ${ratchet.name} / ${bit.name}`;
 }
 
 function splitBattleInput(input: string) {
@@ -247,7 +245,7 @@ async function findOrCreateCombo(userId: string, input: string, parts: Part[], g
   const combo = await prisma.combo.create({
     data: {
       ownerId: userId,
-      name: comboNameFromText(input, blade, ratchet, bit, guesses.name),
+      name: comboNameFromText(input, blade, ratchet, bit),
       visibility: guesses.visibility || "PUBLIC",
       notes: `Created from chat: ${input}`.slice(0, 1000),
       bladePartId: blade.id,

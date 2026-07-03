@@ -115,10 +115,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     }),
     prisma.careerEntry.findMany({ where: { userId }, orderBy: { playedAt: "desc" }, take: 100 })
   ]);
-  const starsAcrossMyCombos = myCombos.reduce((total, combo) => total + combo.stars.length, 0);
-  const careerWins = careerEntries.reduce((total, entry) => total + entry.wins, 0);
-  const careerLosses = careerEntries.reduce((total, entry) => total + entry.losses, 0);
-  const careerDraws = careerEntries.reduce((total, entry) => total + entry.draws, 0);
   const tabLinks: Array<{ id: ProfileTab; label: string }> = [
     { id: "overview", label: "Overview" },
     { id: "posts", label: "Posts" },
@@ -137,12 +133,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
             <h1>{user?.name || session.user.name || session.user.email || "My profile"}</h1>
             {user?.bio ? <p>{user.bio}</p> : <p className="meta">Add a short description to introduce your Beyblade career.</p>}
           </div>
-        </div>
-        <div className="grid stats-grid">
-          <div className="stat"><strong>{myCombos.length}</strong><span>My combos</span></div>
-          <div className="stat"><strong>{starsAcrossMyCombos}</strong><span>Stars across my combos</span></div>
-          <div className="stat"><strong>{starredCombos.length}</strong><span>Starred combos</span></div>
-          <div className="stat"><strong>{careerWins}-{careerLosses}{careerDraws ? `-${careerDraws}` : ""}</strong><span>Career record</span></div>
         </div>
       </section>
       <nav className="dashboard-tabs" aria-label="Profile sections">

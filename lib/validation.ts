@@ -31,7 +31,6 @@ export const updatePartSchema = z.object({
 });
 
 export const comboSchema = z.object({
-  name: z.string().trim().min(1).max(80),
   bladeId: z.string().min(1),
   ratchetId: z.string().min(1),
   bitId: z.string().min(1),
