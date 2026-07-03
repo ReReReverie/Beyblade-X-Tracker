@@ -27,7 +27,7 @@ export function ActivityHeartbeat() {
     }
 
     ping();
-    timer = window.setInterval(ping, 30000);
+    timer = window.setInterval(ping, 300000); // 5 minutes
     return () => {
       if (timer) window.clearInterval(timer);
     };

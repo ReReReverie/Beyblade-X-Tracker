@@ -156,7 +156,7 @@ async function createPartFromChat(userId: string, name: string, type: PartType) 
       name: name.slice(0, 80),
       type,
       manufacturer: "UNKNOWN",
-      weightGrams: 0.01,
+      weightGrams: null,
       conditionRating: 10,
       visibility: "PRIVATE",
       notes: "Created from chat. Update weight, manufacturer, condition, visibility, and photos manually."

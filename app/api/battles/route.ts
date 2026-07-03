@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
+import { enforceBattleCreation } from "@/lib/usage";
 import { battleSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
         }
       });
       if (decks.length !== 2) return NextResponse.json({ error: "Choose two public or owned decks." }, { status: 400 });
+
+      await enforceBattleCreation(ownerId);
 
       const battle = await prisma.battle.create({
         data: {
@@ -59,6 +62,8 @@ export async function POST(request: Request) {
     if (combos.length !== 2) {
       return NextResponse.json({ error: "Choose two public or owned combos." }, { status: 400 });
     }
+
+    await enforceBattleCreation(ownerId);
 
     const battle = await prisma.battle.create({
       data: {

@@ -125,7 +125,7 @@ model PartCatalog {
   name         String
   type         PartType
   manufacturer Manufacturer @default(TAKARA_TOMY)
-  weightGrams  Decimal      @db.Decimal(6, 2)
+  weightGrams  Decimal?     @db.Decimal(6, 2)
   imageUrl     String?
   metaTier     String?
   notes        String?
@@ -146,7 +146,7 @@ model Part {
   name            String
   type            PartType
   manufacturer    Manufacturer @default(UNKNOWN)
-  weightGrams     Decimal      @db.Decimal(6, 2)
+  weightGrams     Decimal?     @db.Decimal(6, 2)
   conditionRating Decimal      @db.Decimal(3, 1)
   visibility      Visibility   @default(PUBLIC)
   notes           String?

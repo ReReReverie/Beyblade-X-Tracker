@@ -3,6 +3,7 @@ import type { Visibility } from "@prisma/client";
 import { uploadImage } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
+import { enforceUploadCreation } from "@/lib/usage";
 
 const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
 const defaultMaxUploadMb = 1;
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
     if (!ownsTarget) {
       return NextResponse.json({ error: "Target not found." }, { status: 404 });
     }
+
+    await enforceUploadCreation(ownerId);
 
     const publicId = `${ownerId}-${Date.now()}-${crypto.randomUUID()}`;
     const upload = await uploadImage(Buffer.from(await file.arrayBuffer()), publicId);

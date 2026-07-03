@@ -5,6 +5,7 @@ export type ComboWithParts = Combo & {
 };
 
 export function comboWeight(combo: ComboWithParts) {
+  if (combo.parts.some((entry) => entry.part.weightGrams == null)) return null;
   return combo.parts.reduce((total, entry) => total + Number(entry.part.weightGrams), 0);
 }
 

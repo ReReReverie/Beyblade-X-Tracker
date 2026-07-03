@@ -151,7 +151,7 @@ export function PartCard({ part }: { part: PartWithPhotos }) {
       <div>
         <strong>{part.name}</strong>
         <p className="meta">
-          {formatPartType(part.type)} - {formatManufacturer(part.manufacturer)} - {Number(part.weightGrams).toFixed(2)} g - {Number(part.conditionRating)}/10 - {formatVisibility(part.visibility)}
+          {formatPartType(part.type)} - {formatManufacturer(part.manufacturer)} - {part.weightGrams ? `${Number(part.weightGrams).toFixed(2)} g` : "Weight optional"} - {Number(part.conditionRating)}/10 - {formatVisibility(part.visibility)}
         </p>
         {part.notes ? <p className="meta" style={{ marginTop: "0.4rem", fontStyle: "italic" }}>{part.notes}</p> : null}
       </div>

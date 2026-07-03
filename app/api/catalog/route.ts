@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PartType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
+import { enforceCatalogImportRequestSize } from "@/lib/usage";
 import { catalogImportSchema } from "@/lib/validation";
 
 export async function GET(request: Request) {
@@ -27,6 +28,12 @@ export async function POST(request: Request) {
     const parsed = catalogImportSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid import request." }, { status: 400 });
+    }
+
+    try {
+      enforceCatalogImportRequestSize(parsed.data.catalogIds.length);
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid import request." }, { status: 400 });
     }
 
     const catalogParts = await prisma.partCatalog.findMany({
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
             name: catalogPart.name,
             type: catalogPart.type,
             manufacturer: catalogPart.manufacturer,
-            weightGrams: catalogPart.weightGrams,
+            weightGrams: null,
             conditionRating: 10,
             visibility: "PUBLIC",
             notes: catalogPart.notes

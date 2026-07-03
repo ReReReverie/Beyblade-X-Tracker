@@ -7,7 +7,10 @@ export const partSchema = z.object({
   name: z.string().trim().min(1).max(80),
   type: z.nativeEnum(PartType),
   manufacturer: z.nativeEnum(Manufacturer).default("UNKNOWN"),
-  weightGrams: z.coerce.number().positive().max(999.99),
+  weightGrams: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : value),
+    z.coerce.number().positive().max(999.99).optional()
+  ),
   conditionRating: z.coerce.number().min(0).max(10),
   visibility: visibilitySchema,
   notes: z.string().trim().max(1000).optional()
@@ -18,7 +21,10 @@ export const updatePartSchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
   type: z.nativeEnum(PartType).optional(),
   manufacturer: z.nativeEnum(Manufacturer).optional(),
-  weightGrams: z.coerce.number().positive().max(999.99).optional(),
+  weightGrams: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : value),
+    z.coerce.number().positive().max(999.99).optional()
+  ),
   conditionRating: z.coerce.number().min(0).max(10).optional(),
   visibility: visibilitySchema.optional(),
   notes: z.string().trim().max(1000).optional().nullable()

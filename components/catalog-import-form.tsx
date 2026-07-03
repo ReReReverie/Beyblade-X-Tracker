@@ -7,7 +7,7 @@ type CatalogPart = {
   id: string;
   name: string;
   type: "BLADE" | "RATCHET" | "BIT";
-  weightGrams: string;
+  manufacturer: "HASBRO" | "TAKARA_TOMY" | "UNKNOWN" | "FAKE";
   metaTier: string | null;
 };
 
@@ -75,7 +75,7 @@ export function CatalogImportForm({
             <option value="">Choose a part…</option>
             {visible.map((part) => (
               <option key={part.id} value={part.id}>
-                {part.name} ({typeLabels[part.type]}, {part.metaTier ?? "?"}-tier, {Number(part.weightGrams).toFixed(2)} g)
+                {part.name} ({typeLabels[part.type]}, {formatManufacturer(part.manufacturer)}, {part.metaTier ?? "?"}-tier)
               </option>
             ))}
           </select>

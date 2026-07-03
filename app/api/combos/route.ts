@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
+import { enforceComboCreation } from "@/lib/usage";
 import { comboSchema } from "@/lib/validation";
 
 const updateComboSchema = z.object({
@@ -56,6 +57,8 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
+
+    await enforceComboCreation(ownerId);
 
     const combo = await prisma.combo.create({
       data: {

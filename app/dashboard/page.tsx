@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { CatalogImportForm } from "@/components/catalog-import-form";
 import { CollapsibleComboCard } from "@/components/collapsible-combo-card";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
-import { BattleForm, ComboForm, DeckForm, PartForm, PhotoForm } from "@/components/dashboard-forms";
+import { BattleForm, ComboForm, DeckForm, PhotoForm } from "@/components/dashboard-forms";
 import { PartCard } from "@/components/part-card";
 import { DeleteButton } from "@/components/delete-button";
 import { authOptions } from "@/lib/auth";
@@ -198,7 +198,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <section className="grid">
           <div className="card">
             <CatalogImportForm catalogParts={catalogForUi} ownedCatalogIds={ownedCatalogIds} />
-            <PartForm />
           </div>
           <div className="card">
             <ComboForm

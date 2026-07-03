@@ -64,40 +64,6 @@ async function compressImage(file: File) {
   }
 }
 
-export function PartForm() {
-  const router = useRouter();
-  const [error, setError] = useState("");
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    try {
-      await postJson("/api/parts", Object.fromEntries(form));
-      formElement.reset();
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
-    }
-  }
-
-  return (
-    <form onSubmit={submit}>
-      <h2>Add part</h2>
-      <label>Name<input name="name" required /></label>
-      <label>Type<select name="type"><option value="BLADE">Blade</option><option value="RATCHET">Ratchet</option><option value="BIT">Bit</option></select></label>
-      <label>Manufacturer<select name="manufacturer"><option value="UNKNOWN">Unknown</option><option value="HASBRO">Hasbro</option><option value="TAKARA_TOMY">Takara Tomy</option><option value="FAKE">Fake</option></select></label>
-      <label>Weight grams<input name="weightGrams" type="number" step="0.01" min="0.01" required /></label>
-      <label>Condition / 10<input name="conditionRating" type="number" step="0.1" min="0" max="10" required /></label>
-      <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
-      <label>Notes<textarea name="notes" /></label>
-      {error ? <p className="danger">{error}</p> : null}
-      <button type="submit">Save part</button>
-    </form>
-  );
-}
-
 export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratchets: Option[]; bits: Option[] }) {
   const router = useRouter();
   const [error, setError] = useState("");

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PartType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
+import { enforcePartCreation } from "@/lib/usage";
 import { partSchema, updatePartSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid part data." }, { status: 400 });
     }
+
+    await enforcePartCreation(ownerId);
 
     const part = await prisma.part.create({
       data: { ...parsed.data, ownerId }
