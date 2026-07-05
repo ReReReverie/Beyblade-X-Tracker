@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
 type PartRole = "BLADE" | "RATCHET" | "BIT" | "LOCK_CHIP" | "MAIN_BLADE" | "ASSIST_BLADE" | "OVER_BLADE" | "METAL_BLADE";
 
@@ -148,6 +149,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
 
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    showLoadingOverlay();
     try {
       const payload = Object.fromEntries(form) as Record<string, FormDataEntryValue>;
       payload.mode = mode;
@@ -181,6 +183,8 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      hideLoadingOverlay();
     }
   }
 
@@ -251,12 +255,15 @@ export function DeckForm({ combos }: { combos: Option[] }) {
     setError("");
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    showLoadingOverlay();
     try {
       await postJson("/api/decks", Object.fromEntries(form));
       formElement.reset();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      hideLoadingOverlay();
     }
   }
 
@@ -285,6 +292,7 @@ export function BattleForm({ combos, decks }: { combos: Option[]; decks: Option[
     setError("");
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    showLoadingOverlay();
     try {
       await postJson("/api/battles", Object.fromEntries(form));
       formElement.reset();
@@ -292,6 +300,8 @@ export function BattleForm({ combos, decks }: { combos: Option[]; decks: Option[
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      hideLoadingOverlay();
     }
   }
 
@@ -332,6 +342,7 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     setError("");
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    showLoadingOverlay();
     try {
       const file = form.get("file");
       if (file instanceof File) {
@@ -347,6 +358,8 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      hideLoadingOverlay();
     }
   }
 
@@ -365,4 +378,3 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     </form>
   );
 }
-

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
 export function PutComboButton({ comboId, initialCount, initiallyPut }: { comboId: string; initialCount: number; initiallyPut: boolean }) {
   const [count, setCount] = useState(initialCount);
@@ -9,18 +10,23 @@ export function PutComboButton({ comboId, initialCount, initiallyPut }: { comboI
 
   async function toggle() {
     setError("");
-    const response = await fetch("/api/combo-puts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comboId })
-    });
-    if (!response.ok) {
-      setError("Sign in to put combos.");
-      return;
+    showLoadingOverlay();
+    try {
+      const response = await fetch("/api/combo-puts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comboId })
+      });
+      if (!response.ok) {
+        setError("Sign in to put combos.");
+        return;
+      }
+      const data = await response.json();
+      setPut(data.put);
+      setCount(data.count);
+    } finally {
+      hideLoadingOverlay();
     }
-    const data = await response.json();
-    setPut(data.put);
-    setCount(data.count);
   }
 
   return (

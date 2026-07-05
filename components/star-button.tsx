@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
 export function StarButton({ comboId, initialCount, initiallyStarred }: { comboId: string; initialCount: number; initiallyStarred: boolean }) {
   const [count, setCount] = useState(initialCount);
@@ -9,18 +10,23 @@ export function StarButton({ comboId, initialCount, initiallyStarred }: { comboI
 
   async function toggle() {
     setError("");
-    const response = await fetch("/api/stars", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comboId })
-    });
-    if (!response.ok) {
-      setError("Sign in to follow.");
-      return;
+    showLoadingOverlay();
+    try {
+      const response = await fetch("/api/stars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comboId })
+      });
+      if (!response.ok) {
+        setError("Sign in to follow.");
+        return;
+      }
+      const data = await response.json();
+      setStarred(data.starred);
+      setCount(data.count);
+    } finally {
+      hideLoadingOverlay();
     }
-    const data = await response.json();
-    setStarred(data.starred);
-    setCount(data.count);
   }
 
   return (

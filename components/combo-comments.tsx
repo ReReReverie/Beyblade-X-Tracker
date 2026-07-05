@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
 type Comment = {
   id: string;
@@ -20,6 +21,7 @@ export function ComboComments({ comboId, comments, signedIn }: { comboId: string
     event.preventDefault();
     setError("");
     setSaving(true);
+    showLoadingOverlay();
     try {
       const response = await fetch("/api/comments", {
         method: "POST",
@@ -36,6 +38,7 @@ export function ComboComments({ comboId, comments, signedIn }: { comboId: string
       setError(err instanceof Error ? err.message : "Comment failed.");
     } finally {
       setSaving(false);
+      hideLoadingOverlay();
     }
   }
 

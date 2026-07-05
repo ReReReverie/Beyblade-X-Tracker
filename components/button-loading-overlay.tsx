@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { loadingOverlayEventName } from "@/components/loading-overlay-events";
 
 const TRIGGER_SELECTOR = "a[href]";
 
@@ -20,6 +21,11 @@ export function ButtonLoadingOverlay() {
   }, [currentLocation]);
 
   useEffect(() => {
+    function handleOverlay(event: Event) {
+      const detail = (event as CustomEvent<{ visible?: boolean }>).detail;
+      if (typeof detail?.visible === "boolean") setVisible(detail.visible);
+    }
+
     function showOverlay(event: MouseEvent) {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
@@ -40,8 +46,10 @@ export function ButtonLoadingOverlay() {
     }
 
     document.addEventListener("click", showOverlay, true);
+    window.addEventListener(loadingOverlayEventName, handleOverlay);
     return () => {
       document.removeEventListener("click", showOverlay, true);
+      window.removeEventListener(loadingOverlayEventName, handleOverlay);
       pendingLocation.current = null;
     };
   }, []);
