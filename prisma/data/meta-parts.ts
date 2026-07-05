@@ -29,7 +29,7 @@ const cxBladeNames = new Set(["Emperor Blast Heavy"]);
 
 const cxExpandedBladeNames = new Set(["Bullet Griffon"]);
 
-function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
+export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
   if (part.type !== "BLADE") {
     return {
       ...part,
@@ -725,7 +725,7 @@ export const metaParts: MetaPartSeed[] = [
     name: "Bullet Griffon",
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
-    series: PartSeries.CX_EXPANDED,
+    series: PartSeries.UX,
     ratchetIntegration: RatchetIntegration.BLADE,
     weightGrams: "63.20",
     notes: "UX-19 ratchet-integrated blade. Splits into Bullet (attack) and Griffon (defense) halves mid-battle."
@@ -951,6 +951,6 @@ const wikiGeneratedParts: MetaPartSeed[] = [
 
 const partKey = (part: MetaPartSeed) => `${part.type}:${part.slug}`;
 
-export const allMetaParts: MetaPartSeed[] = [...metaParts, ...wikiGeneratedParts].filter(
+export const allMetaParts: MetaPartSeed[] = [...metaParts.map(applyMetaPartMetadata), ...wikiGeneratedParts].filter(
   (part, index, parts) => parts.findIndex((candidate) => partKey(candidate) === partKey(part)) === index
 );

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { applyMetaPartMetadata } from "./data/meta-parts";
 import { allMetaParts } from "./data/meta-parts";
 
 const CUSTOM_LINE_WIKI_RAW = "https://beyblade.fandom.com/wiki/List_of_Custom_Line_parts?action=raw";
@@ -69,7 +70,7 @@ export async function seedCatalog() {
   let updated = 0;
   // Gather remote Custom Line parts and merge with the built-in catalog
   const remoteParts = await fetchCustomLineParts();
-  const combined = [...allMetaParts, ...remoteParts];
+  const combined = [...allMetaParts, ...remoteParts.map(applyMetaPartMetadata)];
 
   // de-duplicate by type + slug
   const unique: any[] = [];
