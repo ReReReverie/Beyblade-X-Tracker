@@ -31,7 +31,13 @@ export const updatePartSchema = z.object({
 });
 
 export const comboSchema = z.object({
-  bladeId: z.string().min(1),
+  mode: z.enum(["BX_UX", "CX", "CX_EXPANDED"]).default("BX_UX"),
+  bladeId: z.string().optional(),
+  lockChipId: z.string().optional(),
+  mainBladeId: z.string().optional(),
+  assistBladeId: z.string().optional(),
+  overBladeId: z.string().optional(),
+  metalBladeId: z.string().optional(),
   ratchetId: z.preprocess(
     (value) => (value === "" || value === null || value === undefined ? undefined : value),
     z.string().min(1).optional()
@@ -109,3 +115,5 @@ export const careerEntrySchema = z.object({
   playedAt: z.coerce.date(),
   notes: z.string().trim().max(1000).optional()
 });
+
+

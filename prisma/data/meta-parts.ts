@@ -1,9 +1,10 @@
-import { Manufacturer, PartSeries, PartType, RatchetIntegration } from "@prisma/client";
+import { Manufacturer, PartRole, PartSeries, PartType, RatchetIntegration } from "@prisma/client";
 
 export type MetaPartSeed = {
   slug: string;
   name: string;
   type: PartType;
+  role?: PartRole;
   manufacturer: Manufacturer;
   series?: PartSeries | null;
   ratchetIntegration?: RatchetIntegration;
@@ -34,7 +35,8 @@ export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
     return {
       ...part,
       series: null,
-      ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE
+      ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE,
+      role: part.role ?? part.type
     };
   }
 
@@ -49,7 +51,8 @@ export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
           : uxBladeNames.has(part.name)
             ? PartSeries.UX
             : PartSeries.BX),
-    ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE
+    ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE,
+    role: part.role ?? PartRole.BLADE
   };
 }
 
@@ -922,6 +925,33 @@ const wikiBitNames = [
   "Yielding"
 ];
 
+const cxLockChipNames = [
+  "Bahamut", "Brachio", "Cerberus", "Croc", "Drake", "Dran", "Enlil", "Eva", "Fox", "Hells", "Hornet", "Knight", "Kraken", "Leon", "Emperor", "Pegasus", "Perseus", "Phoenix", "Ragna", "Rhino", "Sol", "Stag", "Unicorn", "Valkerion", "Whale", "Wolf", "Wizard"
+];
+
+const cxMainBladeNames = [
+  "Antler", "Antlers", "Arc", "Blast", "Brave", "Courage", "Brush", "Dark", "Eclipse", "Umbra", "Fang", "Flame", "Flare", "Fort", "Hunt", "Might", "Reaper", "Volt", "Wriggle"
+];
+
+const cxMetalBladeNames = ["Blitz", "Delta", "Fortress", "Armor", "Rage", "Whip"];
+const cxOverBladeNames = ["Break", "Flow", "Guard", "Outer", "Peak"];
+
+const cxAssistBladeNames = [
+  "Assault", "Bumper", "Charge", "Dual", "Erase", "Free", "Gravity", "Heavy", "Jaggy", "Knuckle", "Massive", "Odd", "Q", "Round", "Slash", "Turn", "Vertical", "Wheel", "Zillion"
+];
+
+const cxRatchetNames = ["0-60", "1-50", "4-55", "5-50", "6-60", "6-80", "8-70"];
+const cxBitNames = ["Gear Rush", "Gear Unite", "Ignition", "Kick", "Low Orb", "Narrow", "Trans Kick", "Vortex", "Wall Ball", "Wall Wedge", "Wedge", "Yielding"];
+
+const cxGeneratedParts: MetaPartSeed[] = [
+  ...cxLockChipNames.map((name) => ({ slug: slugifyWikiName(name, "cx-lock-chip-"), name, type: "BLADE" as PartType, role: PartRole.LOCK_CHIP, series: PartSeries.CX, manufacturer: "TAKARA_TOMY" as Manufacturer })),
+  ...cxMainBladeNames.map((name) => ({ slug: slugifyWikiName(name, "cx-main-blade-"), name, type: "BLADE" as PartType, role: PartRole.MAIN_BLADE, series: PartSeries.CX, manufacturer: "TAKARA_TOMY" as Manufacturer })),
+  ...cxAssistBladeNames.map((name) => ({ slug: slugifyWikiName(name, "cx-assist-blade-"), name, type: "BLADE" as PartType, role: PartRole.ASSIST_BLADE, series: PartSeries.CX, manufacturer: "TAKARA_TOMY" as Manufacturer })),
+  ...cxOverBladeNames.map((name) => ({ slug: slugifyWikiName(name, "cx-over-blade-"), name, type: "BLADE" as PartType, role: PartRole.OVER_BLADE, series: PartSeries.CX_EXPANDED, manufacturer: "TAKARA_TOMY" as Manufacturer })),
+  ...cxMetalBladeNames.map((name) => ({ slug: slugifyWikiName(name, "cx-metal-blade-"), name, type: "BLADE" as PartType, role: PartRole.METAL_BLADE, series: PartSeries.CX_EXPANDED, manufacturer: "TAKARA_TOMY" as Manufacturer })),
+  ...cxRatchetNames.map((name) => ({ slug: slugifyWikiName(name, "ratchet-"), name, type: "RATCHET" as PartType, role: PartRole.RATCHET, manufacturer: "TAKARA_TOMY" as Manufacturer })),
+  ...cxBitNames.map((name) => ({ slug: slugifyWikiName(name, "bit-"), name, type: "BIT" as PartType, role: PartRole.BIT, manufacturer: "TAKARA_TOMY" as Manufacturer }))
+].map(applyMetaPartMetadata);
 const wikiGeneratedParts: MetaPartSeed[] = [
   ...wikiBladeNames.map((name) => ({
     slug: slugifyWikiName(name),
@@ -951,6 +981,7 @@ const wikiGeneratedParts: MetaPartSeed[] = [
 
 const partKey = (part: MetaPartSeed) => `${part.type}:${part.slug}`;
 
-export const allMetaParts: MetaPartSeed[] = [...metaParts.map(applyMetaPartMetadata), ...wikiGeneratedParts].filter(
+export const allMetaParts: MetaPartSeed[] = [...metaParts.map(applyMetaPartMetadata), ...cxGeneratedParts, ...wikiGeneratedParts].filter(
   (part, index, parts) => parts.findIndex((candidate) => partKey(candidate) === partKey(part)) === index
 );
+

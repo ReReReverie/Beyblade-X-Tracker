@@ -91,6 +91,7 @@ export async function seedCatalog() {
         type: part.type,
         manufacturer: part.manufacturer,
         series: part.series ?? null,
+        role: part.role ?? part.type,
         ratchetIntegration: part.ratchetIntegration ?? "NONE",
         weightGrams: part.weightGrams ?? null,
         imageUrl: null,
@@ -103,6 +104,7 @@ export async function seedCatalog() {
         type: part.type,
         manufacturer: part.manufacturer,
         series: part.series ?? null,
+        role: part.role ?? part.type,
         ratchetIntegration: part.ratchetIntegration ?? "NONE",
         weightGrams: part.weightGrams ?? null,
         metaTier: part.metaTier ?? null,
@@ -131,3 +133,5 @@ if (require.main === module) {
       await prisma.$disconnect();
     });
 }
+
+

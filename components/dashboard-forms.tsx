@@ -3,20 +3,26 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type PartRole = "BLADE" | "RATCHET" | "BIT" | "LOCK_CHIP" | "MAIN_BLADE" | "ASSIST_BLADE" | "OVER_BLADE" | "METAL_BLADE";
+
 type Option = {
   id: string;
   name: string;
   series?: "BX" | "UX" | "CX" | "CX_EXPANDED" | null;
+  role?: PartRole | null;
   ratchetIntegration?: "NONE" | "BLADE" | "BIT";
 };
 
-const seriesByTab = {
-  uxbx: ["BX", "UX"],
-  cxcxexp: ["CX", "CX_EXPANDED"]
-} as const;
+type ComboTab = "uxbx" | "cx" | "cxExpanded";
 
-function matchesSeries(tab: "uxbx" | "cxcxexp", series?: Option["series"]) {
-  return series != null && (tab === "uxbx" ? series === "BX" || series === "UX" : series === "CX" || series === "CX_EXPANDED");
+function tabLabel(tab: ComboTab) {
+  if (tab === "cx") return "CX";
+  if (tab === "cxExpanded") return "CX-Expanded";
+  return "BX / UX";
+}
+
+function optionsByRole(parts: Option[], role: PartRole) {
+  return parts.filter((part) => part.role === role);
 }
 
 const maxUploadBytes = 1 * 1024 * 1024;
@@ -82,57 +88,93 @@ async function compressImage(file: File) {
 export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratchets: Option[]; bits: Option[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"uxbx" | "cxcxexp">("uxbx");
+  const [tab, setTab] = useState<ComboTab>("uxbx");
   const [selectedBladeId, setSelectedBladeId] = useState("");
+  const [selectedLockChipId, setSelectedLockChipId] = useState("");
+  const [selectedMainBladeId, setSelectedMainBladeId] = useState("");
+  const [selectedAssistBladeId, setSelectedAssistBladeId] = useState("");
+  const [selectedOverBladeId, setSelectedOverBladeId] = useState("");
+  const [selectedMetalBladeId, setSelectedMetalBladeId] = useState("");
   const [selectedRatchetId, setSelectedRatchetId] = useState("");
   const [selectedBitId, setSelectedBitId] = useState("");
 
-  const bladeOptions = blades.filter((part) => matchesSeries(tab, part.series));
-  const ratchetOptions = ratchets;
-  const bitOptions = bits;
-
-  const selectedBlade = blades.find((part) => part.id === selectedBladeId);
+  const bxUxBlades = blades.filter((part) => part.role === "BLADE" && (part.series === "BX" || part.series === "UX"));
+  const lockChips = optionsByRole(blades, "LOCK_CHIP");
+  const mainBlades = optionsByRole(blades, "MAIN_BLADE");
+  const assistBlades = optionsByRole(blades, "ASSIST_BLADE");
+  const overBlades = optionsByRole(blades, "OVER_BLADE");
+  const metalBlades = optionsByRole(blades, "METAL_BLADE");
   const selectedBit = bits.find((part) => part.id === selectedBitId);
-  const bladeIntegrated = selectedBlade?.ratchetIntegration === "BLADE";
   const bitIntegrated = selectedBit?.ratchetIntegration === "BIT";
-  const ratchetLocked = bladeIntegrated || bitIntegrated;
-
-  const filteredBladeOptions = bladeOptions.filter((part) => !bitIntegrated || part.ratchetIntegration !== "BLADE");
-  const filteredBitOptions = bitOptions.filter((part) => !bladeIntegrated || part.ratchetIntegration !== "BIT");
 
   useEffect(() => {
-    if (selectedBladeId && !filteredBladeOptions.some((part) => part.id === selectedBladeId)) {
-      setSelectedBladeId("");
-    }
-  }, [filteredBladeOptions, selectedBladeId]);
+    setSelectedBladeId("");
+    setSelectedLockChipId("");
+    setSelectedMainBladeId("");
+    setSelectedAssistBladeId("");
+    setSelectedOverBladeId("");
+    setSelectedMetalBladeId("");
+    setSelectedRatchetId("");
+  }, [tab]);
 
   useEffect(() => {
-    if (selectedBitId && !filteredBitOptions.some((part) => part.id === selectedBitId)) {
-      setSelectedBitId("");
-    }
-  }, [filteredBitOptions, selectedBitId]);
+    if (bitIntegrated) setSelectedRatchetId("");
+  }, [bitIntegrated]);
+
+  function selectField(label: string, value: string, onChange: (value: string) => void, options: Option[]) {
+    return (
+      <label className="combo-form__field">
+        <span>{label}</span>
+        <select value={value} onChange={(event) => onChange(event.target.value)}>
+          <option value="">Choose {label.toLowerCase()}</option>
+          {options.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
+        </select>
+      </label>
+    );
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    if (!selectedBladeId || !selectedBitId) {
-      setError("Choose a blade and bit before saving.");
+    const mode = tab === "cx" ? "CX" : tab === "cxExpanded" ? "CX_EXPANDED" : "BX_UX";
+    const requiredMissing =
+      (tab === "uxbx" && !selectedBladeId) ||
+      (tab === "cx" && (!selectedLockChipId || !selectedMainBladeId || !selectedAssistBladeId)) ||
+      (tab === "cxExpanded" && (!selectedLockChipId || !selectedOverBladeId || !selectedMetalBladeId || !selectedAssistBladeId));
+    if (requiredMissing || !selectedBitId) {
+      setError("Choose all required parts before saving.");
       return;
     }
+
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
       const payload = Object.fromEntries(form) as Record<string, FormDataEntryValue>;
-      payload.bladeId = selectedBladeId;
+      payload.mode = mode;
       payload.bitId = selectedBitId;
-      if (ratchetLocked || !selectedRatchetId) {
-        delete payload.ratchetId;
-      } else {
-        payload.ratchetId = selectedRatchetId;
+      if (tab === "uxbx") payload.bladeId = selectedBladeId;
+      if (tab === "cx") {
+        payload.lockChipId = selectedLockChipId;
+        payload.mainBladeId = selectedMainBladeId;
+        payload.assistBladeId = selectedAssistBladeId;
       }
+      if (tab === "cxExpanded") {
+        payload.lockChipId = selectedLockChipId;
+        payload.overBladeId = selectedOverBladeId;
+        payload.metalBladeId = selectedMetalBladeId;
+        payload.assistBladeId = selectedAssistBladeId;
+      }
+      if (bitIntegrated || !selectedRatchetId) delete payload.ratchetId;
+      else payload.ratchetId = selectedRatchetId;
+
       await postJson("/api/combos", payload);
       formElement.reset();
       setSelectedBladeId("");
+      setSelectedLockChipId("");
+      setSelectedMainBladeId("");
+      setSelectedAssistBladeId("");
+      setSelectedOverBladeId("");
+      setSelectedMetalBladeId("");
       setSelectedRatchetId("");
       setSelectedBitId("");
       setTab("uxbx");
@@ -147,62 +189,51 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
       <h2>Build combo</h2>
       <p className="meta">Combo names are generated from selected parts automatically.</p>
       <div className="tab-buttons" role="tablist" aria-label="Part groups">
-        <button type="button" className={tab === "uxbx" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("uxbx")}>
-          UX/BX
-        </button>
-        <button type="button" className={tab === "cxcxexp" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cxcxexp")}>
-          CX/CX-EXPANDED
-        </button>
+        <button type="button" className={tab === "uxbx" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("uxbx")}>BX / UX</button>
+        <button type="button" className={tab === "cx" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cx")}>CX</button>
+        <button type="button" className={tab === "cxExpanded" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cxExpanded")}>CX-Expanded</button>
       </div>
 
       <div className="combo-form__status" aria-live="polite">
-        <span className="tag tag--filled">Series: {tab === "uxbx" ? "BX / UX" : "CX / CX-EXPANDED"}</span>
-        <span className={ratchetLocked ? "tag tag--filled combo-form__tag--alert" : "tag"}>
-          {ratchetLocked ? `Ratchet locked to ${bladeIntegrated ? "blade" : "bit"}` : "Ratchet selectable"}
-        </span>
-        <span className="tag">{filteredBladeOptions.length} blade options</span>
-        <span className="tag">{filteredBitOptions.length} bit options</span>
+        <span className="tag tag--filled">Series: {tabLabel(tab)}</span>
+        <span className={bitIntegrated ? "tag tag--filled combo-form__tag--alert" : "tag"}>{bitIntegrated ? "Ratchet built into bit" : "Ratchet selectable"}</span>
       </div>
 
-      <label className="combo-form__field">
-        <span>Blade</span>
-        <select name="bladeId" value={selectedBladeId} onChange={(event) => setSelectedBladeId(event.target.value)}>
-          <option value="">Choose a blade</option>
-          {filteredBladeOptions.map((part) => (
-            <option key={part.id} value={part.id}>
-              {part.name}
-            </option>
-          ))}
-        </select>
-        <span className="meta">{tab === "uxbx" ? "BX and UX blades only." : "CX and CX-EXPANDED blades only."}</span>
-      </label>
-      {!ratchetLocked ? (
+      {tab === "uxbx" ? selectField("Blade", selectedBladeId, setSelectedBladeId, bxUxBlades) : null}
+      {tab === "cx" ? (
+        <>
+          {selectField("Lock Chip", selectedLockChipId, setSelectedLockChipId, lockChips)}
+          {selectField("Main Blade", selectedMainBladeId, setSelectedMainBladeId, mainBlades)}
+          {selectField("Assist Blade", selectedAssistBladeId, setSelectedAssistBladeId, assistBlades)}
+        </>
+      ) : null}
+      {tab === "cxExpanded" ? (
+        <>
+          {selectField("Lock Chip", selectedLockChipId, setSelectedLockChipId, lockChips)}
+          {selectField("Over Blade", selectedOverBladeId, setSelectedOverBladeId, overBlades)}
+          {selectField("Metal Blade", selectedMetalBladeId, setSelectedMetalBladeId, metalBlades)}
+          {selectField("Assist Blade", selectedAssistBladeId, setSelectedAssistBladeId, assistBlades)}
+        </>
+      ) : null}
+
+      {!bitIntegrated ? (
         <label className="combo-form__field">
           <span>Ratchet</span>
           <select name="ratchetId" value={selectedRatchetId} onChange={(event) => setSelectedRatchetId(event.target.value)}>
             <option value="">No separate ratchet</option>
-            {ratchetOptions.map((part) => (
-              <option key={part.id} value={part.id}>
-                {part.name}
-              </option>
-            ))}
+            {ratchets.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
           </select>
           <span className="meta">Ratchets remain fully cross-compatible.</span>
         </label>
-      ) : (
-        <p className="meta combo-form__notice">Ratchet is built into the {bladeIntegrated ? "blade" : "bit"} — no separate ratchet needed.</p>
-      )}
+      ) : <p className="meta combo-form__notice">Ratchet is built into this bit; no separate ratchet needed.</p>}
+
       <label className="combo-form__field">
         <span>Bit</span>
         <select name="bitId" value={selectedBitId} onChange={(event) => setSelectedBitId(event.target.value)}>
           <option value="">Choose a bit</option>
-          {filteredBitOptions.map((part) => (
-            <option key={part.id} value={part.id}>
-              {part.name}
-            </option>
-          ))}
+          {bits.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
         </select>
-        <span className="meta">{bladeIntegrated ? "Integrated bits are hidden to avoid dual ratchet systems." : "All available bits are shown."}</span>
+        <span className="meta">Turbo and Operate can be used in any tab and replace the ratchet slot.</span>
       </label>
       <label className="combo-form__field"><span>Visibility</span><select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
       <label className="combo-form__field"><span>Notes</span><textarea name="notes" /></label>
@@ -211,7 +242,6 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
     </form>
   );
 }
-
 export function DeckForm({ combos }: { combos: Option[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -335,3 +365,4 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     </form>
   );
 }
+

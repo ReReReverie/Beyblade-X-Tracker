@@ -13,6 +13,17 @@ enum PartType {
   BIT
 }
 
+enum PartRole {
+  BLADE
+  RATCHET
+  BIT
+  LOCK_CHIP
+  MAIN_BLADE
+  ASSIST_BLADE
+  OVER_BLADE
+  METAL_BLADE
+}
+
 enum Manufacturer {
   HASBRO
   TAKARA_TOMY
@@ -137,6 +148,7 @@ model PartCatalog {
   slug         String       @unique
   name         String
   type         PartType
+  role         PartRole?
   manufacturer Manufacturer @default(TAKARA_TOMY)
   series       PartSeries?
   ratchetIntegration RatchetIntegration @default(NONE)
@@ -151,6 +163,7 @@ model PartCatalog {
 
   @@unique([name, type])
   @@index([type])
+  @@index([role])
   @@index([series])
   @@index([metaTier])
 }
@@ -161,6 +174,7 @@ model Part {
   catalogPartId   String?
   name            String
   type            PartType
+  role            PartRole?
   manufacturer    Manufacturer @default(UNKNOWN)
   series          PartSeries?
   ratchetIntegration RatchetIntegration @default(NONE)
@@ -181,6 +195,7 @@ model Part {
 
   @@index([ownerId, type])
   @@index([catalogPartId])
+  @@index([role])
   @@index([series])
   @@index([visibility])
   @@index([manufacturer])
@@ -234,7 +249,6 @@ model Combo {
   @@index([ownerId])
   @@index([visibility])
   @@index([createdAt])
-    @@unique([ownerId, bladePartId, ratchetPartId, bitPartId])
 }
 
 model Deck {
@@ -401,7 +415,7 @@ model ComboPart {
   id      String   @id @default(cuid())
   comboId String
   partId  String
-  role    PartType
+  role    PartRole
 
   combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
   part  Part  @relation(fields: [partId], references: [id], onDelete: Restrict)
@@ -463,3 +477,6 @@ model Battle {
   @@index([deckWinnerId])
   @@index([playedAt])
 }
+
+
+

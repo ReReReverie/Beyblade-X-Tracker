@@ -148,19 +148,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     id: part.id,
     name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
     series: part.series,
-    ratchetIntegration: part.ratchetIntegration
+    ratchetIntegration: part.ratchetIntegration,
+    role: part.role
   }));
   const ratchets = catalogParts.filter((part) => part.type === "RATCHET").map((part) => ({
     id: part.id,
     name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
     series: part.series,
-    ratchetIntegration: part.ratchetIntegration
+    ratchetIntegration: part.ratchetIntegration,
+    role: part.role
   }));
   const bits = catalogParts.filter((part) => part.type === "BIT").map((part) => ({
     id: part.id,
     name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
     series: part.series,
-    ratchetIntegration: part.ratchetIntegration
+    ratchetIntegration: part.ratchetIntegration,
+    role: part.role
   }));
   const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
   const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
@@ -311,3 +314,4 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     </div>
   );
 }
+
