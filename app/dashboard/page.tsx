@@ -144,9 +144,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     ]);
   }
 
-  const blades = catalogParts.filter((part) => part.type === "BLADE").map((part) => ({ id: part.id, name: `${part.name} (${formatManufacturer(part.manufacturer)})` }));
-  const ratchets = catalogParts.filter((part) => part.type === "RATCHET").map((part) => ({ id: part.id, name: `${part.name} (${formatManufacturer(part.manufacturer)})` }));
-  const bits = catalogParts.filter((part) => part.type === "BIT").map((part) => ({ id: part.id, name: `${part.name} (${formatManufacturer(part.manufacturer)})` }));
+  const blades = catalogParts.filter((part) => part.type === "BLADE").map((part) => ({
+    id: part.id,
+    name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
+    series: part.series,
+    ratchetIntegration: part.ratchetIntegration
+  }));
+  const ratchets = catalogParts.filter((part) => part.type === "RATCHET").map((part) => ({
+    id: part.id,
+    name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
+    series: part.series,
+    ratchetIntegration: part.ratchetIntegration
+  }));
+  const bits = catalogParts.filter((part) => part.type === "BIT").map((part) => ({
+    id: part.id,
+    name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
+    series: part.series,
+    ratchetIntegration: part.ratchetIntegration
+  }));
   const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
   const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
   const deckOptions = ownedDecks.map((deck) => ({ id: deck.id, name: deck.name }));

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { PartType } from "@prisma/client";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
@@ -22,7 +23,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid combo data." }, { status: 400 });
     }
 
-    const partIds = [parsed.data.bladeId, parsed.data.ratchetId, parsed.data.bitId];
+    const bladeId = parsed.data.bladeId;
+    const ratchetId = parsed.data.ratchetId ?? null;
+    const bitId = parsed.data.bitId;
+    const partIds = [bladeId, bitId, ...(ratchetId ? [ratchetId] : [])];
 
     const ownedParts = await prisma.part.findMany({
       where: {
@@ -35,10 +39,16 @@ export async function POST(request: Request) {
       where: { id: { in: partIds } }
     });
 
-    const partsById = new Map<string, { id: string; type: string; name: string }>();
+    const partsById = new Map<string, { id: string; type: string; name: string; series: string | null; ratchetIntegration: string }>();
 
     for (const part of ownedParts) {
-      partsById.set(part.id, { id: part.id, type: part.type, name: part.name });
+      partsById.set(part.id, {
+        id: part.id,
+        type: part.type,
+        name: part.name,
+        series: part.series,
+        ratchetIntegration: part.ratchetIntegration
+      });
     }
 
     for (const catalogPart of catalogParts) {
@@ -50,28 +60,45 @@ export async function POST(request: Request) {
             name: catalogPart.name,
             type: catalogPart.type,
             manufacturer: catalogPart.manufacturer,
+            series: catalogPart.series,
+            ratchetIntegration: catalogPart.ratchetIntegration,
             weightGrams: catalogPart.weightGrams ?? undefined,
             conditionRating: 5.0,
             visibility: "PUBLIC"
           }
         });
-        partsById.set(catalogPart.id, { id: created.id, type: created.type, name: created.name });
+        partsById.set(catalogPart.id, {
+          id: created.id,
+          type: created.type,
+          name: created.name,
+          series: created.series,
+          ratchetIntegration: created.ratchetIntegration
+        });
       }
     }
 
-    const resolvedPartIds = partIds.map((id) => partsById.get(id)?.id).filter(Boolean) as string[];
-    if (resolvedPartIds.length !== 3) {
-      return NextResponse.json({ error: "Choose one blade, one ratchet, and one bit from the available catalog." }, { status: 400 });
+    const bladePart = partsById.get(bladeId);
+    const bitPart = partsById.get(bitId);
+    const ratchetPart = ratchetId ? partsById.get(ratchetId) : null;
+
+    if (!bladePart || !bitPart || (ratchetId && !ratchetPart)) {
+      return NextResponse.json({ error: "Choose a blade and bit from the available catalog." }, { status: 400 });
+    }
+
+    if (bladePart.type !== "BLADE" || bitPart.type !== "BIT" || (ratchetPart && ratchetPart.type !== "RATCHET")) {
+      return NextResponse.json({ error: "Choose a blade, optional ratchet, and bit from the available catalog." }, { status: 400 });
+    }
+
+    if (bladePart.ratchetIntegration === "BLADE" && bitPart.ratchetIntegration === "BIT") {
+      return NextResponse.json({ error: "Choose only one ratchet-integrated part at a time." }, { status: 400 });
     }
 
     const duplicate = await prisma.combo.findFirst({
       where: {
         ownerId,
-        AND: [
-          { parts: { some: { partId: resolvedPartIds[0], role: "BLADE" } } },
-          { parts: { some: { partId: resolvedPartIds[1], role: "RATCHET" } } },
-          { parts: { some: { partId: resolvedPartIds[2], role: "BIT" } } }
-        ]
+        bladePartId: bladePart.id,
+        bitPartId: bitPart.id,
+        ratchetPartId: ratchetPart?.id ?? null
       },
       select: { id: true }
     });
@@ -85,21 +112,21 @@ export async function POST(request: Request) {
 
     await enforceComboCreation(ownerId);
 
-    const comboName = `${partsById.get(resolvedPartIds[0])!.name} / ${partsById.get(resolvedPartIds[1])!.name} / ${partsById.get(resolvedPartIds[2])!.name}`;
+    const comboName = ratchetPart ? `${bladePart.name} / ${ratchetPart.name} / ${bitPart.name}` : `${bladePart.name} / ${bitPart.name}`;
     const combo = await prisma.combo.create({
       data: {
         ownerId,
         name: comboName,
         visibility: parsed.data.visibility,
         notes: parsed.data.notes,
-        bladePartId: resolvedPartIds[0],
-        ratchetPartId: resolvedPartIds[1],
-        bitPartId: resolvedPartIds[2],
+        bladePartId: bladePart.id,
+        ratchetPartId: ratchetPart?.id ?? null,
+        bitPartId: bitPart.id,
         parts: {
           create: [
-            { partId: resolvedPartIds[0], role: "BLADE" },
-            { partId: resolvedPartIds[1], role: "RATCHET" },
-            { partId: resolvedPartIds[2], role: "BIT" }
+            { partId: bladePart.id, role: PartType.BLADE },
+            ...(ratchetPart ? [{ partId: ratchetPart.id, role: PartType.RATCHET }] : []),
+            { partId: bitPart.id, role: PartType.BIT }
           ]
         }
       },

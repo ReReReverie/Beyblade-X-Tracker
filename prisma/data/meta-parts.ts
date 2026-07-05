@@ -1,14 +1,57 @@
-import { Manufacturer, PartType } from "@prisma/client";
+import { Manufacturer, PartSeries, PartType, RatchetIntegration } from "@prisma/client";
 
 export type MetaPartSeed = {
   slug: string;
   name: string;
   type: PartType;
   manufacturer: Manufacturer;
-  weightGrams: string;
-  metaTier: "S" | "A" | "B";
-  notes: string;
+  series?: PartSeries | null;
+  ratchetIntegration?: RatchetIntegration;
+  weightGrams?: string;
+  metaTier?: "S" | "A" | "B";
+  notes?: string;
 };
+
+const uxBladeNames = new Set([
+  "Aero Pegasus",
+  "Clock Mirage",
+  "Dran Buster",
+  "Impact Drake",
+  "Meteor Dragoon",
+  "Phoenix Rudder",
+  "Shark Scale",
+  "Silver Wolf",
+  "Whales Wave",
+  "Wizard Rod"
+]);
+
+const cxBladeNames = new Set(["Emperor Blast Heavy"]);
+
+const cxExpandedBladeNames = new Set(["Bullet Griffon"]);
+
+function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
+  if (part.type !== "BLADE") {
+    return {
+      ...part,
+      series: null,
+      ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE
+    };
+  }
+
+  return {
+    ...part,
+    series:
+      part.series ??
+      (cxExpandedBladeNames.has(part.name)
+        ? PartSeries.CX_EXPANDED
+        : cxBladeNames.has(part.name)
+          ? PartSeries.CX
+          : uxBladeNames.has(part.name)
+            ? PartSeries.UX
+            : PartSeries.BX),
+    ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE
+  };
+}
 
 /**
  * Competitive Beyblade X parts sourced from BeyBase, BeyCase, and WBO meta reports
@@ -676,5 +719,238 @@ export const metaParts: MetaPartSeed[] = [
     weightGrams: "2.35",
     metaTier: "S",
     notes: "Premier aggressive attack bit. Highest speed X-Dashes."
+  },
+  {
+    slug: "bullet-griffon",
+    name: "Bullet Griffon",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    series: PartSeries.CX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    weightGrams: "63.20",
+    notes: "UX-19 ratchet-integrated blade. Splits into Bullet (attack) and Griffon (defense) halves mid-battle."
+  },
+  {
+    slug: "turbo",
+    name: "Turbo",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    ratchetIntegration: RatchetIntegration.BIT,
+    notes: "Ratchet-integrated bit."
+  },
+  {
+    slug: "operate",
+    name: "Operate",
+    type: "BIT",
+    manufacturer: "TAKARA_TOMY",
+    ratchetIntegration: RatchetIntegration.BIT,
+    notes: "Ratchet-integrated bit."
   }
 ];
+
+const formatWikiName = (value: string) =>
+  value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const slugifyWikiName = (value: string, prefix = "") => {
+  const normalized = formatWikiName(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${prefix}${normalized}`;
+};
+
+const wikiBladeNames = [
+  "BlackShell",
+  "CobaltDragoon",
+  "CobaltDrake",
+  "CrimsonGaruda",
+  "DranDagger",
+  "DranSword",
+  "HellsChain",
+  "HellsScythe",
+  "KnightLance",
+  "KnightShield",
+  "LeonClaw",
+  "PhoenixFeather",
+  "PhoenixWing",
+  "RhinoHorn",
+  "SamuraiCalibur",
+  "SharkEdge",
+  "ShelterDrake",
+  "SphinxCowl",
+  "TriceraPress",
+  "TyrannoBeat",
+  "UnicornSting",
+  "ViperTail",
+  "WeissTiger",
+  "WhaleWave",
+  "WizardArrow",
+  "WyvernGale",
+  "AeroPegasus",
+  "ClockMirage",
+  "DranBuster",
+  "GhostCircle",
+  "GolemRock",
+  "HellsHammer",
+  "ImpactDrake",
+  "KnightMail",
+  "LeonCrest",
+  "MeteorDragoon",
+  "MummyCurse",
+  "OrochiCluster",
+  "PhoenixRudder",
+  "SamuraiSaber",
+  "ScorpioSpear",
+  "SharkScale",
+  "ShinobiShadow",
+  "SilverWolf",
+  "WizardRod"
+];
+
+const wikiHasbroOnlyBladeNames = [
+  "Hack Viking",
+  "Stun Medusa",
+  "BatGust",
+  "TriceraSpiky",
+  "CyclopsEye",
+  "DranStrike",
+  "HeavensRing",
+  "SiegSuperion",
+  "DranzerSpiral",
+  "DrigerSlash",
+  "DracielShield",
+  "Lightning L-Drago (Rapid-Hit Type)",
+  "Lightning L-Drago (Upper Type)",
+  "Rock Leone",
+  "StormSpriggan",
+  "XenoXcalibur"
+];
+
+const wikiRatchetNames = [
+  "0-70",
+  "0-80",
+  "1-60",
+  "1-80",
+  "2-70",
+  "3-70",
+  "4-50",
+  "5-70",
+  "7-55",
+  "7-60",
+  "7-70",
+  "9-65",
+  "9-70",
+  "1-70",
+  "2-60",
+  "2-80",
+  "3-60",
+  "3-80",
+  "4-60",
+  "4-70",
+  "4-80",
+  "5-80",
+  "6-70",
+  "7-80",
+  "9-60",
+  "9-80",
+  "M-85",
+  "0-60",
+  "1-50",
+  "4-55",
+  "5-50",
+  "6-60",
+  "6-80",
+  "8-70"
+];
+
+const wikiBitNames = [
+  "Accel",
+  "Bound Spike",
+  "Disk Ball",
+  "Free Ball",
+  "Glide",
+  "Hexa",
+  "Jolt",
+  "Level",
+  "Low Rush",
+  "Metal Needle",
+  "Rubber Accel",
+  "Under Flat",
+  "Under Needle",
+  "Zap",
+  "Ball",
+  "Cyclone",
+  "Disk Spike",
+  "Dot",
+  "Elevate",
+  "Flat",
+  "Free Flat",
+  "Gear Ball",
+  "Gear Flat",
+  "Gear Needle",
+  "Gear Point",
+  "High Needle",
+  "High Taper",
+  "Low Flat",
+  "Merge",
+  "Needle",
+  "Orb",
+  "Point",
+  "Quake",
+  "Rush",
+  "Spike",
+  "Taper",
+  "Trans Point",
+  "Unite",
+  "Gear Rush",
+  "Gear Unite",
+  "Ignition",
+  "Kick",
+  "Low Orb",
+  "Narrow",
+  "Trans Kick",
+  "Vortex",
+  "Wall Ball",
+  "Wall Wedge",
+  "Wedge",
+  "Yielding"
+];
+
+const wikiGeneratedParts: MetaPartSeed[] = [
+  ...wikiBladeNames.map((name) => ({
+    slug: slugifyWikiName(name),
+    name: formatWikiName(name),
+    type: "BLADE" as PartType,
+    manufacturer: "TAKARA_TOMY" as Manufacturer
+  })),
+  ...wikiHasbroOnlyBladeNames.map((name) => ({
+    slug: slugifyWikiName(name),
+    name: formatWikiName(name),
+    type: "BLADE" as PartType,
+    manufacturer: "HASBRO" as Manufacturer
+  })),
+  ...wikiRatchetNames.map((name) => ({
+    slug: slugifyWikiName(name, "ratchet-"),
+    name: formatWikiName(name),
+    type: "RATCHET" as PartType,
+    manufacturer: "TAKARA_TOMY" as Manufacturer
+  })),
+  ...wikiBitNames.map((name) => ({
+    slug: slugifyWikiName(name, "bit-"),
+    name: formatWikiName(name),
+    type: "BIT" as PartType,
+    manufacturer: "TAKARA_TOMY" as Manufacturer
+  }))
+].map(applyMetaPartMetadata);
+
+const partKey = (part: MetaPartSeed) => `${part.type}:${part.slug}`;
+
+export const allMetaParts: MetaPartSeed[] = [...metaParts, ...wikiGeneratedParts].filter(
+  (part, index, parts) => parts.findIndex((candidate) => partKey(candidate) === partKey(part)) === index
+);

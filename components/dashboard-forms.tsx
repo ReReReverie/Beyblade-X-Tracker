@@ -1,9 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Option = { id: string; name: string };
+type Option = {
+  id: string;
+  name: string;
+  series?: "BX" | "UX" | "CX" | "CX_EXPANDED" | null;
+  ratchetIntegration?: "NONE" | "BLADE" | "BIT";
+};
+
+const seriesByTab = {
+  uxbx: ["BX", "UX"],
+  cxcxexp: ["CX", "CX_EXPANDED"]
+} as const;
+
+function matchesSeries(tab: "uxbx" | "cxcxexp", series?: Option["series"]) {
+  return series != null && (tab === "uxbx" ? series === "BX" || series === "UX" : series === "CX" || series === "CX_EXPANDED");
+}
+
 const maxUploadBytes = 1 * 1024 * 1024;
 
 async function postJson(url: string, data: unknown) {
@@ -67,15 +82,60 @@ async function compressImage(file: File) {
 export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratchets: Option[]; bits: Option[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<"uxbx" | "cxcxexp">("uxbx");
+  const [selectedBladeId, setSelectedBladeId] = useState("");
+  const [selectedRatchetId, setSelectedRatchetId] = useState("");
+  const [selectedBitId, setSelectedBitId] = useState("");
+
+  const bladeOptions = blades.filter((part) => matchesSeries(tab, part.series));
+  const ratchetOptions = ratchets;
+  const bitOptions = bits;
+
+  const selectedBlade = blades.find((part) => part.id === selectedBladeId);
+  const selectedBit = bits.find((part) => part.id === selectedBitId);
+  const bladeIntegrated = selectedBlade?.ratchetIntegration === "BLADE";
+  const bitIntegrated = selectedBit?.ratchetIntegration === "BIT";
+  const ratchetLocked = bladeIntegrated || bitIntegrated;
+
+  const filteredBladeOptions = bladeOptions.filter((part) => !bitIntegrated || part.ratchetIntegration !== "BLADE");
+  const filteredBitOptions = bitOptions.filter((part) => !bladeIntegrated || part.ratchetIntegration !== "BIT");
+
+  useEffect(() => {
+    if (selectedBladeId && !filteredBladeOptions.some((part) => part.id === selectedBladeId)) {
+      setSelectedBladeId("");
+    }
+  }, [filteredBladeOptions, selectedBladeId]);
+
+  useEffect(() => {
+    if (selectedBitId && !filteredBitOptions.some((part) => part.id === selectedBitId)) {
+      setSelectedBitId("");
+    }
+  }, [filteredBitOptions, selectedBitId]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    if (!selectedBladeId || !selectedBitId) {
+      setError("Choose a blade and bit before saving.");
+      return;
+    }
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     try {
-      await postJson("/api/combos", Object.fromEntries(form));
+      const payload = Object.fromEntries(form) as Record<string, FormDataEntryValue>;
+      payload.bladeId = selectedBladeId;
+      payload.bitId = selectedBitId;
+      if (ratchetLocked || !selectedRatchetId) {
+        delete payload.ratchetId;
+      } else {
+        payload.ratchetId = selectedRatchetId;
+      }
+      await postJson("/api/combos", payload);
       formElement.reset();
+      setSelectedBladeId("");
+      setSelectedRatchetId("");
+      setSelectedBitId("");
+      setTab("uxbx");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -83,14 +143,69 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   }
 
   return (
-    <form onSubmit={submit}>
+    <form className="combo-form" onSubmit={submit}>
       <h2>Build combo</h2>
       <p className="meta">Combo names are generated from selected parts automatically.</p>
-      <label>Blade<select name="bladeId">{blades.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-      <label>Ratchet<select name="ratchetId">{ratchets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-      <label>Bit<select name="bitId">{bits.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-      <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
-      <label>Notes<textarea name="notes" /></label>
+      <div className="tab-buttons" role="tablist" aria-label="Part groups">
+        <button type="button" className={tab === "uxbx" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("uxbx")}>
+          UX/BX
+        </button>
+        <button type="button" className={tab === "cxcxexp" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cxcxexp")}>
+          CX/CX-EXPANDED
+        </button>
+      </div>
+
+      <div className="combo-form__status" aria-live="polite">
+        <span className="tag tag--filled">Series: {tab === "uxbx" ? "BX / UX" : "CX / CX-EXPANDED"}</span>
+        <span className={ratchetLocked ? "tag tag--filled combo-form__tag--alert" : "tag"}>
+          {ratchetLocked ? `Ratchet locked to ${bladeIntegrated ? "blade" : "bit"}` : "Ratchet selectable"}
+        </span>
+        <span className="tag">{filteredBladeOptions.length} blade options</span>
+        <span className="tag">{filteredBitOptions.length} bit options</span>
+      </div>
+
+      <label className="combo-form__field">
+        <span>Blade</span>
+        <select name="bladeId" value={selectedBladeId} onChange={(event) => setSelectedBladeId(event.target.value)}>
+          <option value="">Choose a blade</option>
+          {filteredBladeOptions.map((part) => (
+            <option key={part.id} value={part.id}>
+              {part.name}
+            </option>
+          ))}
+        </select>
+        <span className="meta">{tab === "uxbx" ? "BX and UX blades only." : "CX and CX-EXPANDED blades only."}</span>
+      </label>
+      {!ratchetLocked ? (
+        <label className="combo-form__field">
+          <span>Ratchet</span>
+          <select name="ratchetId" value={selectedRatchetId} onChange={(event) => setSelectedRatchetId(event.target.value)}>
+            <option value="">No separate ratchet</option>
+            {ratchetOptions.map((part) => (
+              <option key={part.id} value={part.id}>
+                {part.name}
+              </option>
+            ))}
+          </select>
+          <span className="meta">Ratchets remain fully cross-compatible.</span>
+        </label>
+      ) : (
+        <p className="meta combo-form__notice">Ratchet is built into the {bladeIntegrated ? "blade" : "bit"} — no separate ratchet needed.</p>
+      )}
+      <label className="combo-form__field">
+        <span>Bit</span>
+        <select name="bitId" value={selectedBitId} onChange={(event) => setSelectedBitId(event.target.value)}>
+          <option value="">Choose a bit</option>
+          {filteredBitOptions.map((part) => (
+            <option key={part.id} value={part.id}>
+              {part.name}
+            </option>
+          ))}
+        </select>
+        <span className="meta">{bladeIntegrated ? "Integrated bits are hidden to avoid dual ratchet systems." : "All available bits are shown."}</span>
+      </label>
+      <label className="combo-form__field"><span>Visibility</span><select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
+      <label className="combo-form__field"><span>Notes</span><textarea name="notes" /></label>
       {error ? <p className="danger">{error}</p> : null}
       <button type="submit">Save combo</button>
     </form>

@@ -20,6 +20,19 @@ enum Manufacturer {
   UNKNOWN
 }
 
+enum PartSeries {
+  BX
+  UX
+  CX
+  CX_EXPANDED
+}
+
+enum RatchetIntegration {
+  NONE
+  BLADE
+  BIT
+}
+
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -125,6 +138,8 @@ model PartCatalog {
   name         String
   type         PartType
   manufacturer Manufacturer @default(TAKARA_TOMY)
+  series       PartSeries?
+  ratchetIntegration RatchetIntegration @default(NONE)
   weightGrams  Decimal?     @db.Decimal(6, 2)
   imageUrl     String?
   metaTier     String?
@@ -136,6 +151,7 @@ model PartCatalog {
 
   @@unique([name, type])
   @@index([type])
+  @@index([series])
   @@index([metaTier])
 }
 
@@ -146,6 +162,8 @@ model Part {
   name            String
   type            PartType
   manufacturer    Manufacturer @default(UNKNOWN)
+  series          PartSeries?
+  ratchetIntegration RatchetIntegration @default(NONE)
   weightGrams     Decimal?     @db.Decimal(6, 2)
   conditionRating Decimal      @db.Decimal(3, 1)
   visibility      Visibility   @default(PUBLIC)
@@ -163,6 +181,7 @@ model Part {
 
   @@index([ownerId, type])
   @@index([catalogPartId])
+  @@index([series])
   @@index([visibility])
   @@index([manufacturer])
   @@index([createdAt])
@@ -194,12 +213,12 @@ model Combo {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
     bladePartId  String
-    ratchetPartId String
+    ratchetPartId String?
     bitPartId    String
 
   owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   bladePart  Part         @relation("ComboBlade", fields: [bladePartId], references: [id], onDelete: Restrict)
-  ratchetPart Part        @relation("ComboRatchet", fields: [ratchetPartId], references: [id], onDelete: Restrict)
+  ratchetPart Part?       @relation("ComboRatchet", fields: [ratchetPartId], references: [id], onDelete: SetNull)
   bitPart    Part         @relation("ComboBit", fields: [bitPartId], references: [id], onDelete: Restrict)
   parts      ComboPart[]
   photos     ComboPhoto[]

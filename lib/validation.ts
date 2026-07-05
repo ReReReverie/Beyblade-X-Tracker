@@ -32,7 +32,10 @@ export const updatePartSchema = z.object({
 
 export const comboSchema = z.object({
   bladeId: z.string().min(1),
-  ratchetId: z.string().min(1),
+  ratchetId: z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? undefined : value),
+    z.string().min(1).optional()
+  ),
   bitId: z.string().min(1),
   visibility: visibilitySchema,
   notes: z.string().trim().max(1000).optional()

@@ -745,6 +745,35 @@ textarea {
   margin-top: 1rem;
 }
 
+.combo-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.combo-form__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.combo-form__tag--alert {
+  background: var(--safety);
+  color: var(--base);
+}
+
+.combo-form__field {
+  gap: 0.35rem;
+}
+
+.combo-form__field span:first-child {
+  color: var(--ink);
+}
+
+.combo-form__field .meta,
+.combo-form__notice {
+  font-size: 0.72rem;
+}
+
 .tab-button--active {
   outline: 3px solid var(--safety);
 }
