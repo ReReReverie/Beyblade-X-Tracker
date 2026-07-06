@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
 export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
@@ -58,6 +59,7 @@ export function SignUpForm() {
     event.preventDefault();
     setError("");
     setLoading(true);
+    showLoadingOverlay();
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/auth/signup", {
       method: "POST",
@@ -73,6 +75,7 @@ export function SignUpForm() {
       const data = await response.json().catch(() => ({}));
       setError(data.error || "Could not create account.");
       setLoading(false);
+      hideLoadingOverlay();
       return;
     }
     const result = await signIn("credentials", {
@@ -81,6 +84,7 @@ export function SignUpForm() {
       redirect: false
     });
     setLoading(false);
+    hideLoadingOverlay();
     if (result?.error) {
       setError("Account created, but automatic sign in failed. Please sign in.");
       return;
