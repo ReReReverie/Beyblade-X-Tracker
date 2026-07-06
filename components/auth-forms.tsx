@@ -21,7 +21,7 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
     setLoading(false);
     if (result?.error) {
-      setError("Email or password did not match.");
+      setError("Username/email or password did not match.");
       return;
     }
     router.push("/dashboard");
@@ -64,6 +64,7 @@ export function SignUpForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: form.get("name"),
+        username: form.get("username"),
         email: form.get("email"),
         password: form.get("password")
       })
@@ -75,7 +76,7 @@ export function SignUpForm() {
       return;
     }
     const result = await signIn("credentials", {
-      login: form.get("email"),
+      login: form.get("username"),
       password: form.get("password"),
       redirect: false
     });
@@ -95,8 +96,12 @@ export function SignUpForm() {
         <input name="name" maxLength={80} />
       </label>
       <label>
+        Username
+        <input name="username" minLength={3} maxLength={40} required />
+      </label>
+      <label>
         Email
-        <input name="email" type="email" required />
+        <input name="email" type="email" placeholder="(optional)" />
       </label>
       <label>
         Password

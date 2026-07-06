@@ -4,10 +4,15 @@ async function main() {
   const totalRes: any = await prisma.$queryRaw`SELECT COUNT(*)::int AS count FROM "Combo"`;
   const total = totalRes[0]?.count ?? 0;
 
-  const missingAnyRes: any = await prisma.$queryRaw`
-    SELECT COUNT(*)::int AS count FROM "Combo" WHERE "bladePartId" IS NULL OR "ratchetPartId" IS NULL OR "bitPartId" IS NULL
+  const missingRequiredRes: any = await prisma.$queryRaw`
+    SELECT COUNT(*)::int AS count FROM "Combo" WHERE "bladePartId" IS NULL OR "bitPartId" IS NULL
   `;
-  const missingAny = missingAnyRes[0]?.count ?? 0;
+  const missingRequired = missingRequiredRes[0]?.count ?? 0;
+
+  const missingOptionalRatchetRes: any = await prisma.$queryRaw`
+    SELECT COUNT(*)::int AS count FROM "Combo" WHERE "ratchetPartId" IS NULL
+  `;
+  const missingOptionalRatchet = missingOptionalRatchetRes[0]?.count ?? 0;
 
   const missingAllRes: any = await prisma.$queryRaw`
     SELECT COUNT(*)::int AS count FROM "Combo" WHERE "bladePartId" IS NULL AND "ratchetPartId" IS NULL AND "bitPartId" IS NULL
@@ -15,7 +20,8 @@ async function main() {
   const missingAll = missingAllRes[0]?.count ?? 0;
 
   console.log(`Total combos: ${total}`);
-  console.log(`Combos missing any denorm field: ${missingAny}`);
+  console.log(`Combos missing required denorm fields: ${missingRequired}`);
+  console.log(`Combos without optional ratchet denorm field: ${missingOptionalRatchet}`);
   console.log(`Combos missing all denorm fields: ${missingAll}`);
 
   await prisma.$disconnect();

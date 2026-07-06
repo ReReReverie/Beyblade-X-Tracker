@@ -282,7 +282,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <section className="list">
           <div className="card">
             <h2>Profile</h2>
-            <p className="meta">{session.user.name || session.user.email || "Signed in user"}</p>
+            <p className="meta">{session.user.name || session.user.username || session.user.email || "Signed in user"}</p>
             <p>{combos.length} posted combo{combos.length === 1 ? "" : "s"} - {followedCombos.length} followed combo{followedCombos.length === 1 ? "" : "s"}</p>
           </div>
           <section>

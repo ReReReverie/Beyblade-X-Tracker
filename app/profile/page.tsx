@@ -81,7 +81,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       ? requestedTab
       : "overview";
   const [user, myCombos, starredCombos, putCombos, careerEntries] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true, image: true, bio: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true, image: true, bio: true } }),
     getProfileCombos(userId),
     prisma.combo.findMany({
       where: { stars: { some: { userId } }, visibility: "PUBLIC" },
@@ -130,7 +130,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         <div className="profile-head">
           {user?.image ? <img className="profile-avatar" src={user.image} alt="" /> : <div className="profile-avatar" aria-hidden="true" />}
           <div>
-            <h1>{user?.name || session.user.name || session.user.email || "My profile"}</h1>
+            <h1>{user?.name || user?.username || session.user.name || session.user.username || session.user.email || "My profile"}</h1>
             {user?.bio ? <p>{user.bio}</p> : <p className="meta">Add a short description to introduce your Beyblade career.</p>}
           </div>
         </div>

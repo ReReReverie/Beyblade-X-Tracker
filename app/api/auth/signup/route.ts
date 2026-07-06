@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 const signupSchema = z.object({
   name: z.string().trim().max(80).optional(),
-  email: z.string().trim().email(),
+  username: z.string().trim().min(3).max(40),
+  email: z.string().trim().email().optional().or(z.literal("")),
   password: z.string().min(8).max(120)
 });
 
@@ -16,9 +17,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signup details." }, { status: 400 });
   }
 
-  const email = parsed.data.email.toLowerCase();
-  const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists) {
+  const username = parsed.data.username.toLowerCase();
+  const email = parsed.data.email ? parsed.data.email.toLowerCase() : null;
+  const usernameExists = await prisma.user.findUnique({ where: { username } });
+  if (usernameExists) {
+    return NextResponse.json({ error: "That username is already registered." }, { status: 409 });
+  }
+
+  const emailExists = email ? await prisma.user.findUnique({ where: { email } }) : null;
+  if (emailExists) {
     return NextResponse.json({ error: "That email is already registered." }, { status: 409 });
   }
 
@@ -26,7 +33,7 @@ export async function POST(request: Request) {
     data: {
       email,
       name: parsed.data.name,
-      username: email,
+      username,
       passwordHash: await hash(parsed.data.password, 12)
     }
   });

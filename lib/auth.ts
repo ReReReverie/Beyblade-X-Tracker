@@ -27,7 +27,7 @@ const providers: NextAuthOptions["providers"] = [
       const valid = await compare(password, user.passwordHash);
       if (!valid) return null;
 
-      return { id: user.id, email: user.email, name: user.name, image: user.image };
+      return { id: user.id, email: user.email, name: user.name, image: user.image, username: user.username };
     }
   })
 ];
@@ -54,9 +54,10 @@ export const authOptions: NextAuthOptions = {
         token.sub = user.id;
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          select: { role: true }
+          select: { role: true, username: true }
         });
         token.role = dbUser?.role || "USER";
+        token.username = dbUser?.username || null;
       }
       return token;
     },
@@ -64,6 +65,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.sub || "";
         session.user.role = String(token.role || "USER");
+        session.user.username = typeof token.username === "string" ? token.username : null;
       }
       return session;
     }

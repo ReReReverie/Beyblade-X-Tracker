@@ -11,7 +11,7 @@ export default function SignInPage() {
   return (
     <section className="band">
       <h1>Sign in</h1>
-      <p>Use email/password to access your parts, combos, photos, and battles.</p>
+      <p>Use username/password to access your parts, combos, photos, and battles.</p>
       <SignInForm googleEnabled={googleEnabled} />
       <p>
         New here? <Link href="/auth/signup">Create an account</Link>
