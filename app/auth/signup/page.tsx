@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+
+import { Suspense } from "react";
 import { SignUpForm } from "@/components/auth-forms";
 
 export default function SignUpPage() {
@@ -5,7 +8,10 @@ export default function SignUpPage() {
     <section className="band">
       <h1>Create account</h1>
       <p>Start your catalog with measured weights, condition ratings, source labels, and photos.</p>
-      <SignUpForm />
+      <Suspense fallback={null}>
+        <SignUpForm />
+      </Suspense>
     </section>
   );
 }
+

@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
@@ -42,7 +43,11 @@ export async function POST(request: Request) {
           notes: parsed.data.notes
         }
       });
-      return NextResponse.json({ battle });
+      revalidateTag("public-combo-detail");
+      revalidateTag("public-combos");
+      revalidateTag("public-combo-detail");
+    revalidateTag("public-combos");
+    return NextResponse.json({ battle });
     }
 
     if (!parsed.data.comboAId || !parsed.data.comboBId || !parsed.data.winnerId || parsed.data.comboAId === parsed.data.comboBId) {
@@ -79,6 +84,8 @@ export async function POST(request: Request) {
       }
     });
 
+    revalidateTag("public-combo-detail");
+    revalidateTag("public-combos");
     return NextResponse.json({ battle });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
@@ -88,3 +95,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not save battle." }, { status: 500 });
   }
 }
+

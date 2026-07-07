@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { loadingOverlayEventName } from "@/components/loading-overlay-events";
 
 const TRIGGER_SELECTOR = "a[href]";
@@ -10,15 +10,14 @@ export function ButtonLoadingOverlay() {
   const [visible, setVisible] = useState(false);
   const pendingLocation = useRef<string | null>(null);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentLocation = `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
 
   useEffect(() => {
+    const currentLocation = `${window.location.pathname}${window.location.search}`;
     if (pendingLocation.current && pendingLocation.current === currentLocation) {
       pendingLocation.current = null;
       setVisible(false);
     }
-  }, [currentLocation]);
+  }, [pathname]);
 
   useEffect(() => {
     function handleOverlay(event: Event) {

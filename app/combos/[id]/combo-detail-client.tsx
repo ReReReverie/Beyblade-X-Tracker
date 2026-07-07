@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ComboComments } from "@/components/combo-comments";
 import { ComboDetailTabs } from "@/components/combo-detail-tabs";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
-import { formatManufacturer, formatPartType, pct } from "@/lib/format";
+import { formatManufacturer, pct } from "@/lib/format";
 
 type ComboDetailResponse = {
   combo: {
@@ -16,28 +15,28 @@ type ComboDetailResponse = {
     visibility: "PUBLIC" | "PRIVATE";
     owner: { name: string | null; username: string | null } | null;
     parts: Array<{
-      role: "BLADE" | "RATCHET" | "BIT";
+      role: "BLADE" | "RATCHET" | "BIT" | "LOCK_CHIP" | "MAIN_BLADE" | "ASSIST_BLADE" | "OVER_BLADE" | "METAL_BLADE";
       part: {
         id: string;
         name: string;
         manufacturer: "HASBRO" | "TAKARA_TOMY" | "FAKE" | "UNKNOWN";
-        weightGrams: string | number | null;
-        conditionRating: string | number;
+        weightGrams: number | null;
+        conditionRating: number;
         notes: string | null;
         photos: Array<{ url: string }>;
       };
     }>;
-    stars: Array<{ userId: string }>;
-    puts: Array<{ userId: string }>;
     comments: Array<{
       id: string;
       body: string;
       createdAt: string;
       author: { name: string | null; username: string | null };
     }>;
-    wins: Array<{ id: string }>;
-    battlesA: Array<{ id: string }>;
-    battlesB: Array<{ id: string }>;
+    starsCount: number;
+    putsCount: number;
+    winsCount: number;
+    battlesACount: number;
+    battlesBCount: number;
   };
   battleHistory: Array<{
     id: string;
@@ -57,11 +56,11 @@ type ComboDetailResponse = {
   initiallyPut: boolean;
 };
 
-function toBattlePoints(battles: ComboDetailResponse["battleHistory"]) {
-  return battles.map((battle) => ({
-    ...battle,
-    playedAt: new Date(battle.playedAt)
-  }));
+function formatPartRole(role: string) {
+  return role
+    .split("_")
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function comboWeightValue(combo: ComboDetailResponse["combo"]) {
@@ -75,89 +74,10 @@ function comboConditionValue(combo: ComboDetailResponse["combo"]) {
   return Math.round((sum / combo.parts.length) * 10) / 10;
 }
 
-function DetailSkeleton() {
-  return (
-    <div className="combo-detail">
-      <section className="combo-detail__left">
-        <div className="band" aria-hidden="true">
-          <div className="skeleton skeleton--line skeleton--title" style={{ width: "9rem" }} />
-          <div className="skeleton skeleton--line skeleton--title" style={{ width: "70%", marginTop: "1rem" }} />
-          <div className="skeleton skeleton--line" style={{ width: "55%", marginTop: "1rem" }} />
-          <div className="skeleton skeleton--line" style={{ width: "85%", marginTop: "1rem" }} />
-          <div className="skeleton skeleton--button" style={{ marginTop: "1.2rem" }} />
-        </div>
-      </section>
-      <section className="combo-detail__right list" aria-hidden="true">
-        <div className="card skeleton-card">
-          <div className="skeleton skeleton--line skeleton--title" />
-          <div className="skeleton skeleton--chart" />
-        </div>
-        <div className="card skeleton-card">
-          <div className="skeleton skeleton--line skeleton--title" />
-          <div className="skeleton skeleton--line" />
-          <div className="skeleton skeleton--line" />
-        </div>
-        <div className="card skeleton-card">
-          <div className="skeleton skeleton--line skeleton--title" />
-          <div className="skeleton skeleton--line" />
-          <div className="skeleton skeleton--line" />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-export function ComboDetailClient({ comboId }: { comboId: string }) {
-  const [data, setData] = useState<ComboDetailResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadCombo() {
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await fetch(`/api/combos/${comboId}`, {
-          signal: controller.signal,
-          cache: "no-store"
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load combo details.");
-        }
-        const payload = (await response.json()) as ComboDetailResponse;
-        setData(payload);
-      } catch (loadError) {
-        if (loadError instanceof DOMException && loadError.name === "AbortError") return;
-        setError("Unable to load this combo right now.");
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-
-    void loadCombo();
-
-    return () => controller.abort();
-  }, [comboId]);
-
-  if (loading) return <DetailSkeleton />;
-
-  if (error || !data) {
-    return (
-      <div className="list">
-        <p className="meta danger" role="alert">
-          {error || "Combo not found."}
-        </p>
-      </div>
-    );
-  }
-
+export function ComboDetailClient({ data }: { data: ComboDetailResponse }) {
   const combo = data.combo;
-  const wins = combo.wins.length;
-  const total = combo.battlesA.length + combo.battlesB.length;
-  const battleHistory = toBattlePoints(data.battleHistory);
+  const wins = combo.winsCount;
+  const total = combo.battlesACount + combo.battlesBCount;
   const comboWeight = comboWeightValue(combo);
 
   return (
@@ -171,9 +91,9 @@ export function ComboDetailClient({ comboId }: { comboId: string }) {
             {comboWeight !== null ? `${comboWeight.toFixed(2)} g total` : "Weight unavailable"} - Condition {comboConditionValue(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
           </p>
           {data.isOwner ? <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} /> : null}
-          <ComboDetailTabs comboId={combo.id} battles={battleHistory} />
-          <StarButton comboId={combo.id} initialCount={combo.stars.length} initiallyStarred={data.initiallyStarred} />
-          <PutComboButton comboId={combo.id} initialCount={combo.puts.length} initiallyPut={data.initiallyPut} />
+          <ComboDetailTabs comboId={combo.id} battles={data.battleHistory} />
+          <StarButton comboId={combo.id} initialCount={combo.starsCount} initiallyStarred={data.initiallyStarred} />
+          <PutComboButton comboId={combo.id} initialCount={combo.putsCount} initiallyPut={data.initiallyPut} />
           <ComboComments comboId={combo.id} comments={combo.comments} signedIn={data.signedIn} />
         </div>
       </section>
@@ -187,10 +107,10 @@ export function ComboDetailClient({ comboId }: { comboId: string }) {
               <div className="photo" aria-hidden="true" />
             )}
             <div>
-              <span className="tag">{formatPartType(role)}</span>
+              <span className="tag">{formatPartRole(role)}</span>
               <h3>{part.name}</h3>
               <p className="meta">
-                {formatManufacturer(part.manufacturer)} - {Number(part.weightGrams).toFixed(2)} g - Condition {Number(part.conditionRating)}/10
+                {formatManufacturer(part.manufacturer)} - {part.weightGrams !== null ? part.weightGrams.toFixed(2) : "N/A"} g - Condition {part.conditionRating}/10
               </p>
               {part.notes ? <p>{part.notes}</p> : null}
             </div>

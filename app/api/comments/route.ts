@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
     },
     include: { author: { select: { name: true, username: true } } }
   });
+
+  revalidateTag("public-combo-detail");
+  revalidateTag("public-combos");
 
   return NextResponse.json({ comment });
 }

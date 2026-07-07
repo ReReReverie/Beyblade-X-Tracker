@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
+const heartbeatIntervalMs = 300000;
+
 function visitorId() {
   const key = "beyblade-x-visitor-id";
   const existing = localStorage.getItem(key);
@@ -12,13 +14,23 @@ function visitorId() {
   return created;
 }
 
+function recentlyPinged(pathname: string) {
+  const key = `beyblade-x-activity:${pathname}`;
+  const now = Date.now();
+  const last = Number(sessionStorage.getItem(key) || 0);
+  if (now - last < heartbeatIntervalMs) return true;
+  sessionStorage.setItem(key, String(now));
+  return false;
+}
+
 export function ActivityHeartbeat() {
   const pathname = usePathname();
 
   useEffect(() => {
     let timer: number | undefined;
-    async function ping() {
+    async function ping(force = false) {
       if (document.visibilityState !== "visible") return;
+      if (!force && recentlyPinged(pathname)) return;
       await fetch("/api/activity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -26,10 +38,15 @@ export function ActivityHeartbeat() {
       }).catch(() => undefined);
     }
 
-    ping();
-    timer = window.setInterval(ping, 300000); // 5 minutes
+    const idleId = "requestIdleCallback" in window
+      ? window.requestIdleCallback(() => void ping())
+      : undefined;
+    const fallback = idleId === undefined ? window.setTimeout(() => void ping(), 3000) : undefined;
+    timer = window.setInterval(() => void ping(true), heartbeatIntervalMs);
     return () => {
       if (timer) window.clearInterval(timer);
+      if (fallback) window.clearTimeout(fallback);
+      if (idleId !== undefined && "cancelIdleCallback" in window) window.cancelIdleCallback(idleId);
     };
   }, [pathname]);
 

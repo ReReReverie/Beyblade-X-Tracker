@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 type PublicPart = {
@@ -132,7 +133,7 @@ function serializeBattle(battle: { id: string; comboAId: string | null; comboBId
   return { ...battle, playedAt: battle.playedAt.toISOString() };
 }
 
-export async function getPublicHomeData() {
+async function getPublicHomeDataUncached() {
   const combos = await timed("home combos query", () => prisma.combo.findMany({
     where: { visibility: "PUBLIC" },
     select: comboSelect,
@@ -154,7 +155,7 @@ export async function getPublicHomeData() {
   return { combos: publicCombos, battleHistory: battleHistory.map(serializeBattle) };
 }
 
-export async function getPublicCombosOverviewData() {
+async function getPublicCombosOverviewDataUncached() {
   const now = new Date();
   const [combos, decks, activeFeatures] = await Promise.all([
     timed("overview combos query", () => prisma.combo.findMany({
@@ -240,3 +241,14 @@ export async function getPublicCombosOverviewData() {
     battleHistory: battleHistory.map(serializeBattle)
   };
 }
+
+export const getPublicHomeData = unstable_cache(getPublicHomeDataUncached, ["public-home-data"], {
+  revalidate: 300,
+  tags: ["public-home-data", "public-combos"]
+});
+
+export const getPublicCombosOverviewData = unstable_cache(getPublicCombosOverviewDataUncached, ["public-combos-overview-data"], {
+  revalidate: 300,
+  tags: ["public-combos-overview-data", "public-combos"]
+});
+

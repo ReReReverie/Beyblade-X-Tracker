@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -24,5 +25,8 @@ export async function POST(request: Request) {
   }
 
   const count = await prisma.comboStar.count({ where: { comboId: parsed.data.comboId } });
+  revalidateTag("public-combo-detail");
+  revalidateTag("public-combos");
+
   return NextResponse.json({ starred: !existing, count });
 }

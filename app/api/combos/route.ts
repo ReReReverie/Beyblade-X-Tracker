@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { PartRole, PartType } from "@prisma/client";
@@ -170,6 +171,8 @@ export async function POST(request: Request) {
       include: { parts: { include: { part: true }, orderBy: { role: "asc" } } }
     });
 
+    revalidateTag("public-combo-detail");
+    revalidateTag("public-combos");
     return NextResponse.json({ combo });
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -189,6 +192,8 @@ export async function PATCH(request: Request) {
   if (!combo) return NextResponse.json({ error: "Combo not found." }, { status: 404 });
 
   const updated = await prisma.combo.update({ where: { id: parsed.data.id }, data: { visibility: parsed.data.visibility } });
+  revalidateTag("public-combo-detail");
+  revalidateTag("public-combos");
   return NextResponse.json({ combo: updated });
 }
 
@@ -232,5 +237,8 @@ export async function DELETE(request: Request) {
   }
 
   await prisma.combo.delete({ where: { id } });
+  revalidateTag("public-combo-detail");
+  revalidateTag("public-combos");
   return NextResponse.json({ ok: true });
 }
+
