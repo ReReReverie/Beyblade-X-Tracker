@@ -1,6 +1,9 @@
-export const dynamic = "force-dynamic";
 import { CombosClient } from "./combos-client";
+import { getPublicCombosOverviewData } from "@/lib/public-data";
 
-export default function CombosPage() {
-  return <CombosClient />;
+export const revalidate = 300;
+
+export default async function CombosPage() {
+  const data = await getPublicCombosOverviewData();
+  return <CombosClient initialData={data} />;
 }

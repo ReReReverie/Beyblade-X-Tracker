@@ -1,10 +1,10 @@
 "use client";
 
-import type { BattlePoint } from "@/lib/battle-history";
+import { battleTime, type BattlePoint } from "@/lib/battle-history";
 import { pct } from "@/lib/format";
 
 function recentWindow(points: BattlePoint[]) {
-  const sorted = [...points].sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime());
+  const sorted = [...points].sort((a, b) => battleTime(a) - battleTime(b));
   const slots = sorted.length <= 1 ? 10 : Math.min(Math.ceil(sorted.length / 10) * 10, 60);
   return { points: sorted.slice(-slots), slots };
 }

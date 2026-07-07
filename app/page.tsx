@@ -1,100 +1,25 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { WRGraph } from "@/components/wr-graph";
 import { StarButton } from "@/components/star-button";
 import { battlesForCombo } from "@/lib/battle-history";
 import { formatManufacturer, pct } from "@/lib/format";
+import { getPublicHomeData, type PublicCombo } from "@/lib/public-data";
 
-type HomeCombo = {
-  id: string;
-  name: string;
-  owner: { name: string | null; username: string | null };
-  stars: Array<{ userId: string }>;
-  initiallyStarred: boolean;
-  wins: Array<{ id: string }>;
-  battlesA: Array<{ id: string }>;
-  battlesB: Array<{ id: string }>;
-  parts: Array<{ part: { id: string; name: string; manufacturer: "HASBRO" | "TAKARA_TOMY" | "FAKE" | "UNKNOWN"; weightGrams: string | number | null; conditionRating: string | number } }>;
-};
+export const revalidate = 300;
 
-type HomeBattle = {
-  id: string;
-  comboAId: string | null;
-  comboBId: string | null;
-  winnerId: string | null;
-  playedAt: string;
-};
-
-type HomeResponse = {
-  combos: HomeCombo[];
-  battleHistory: HomeBattle[];
-};
-
-function toBattlePoints(battles: HomeBattle[]) {
-  return battles.map((battle) => ({
-    ...battle,
-    playedAt: new Date(battle.playedAt)
-  }));
-}
-
-function comboWeightValue(combo: HomeCombo) {
+function comboWeightValue(combo: PublicCombo) {
   if (combo.parts.some((entry) => entry.part.weightGrams == null)) return null;
   return combo.parts.reduce((total, entry) => total + Number(entry.part.weightGrams), 0);
 }
 
-function comboConditionValue(combo: HomeCombo) {
+function comboConditionValue(combo: PublicCombo) {
   if (combo.parts.length === 0) return 0;
   const sum = combo.parts.reduce((total, entry) => total + Number(entry.part.conditionRating), 0);
   return Math.round((sum / combo.parts.length) * 10) / 10;
 }
 
-function SkeletonCard() {
-  return (
-    <div className="card skeleton-card" aria-hidden="true">
-      <div className="skeleton skeleton--line skeleton--title" />
-      <div className="skeleton skeleton--line" />
-      <div className="skeleton skeleton--chart" />
-      <div className="skeleton skeleton--button" />
-    </div>
-  );
-}
-
-export default function Home() {
-  const [data, setData] = useState<HomeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadHome() {
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await fetch("/api/home", { signal: controller.signal });
-        if (!response.ok) {
-          throw new Error("Failed to load home data.");
-        }
-        const payload = (await response.json()) as HomeResponse;
-        setData(payload);
-      } catch (loadError) {
-        if (loadError instanceof DOMException && loadError.name === "AbortError") return;
-        setError("Unable to load recent builds right now.");
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-
-    void loadHome();
-
-    return () => controller.abort();
-  }, []);
-
-  const combos = data?.combos ?? [];
-  const battleHistory = data ? toBattlePoints(data.battleHistory) : [];
+export default async function Home() {
+  const { combos, battleHistory } = await getPublicHomeData();
 
   return (
     <div className="list">
@@ -113,21 +38,11 @@ export default function Home() {
       </section>
       <section>
         <h2>Recent public builds</h2>
-        {loading ? (
-          <div className="grid">
-            {Array.from({ length: 6 }, (_, index) => (
-              <SkeletonCard key={index} />
-            ))}
-          </div>
-        ) : error ? (
-          <p className="meta danger" role="alert">
-            {error}
-          </p>
-        ) : combos.length ? (
+        {combos.length ? (
           <div className="grid">
             {combos.map((combo) => {
-              const wins = combo.wins.length;
-              const total = combo.battlesA.length + combo.battlesB.length;
+              const wins = combo.winsCount;
+              const total = combo.battlesACount + combo.battlesBCount;
               const weight = comboWeightValue(combo);
               const condition = comboConditionValue(combo);
               return (
@@ -143,7 +58,7 @@ export default function Home() {
                   </p>
                   <StarButton
                     comboId={combo.id}
-                    initialCount={combo.stars.length}
+                    initialCount={combo.starsCount}
                     initiallyStarred={combo.initiallyStarred}
                   />
                 </Link>
