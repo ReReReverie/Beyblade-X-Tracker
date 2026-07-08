@@ -177,7 +177,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </section>
       <nav className="dashboard-tabs" aria-label="Create sections">
         {tabLinks.map((tab) => (
-          <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={`/dashboard?tab=${tab.id}`} key={tab.id}>
+          <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={`/dashboard?tab=${tab.id}`} prefetch={false} key={tab.id}>
             {tab.label}
           </Link>
         ))}
@@ -298,3 +298,4 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     </div>
   );
 }
+

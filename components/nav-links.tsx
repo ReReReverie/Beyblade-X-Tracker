@@ -37,14 +37,14 @@ export function NavLinks() {
 
   return (
     <div className="navlinks">
-      <Link className="button secondary" href="/combos">
+      <Link className="button secondary" href="/combos" prefetch={false}>
         Public combos
       </Link>
       {signedIn ? (
         <>
-          {session?.user?.role === "ADMIN" ? <Link className="button secondary" href="/admin">Admin</Link> : null}
-          <Link className="button secondary" href="/profile">Profile</Link>
-          <Link className="button" href="/dashboard">Create</Link>
+          {session?.user?.role === "ADMIN" ? <Link className="button secondary" href="/admin" prefetch={false}>Admin</Link> : null}
+          <Link className="button secondary" href="/profile" prefetch={false}>Profile</Link>
+          <Link className="button" href="/dashboard" prefetch={false}>Create</Link>
           <SessionControls />
         </>
       ) : loaded ? (
@@ -55,4 +55,5 @@ export function NavLinks() {
     </div>
   );
 }
+
 

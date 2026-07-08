@@ -81,9 +81,9 @@ export function ButtonLoadingOverlay() {
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;
 
-      const destination = `${url.pathname}${url.search}`;
-      if (destination === `${window.location.pathname}${window.location.search}`) return;
+      if (url.pathname === window.location.pathname) return;
 
+      const destination = `${url.pathname}${url.search}`;
       scheduleOverlayShow(destination);
     }
 
@@ -127,3 +127,4 @@ export function ButtonLoadingOverlay() {
     </div>
   );
 }
+

@@ -48,7 +48,7 @@ export default async function AdminPage() {
         <h1>Site control</h1>
         <p>Track active visitors, pending requests, bug reports, and recent paths.</p>
         <div className="navlinks">
-          <Link className="button secondary" href="/admin/tickets">Tickets</Link>
+          <Link className="button secondary" href="/admin/tickets" prefetch={false}>Tickets</Link>
         </div>
       </section>
       <section className="tabs admin-layout">
@@ -108,3 +108,4 @@ export default async function AdminPage() {
     </div>
   );
 }
+
