@@ -6,16 +6,16 @@ import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/componen
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
 import { formatManufacturer, formatVisibility, pct } from "@/lib/format";
+import type { ProfileTab } from "@/lib/profile-data";
 import { comboCondition, comboWeight } from "@/lib/stats";
 
-type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
 type ProfilePayload = {
   user: { id: string; name?: string | null; username?: string | null; email?: string | null; image?: string | null; bio?: string | null };
   stats: { comboCount: number; putCount: number; careerCount: number };
-  myCombos: any[];
-  starredCombos: any[];
-  putCombos: any[];
-  careerEntries: any[];
+  myCombos?: any[];
+  starredCombos?: any[];
+  putCombos?: any[];
+  careerEntries?: any[];
 };
 
 const tabs: Array<{ id: ProfileTab; label: string }> = [
@@ -26,16 +26,16 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "career", label: "Career" }
 ];
 
-const cacheVersion = "v1";
+const cacheVersion = "v2";
 const ttlMs = 5 * 60 * 1000;
 
-function cacheKey(userId: string) {
-  return `profile-cache:${cacheVersion}:${userId}`;
+function cacheKey(userId: string, tab: ProfileTab) {
+  return `profile-cache:${cacheVersion}:${userId}:${tab}`;
 }
 
-function readCache(userId: string): ProfilePayload | null {
+function readCache(userId: string, tab: ProfileTab): ProfilePayload | null {
   try {
-    const raw = sessionStorage.getItem(cacheKey(userId));
+    const raw = sessionStorage.getItem(cacheKey(userId, tab));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { savedAt: number; data: ProfilePayload };
     if (Date.now() - parsed.savedAt > ttlMs) return null;
@@ -45,10 +45,30 @@ function readCache(userId: string): ProfilePayload | null {
   }
 }
 
-function writeCache(userId: string, data: ProfilePayload) {
+function writeCache(userId: string, tab: ProfileTab, data: ProfilePayload) {
   try {
-    sessionStorage.setItem(cacheKey(userId), JSON.stringify({ savedAt: Date.now(), data }));
+    sessionStorage.setItem(cacheKey(userId, tab), JSON.stringify({ savedAt: Date.now(), data }));
   } catch {}
+}
+
+function mergeProfilePayload(current: ProfilePayload, incoming: ProfilePayload): ProfilePayload {
+  return {
+    ...current,
+    user: { ...current.user, ...incoming.user },
+    stats: incoming.stats || current.stats,
+    myCombos: incoming.myCombos ?? current.myCombos,
+    starredCombos: incoming.starredCombos ?? current.starredCombos,
+    putCombos: incoming.putCombos ?? current.putCombos,
+    careerEntries: incoming.careerEntries ?? current.careerEntries
+  };
+}
+
+function hasTabData(data: ProfilePayload, tab: ProfileTab) {
+  if (tab === "overview") return true;
+  if (tab === "posts") return Boolean(data.myCombos);
+  if (tab === "starred") return Boolean(data.starredCombos);
+  if (tab === "lineup") return Boolean(data.putCombos);
+  return Boolean(data.careerEntries);
 }
 
 function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; empty: string }) {
@@ -90,26 +110,27 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
   const userId = initialData.user.id;
 
   useEffect(() => {
-    writeCache(userId, initialData);
-  }, [initialData, userId]);
+    writeCache(userId, initialTab, initialData);
+  }, [initialData, initialTab, userId]);
 
   async function selectTab(tab: ProfileTab) {
     setActiveTab(tab);
     window.history.replaceState(null, "", `/profile?tab=${tab}`);
-    const cached = readCache(userId);
+    if (hasTabData(data, tab)) return;
+
+    const cached = readCache(userId, tab);
     if (cached) {
-      setData(cached);
+      setData((current) => mergeProfilePayload(current, cached));
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/profile", { cache: "no-store" });
+      const response = await fetch(`/api/profile?tab=${tab}`, { cache: "no-store" });
       if (!response.ok) throw new Error("Could not load profile data.");
       const fresh = (await response.json()) as ProfilePayload;
-      fresh.stats.careerCount = fresh.careerEntries.length;
-      setData(fresh);
-      writeCache(userId, fresh);
+      setData((current) => mergeProfilePayload(current, fresh));
+      writeCache(userId, tab, fresh);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load profile data.");
     } finally {
@@ -157,15 +178,15 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
           </div>
         </section>
       ) : null}
-      {activeTab === "posts" ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos} userId={userId} empty="You have not created any combos yet." /></section> : null}
-      {activeTab === "starred" ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos} userId={userId} empty="You have not starred any combos yet." /></section> : null}
-      {activeTab === "lineup" ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : null}
+      {activeTab === "posts" ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : null}
+      {activeTab === "starred" ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : null}
+      {activeTab === "lineup" ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : null}
       {activeTab === "career" ? (
         <section className="tabs">
           <div className="card"><CareerEntryForm /></div>
           <div className="list">
             <h2>Career</h2>
-            {data.careerEntries.length ? data.careerEntries.map((entry) => (
+            {data.careerEntries?.length ? data.careerEntries.map((entry) => (
               <div className="card career-row" key={entry.id}>
                 <div>
                   <span className="tag">{new Date(entry.playedAt).toLocaleDateString()}</span>
