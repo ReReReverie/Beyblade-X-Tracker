@@ -36,16 +36,56 @@ async function getProfileStats(userId: string) {
   return { comboCount, putCount, careerCount };
 }
 
+function getTabData(userId: string, tab: ProfileTab) {
+  if (tab === "posts") {
+    return prisma.combo.findMany({
+      where: { ownerId: userId },
+      include: profileComboInclude(userId),
+      orderBy: { createdAt: "desc" },
+      take: 60
+    });
+  }
+
+  if (tab === "starred") {
+    return prisma.combo.findMany({
+      where: { stars: { some: { userId } }, visibility: "PUBLIC" },
+      include: profileComboInclude(userId, true),
+      orderBy: { createdAt: "desc" },
+      take: 60
+    });
+  }
+
+  if (tab === "lineup") {
+    return prisma.combo.findMany({
+      where: { puts: { some: { userId } }, visibility: "PUBLIC" },
+      include: profileComboInclude(userId, true),
+      orderBy: { createdAt: "desc" },
+      take: 60
+    });
+  }
+
+  if (tab === "career") {
+    return prisma.careerEntry.findMany({
+      where: { userId },
+      orderBy: { playedAt: "desc" },
+      take: 100
+    });
+  }
+
+  return Promise.resolve([]);
+}
+
 export async function getProfilePayload(userId: string, tab: ProfileTab, fallbackRole?: string) {
-  const [user, stats] = await Promise.all([
+  const [user, stats, tabData] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, username: true, email: true, role: true, image: true, bio: true }
     }),
-    getProfileStats(userId)
+    getProfileStats(userId),
+    getTabData(userId, tab)
   ]);
 
-  const payload = {
+  return {
     user: {
       id: userId,
       name: user?.name,
@@ -56,40 +96,9 @@ export async function getProfilePayload(userId: string, tab: ProfileTab, fallbac
       bio: user?.bio
     },
     stats,
-    myCombos: undefined as unknown[] | undefined,
-    starredCombos: undefined as unknown[] | undefined,
-    putCombos: undefined as unknown[] | undefined,
-    careerEntries: undefined as unknown[] | undefined
+    myCombos: tab === "posts" ? tabData : undefined,
+    starredCombos: tab === "starred" ? tabData : undefined,
+    putCombos: tab === "lineup" ? tabData : undefined,
+    careerEntries: tab === "career" ? tabData : undefined
   };
-
-  if (tab === "posts") {
-    payload.myCombos = await prisma.combo.findMany({
-      where: { ownerId: userId },
-      include: profileComboInclude(userId),
-      orderBy: { createdAt: "desc" },
-      take: 60
-    });
-  } else if (tab === "starred") {
-    payload.starredCombos = await prisma.combo.findMany({
-      where: { stars: { some: { userId } }, visibility: "PUBLIC" },
-      include: profileComboInclude(userId, true),
-      orderBy: { createdAt: "desc" },
-      take: 60
-    });
-  } else if (tab === "lineup") {
-    payload.putCombos = await prisma.combo.findMany({
-      where: { puts: { some: { userId } }, visibility: "PUBLIC" },
-      include: profileComboInclude(userId, true),
-      orderBy: { createdAt: "desc" },
-      take: 60
-    });
-  } else if (tab === "career") {
-    payload.careerEntries = await prisma.careerEntry.findMany({
-      where: { userId },
-      orderBy: { playedAt: "desc" },
-      take: 100
-    });
-  }
-
-  return payload;
 }

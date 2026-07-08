@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/components/profile-forms";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
@@ -107,6 +107,7 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
   const [data, setData] = useState<ProfilePayload>(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const requestRef = useRef<AbortController | null>(null);
   const userId = initialData.user.id;
 
   useEffect(() => {
@@ -123,18 +124,26 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
       setData((current) => mergeProfilePayload(current, cached));
       return;
     }
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`/api/profile?tab=${tab}`, { cache: "no-store" });
+      const response = await fetch(`/api/profile?tab=${tab}`, { cache: "no-store", signal: controller.signal });
       if (!response.ok) throw new Error("Could not load profile data.");
       const fresh = (await response.json()) as ProfilePayload;
+      if (controller.signal.aborted) return;
       setData((current) => mergeProfilePayload(current, fresh));
       writeCache(userId, tab, fresh);
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Could not load profile data.");
     } finally {
-      setLoading(false);
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
   }
 
