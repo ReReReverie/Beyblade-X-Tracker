@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { ProfileClient } from "./profile-client";
 import { authOptions } from "@/lib/auth";
-import { parseProfileTab } from "@/lib/profile-data";
+import { getProfilePayload, parseProfileTab } from "@/lib/profile-data";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +12,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
 
   const params = await searchParams;
   const activeTab = parseProfileTab(params.tab);
-  const initialData = {
-    user: {
-      id: session.user.id,
-      name: session.user.name,
-      username: session.user.username,
-      email: session.user.email,
-      image: session.user.image
-    },
-    stats: { comboCount: 0, putCount: 0, careerCount: 0 }
-  };
+  const initialData = await getProfilePayload(session.user.id, activeTab, session.user.role);
 
-  return <ProfileClient initialData={initialData} initialTab={activeTab} sessionName={session.user.name || session.user.username || session.user.email} initialReady={false} />;
+  return <ProfileClient initialData={initialData} initialTab={activeTab} sessionName={session.user.name || session.user.username || session.user.email} />;
 }
+

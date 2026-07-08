@@ -168,6 +168,39 @@ export function ProfileClient({
     return () => requestRef.current?.abort();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function preloadTabs() {
+      for (const tab of tabs) {
+        if (cancelled || tab.id === initialTab || loadedTabs.has(tab.id)) continue;
+
+        const cached = readCache(userId, tab.id);
+        if (cached) {
+          setData((current) => mergeProfilePayload(current, cached));
+          setLoadedTabs((current) => new Set(current).add(tab.id));
+          continue;
+        }
+
+        try {
+          const response = await fetch(`/api/profile?tab=${tab.id}&partial=1`, { cache: "no-store" });
+          if (!response.ok || cancelled) continue;
+          const fresh = (await response.json()) as ProfileTabPayload;
+          if (cancelled) continue;
+          setData((current) => mergeProfilePayload(current, fresh));
+          setLoadedTabs((current) => new Set(current).add(tab.id));
+          writeCache(userId, tab.id, fresh);
+        } catch {}
+      }
+    }
+
+    const timer = window.setTimeout(() => void preloadTabs(), 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [initialTab, userId]);
+
   async function selectTab(tab: ProfileTab) {
     setActiveTab(tab);
     window.history.replaceState(null, "", `/profile?tab=${tab}`);
