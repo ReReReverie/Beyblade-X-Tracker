@@ -21,11 +21,12 @@ export async function GET() {
         owner: { select: { name: true, username: true } },
         parts: { include: { part: true }, orderBy: { role: "asc" } },
         photos: { take: 1, orderBy: { createdAt: "desc" } },
-        stars: { select: { id: true } },
+        stars: { where: { userId }, select: { userId: true } },
         puts: { where: { userId }, select: { id: true } },
         wins: { select: { id: true } },
         battlesA: { select: { id: true } },
-        battlesB: { select: { id: true } }
+        battlesB: { select: { id: true } },
+        _count: { select: { stars: true, puts: true, wins: true, battlesA: true, battlesB: true } }
       },
       orderBy: { createdAt: "desc" },
       take: 60
@@ -36,11 +37,20 @@ export async function GET() {
         owner: { select: { name: true, username: true } },
         parts: { include: { part: true }, orderBy: { role: "asc" } },
         photos: { where: { visibility: "PUBLIC" }, take: 1 },
-        stars: { select: { id: true, userId: true } },
+        stars: { where: { userId }, select: { userId: true } },
         puts: { where: { userId }, select: { id: true } },
         wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
         battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
-        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
+        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } },
+        _count: {
+          select: {
+            stars: true,
+            puts: true,
+            wins: { where: { visibility: "PUBLIC" } },
+            battlesA: { where: { visibility: "PUBLIC" } },
+            battlesB: { where: { visibility: "PUBLIC" } }
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
       take: 60
@@ -51,11 +61,20 @@ export async function GET() {
         owner: { select: { name: true, username: true } },
         parts: { include: { part: true }, orderBy: { role: "asc" } },
         photos: { where: { visibility: "PUBLIC" }, take: 1 },
-        stars: { select: { id: true, userId: true } },
+        stars: { where: { userId }, select: { userId: true } },
         puts: { where: { userId }, select: { id: true } },
         wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
         battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
-        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
+        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } },
+        _count: {
+          select: {
+            stars: true,
+            puts: true,
+            wins: { where: { visibility: "PUBLIC" } },
+            battlesA: { where: { visibility: "PUBLIC" } },
+            battlesB: { where: { visibility: "PUBLIC" } }
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
       take: 60
@@ -75,9 +94,10 @@ export async function GET() {
     },
     stats: {
       comboCount: myCombos.length,
-      starsAcrossMyCombos: myCombos.reduce((total, combo) => total + combo.stars.length, 0),
+      starsAcrossMyCombos: myCombos.reduce((total, combo) => total + combo._count.stars, 0),
       starredCount: starredCombos.length,
-      putCount: putCombos.length
+      putCount: putCombos.length,
+      careerCount: careerEntries.length
     },
     myCombos,
     starredCombos,
@@ -157,3 +177,5 @@ export async function DELETE(request: Request) {
   await prisma.careerEntry.deleteMany({ where: { id, userId: session.user.id } });
   return NextResponse.json({ ok: true });
 }
+
+

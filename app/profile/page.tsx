@@ -1,17 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/components/profile-forms";
-import { PutComboButton } from "@/components/put-combo-button";
-import { StarButton } from "@/components/star-button";
+import { ProfileClient } from "./profile-client";
 import { authOptions } from "@/lib/auth";
-import { formatManufacturer, formatVisibility, pct } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { comboCondition, comboWeight } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
-type ProfileCombo = Awaited<ReturnType<typeof getProfileCombos>>[number];
 type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
 
 function profileComboInclude(userId: string, publicOnly = false) {
@@ -34,174 +28,48 @@ function profileComboInclude(userId: string, publicOnly = false) {
   };
 }
 
-async function getProfileCombos(userId: string) {
-  return prisma.combo.findMany({
-    where: { ownerId: userId },
-    include: profileComboInclude(userId),
-    orderBy: { createdAt: "desc" },
-    take: 60
-  });
-}
+async function getProfilePayload(userId: string) {
+  const [user, myCombos, starredCombos, putCombos, careerEntries] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, username: true, email: true, image: true, bio: true } }),
+    prisma.combo.findMany({ where: { ownerId: userId }, include: profileComboInclude(userId), orderBy: { createdAt: "desc" }, take: 60 }),
+    prisma.combo.findMany({ where: { stars: { some: { userId } }, visibility: "PUBLIC" }, include: profileComboInclude(userId, true), orderBy: { createdAt: "desc" }, take: 60 }),
+    prisma.combo.findMany({ where: { puts: { some: { userId } }, visibility: "PUBLIC" }, include: profileComboInclude(userId, true), orderBy: { createdAt: "desc" }, take: 60 }),
+    prisma.careerEntry.findMany({ where: { userId }, orderBy: { playedAt: "desc" }, take: 100 })
+  ]);
 
-function ComboList({ combos, userId, empty }: { combos: ProfileCombo[]; userId: string; empty: string }) {
-  if (!combos.length) return <p className="meta">{empty}</p>;
-
-  return (
-    <div className="grid">
-      {combos.map((combo) => {
-        const wins = combo._count.wins;
-        const total = combo._count.battlesA + combo._count.battlesB;
-        const comboWeightValue = comboWeight(combo);
-        return (
-          <div className="card" key={combo.id}>
-            {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
-            <Link href={`/combos/${combo.id}`}><h3>{combo.name}</h3></Link>
-            <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
-            <p className="meta">
-              {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
-            </p>
-            <p className="meta">
-              {combo.parts.map((entry) => `${entry.part.name} (${formatManufacturer(entry.part.manufacturer)})`).join(" / ")}
-            </p>
-            <StarButton
-              comboId={combo.id}
-              initialCount={combo._count.stars}
-              initiallyStarred={combo.stars.some((star) => star.userId === userId)}
-            />
-            <PutComboButton
-              comboId={combo.id}
-              initialCount={combo._count.puts}
-              initiallyPut={combo.puts.some((put) => put.userId === userId)}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
+  return {
+    user: {
+      id: userId,
+      name: user?.name,
+      username: user?.username,
+      email: user?.email,
+      image: user?.image,
+      bio: user?.bio
+    },
+    stats: {
+      comboCount: myCombos.length,
+      putCount: putCombos.length,
+      careerCount: careerEntries.length
+    },
+    myCombos,
+    starredCombos,
+    putCombos,
+    careerEntries
+  };
 }
 
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/auth/signin");
 
-  const userId = session.user.id;
   const params = await searchParams;
   const requestedTab = params.tab;
   const activeTab: ProfileTab =
     requestedTab === "posts" || requestedTab === "starred" || requestedTab === "lineup" || requestedTab === "career"
       ? requestedTab
       : "overview";
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true, image: true, bio: true } });
-  let myCombos: ProfileCombo[] = [];
-  let starredCombos: ProfileCombo[] = [];
-  let putCombos: ProfileCombo[] = [];
-  let careerEntries: Awaited<ReturnType<typeof prisma.careerEntry.findMany>> = [];
-  let snapshot = { combos: 0, puts: 0, career: 0 };
 
-  if (activeTab === "overview") {
-    const [combosCount, putsCount, careerCount] = await Promise.all([
-      prisma.combo.count({ where: { ownerId: userId } }),
-      prisma.comboPut.count({ where: { userId } }),
-      prisma.careerEntry.count({ where: { userId } })
-    ]);
-    snapshot = { combos: combosCount, puts: putsCount, career: careerCount };
-  } else if (activeTab === "posts") {
-    myCombos = await getProfileCombos(userId);
-  } else if (activeTab === "starred") {
-    starredCombos = await prisma.combo.findMany({
-      where: { stars: { some: { userId } }, visibility: "PUBLIC" },
-      include: profileComboInclude(userId, true),
-      orderBy: { createdAt: "desc" },
-      take: 60
-    });
-  } else if (activeTab === "lineup") {
-    putCombos = await prisma.combo.findMany({
-      where: { puts: { some: { userId } }, visibility: "PUBLIC" },
-      include: profileComboInclude(userId, true),
-      orderBy: { createdAt: "desc" },
-      take: 60
-    });
-  } else {
-    careerEntries = await prisma.careerEntry.findMany({ where: { userId }, orderBy: { playedAt: "desc" }, take: 100 });
-  }
+  const initialData = await getProfilePayload(session.user.id);
 
-  const tabLinks: Array<{ id: ProfileTab; label: string }> = [
-    { id: "overview", label: "Overview" },
-    { id: "posts", label: "Posts" },
-    { id: "starred", label: "Starred" },
-    { id: "lineup", label: "Lineup" },
-    { id: "career", label: "Career" }
-  ];
-
-  return (
-    <div className="list">
-      <section className="band">
-        <span className="tag tag--filled">Profile</span>
-        <div className="profile-head">
-          {user?.image ? <img className="profile-avatar" src={user.image} alt="" /> : <div className="profile-avatar" aria-hidden="true" />}
-          <div>
-            <h1>{user?.name || user?.username || session.user.name || session.user.username || session.user.email || "My profile"}</h1>
-            {user?.bio ? <p>{user.bio}</p> : <p className="meta">Add a short description to introduce your Beyblade career.</p>}
-          </div>
-        </div>
-      </section>
-      <nav className="dashboard-tabs" aria-label="Profile sections">
-        {tabLinks.map((tab) => (
-          <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={`/profile?tab=${tab.id}`} key={tab.id}>
-            {tab.label}
-          </Link>
-        ))}
-      </nav>
-      {activeTab === "overview" ? (
-        <section className="tabs">
-          <div className="card"><ProfileEditForm name={user?.name} image={user?.image} bio={user?.bio} /></div>
-          <div className="list">
-            <div className="card">
-              <h2>Snapshot</h2>
-              <p>{snapshot.combos} posted combo{snapshot.combos === 1 ? "" : "s"} - {snapshot.puts} lineup put{snapshot.puts === 1 ? "" : "s"}</p>
-              <p>{snapshot.career} tournament record{snapshot.career === 1 ? "" : "s"} logged.</p>
-            </div>
-            <div className="card">
-              <h2>Account data</h2>
-              <p className="danger">Inactive accounts may be deleted after 90 days. Export your data if you want a backup.</p>
-              <a className="button secondary" href="/api/profile/export" download>
-                Export my data
-              </a>
-            </div>
-          </div>
-        </section>
-      ) : null}
-      {activeTab === "posts" ? <section className="list">
-        <h2>My posts / combos</h2>
-        <ComboList combos={myCombos} userId={userId} empty="You have not created any combos yet." />
-      </section> : null}
-      {activeTab === "starred" ? <section className="list">
-        <h2>Combos I starred</h2>
-        <ComboList combos={starredCombos} userId={userId} empty="You have not starred any combos yet." />
-      </section> : null}
-      {activeTab === "lineup" ? <section className="list">
-        <h2>Combos in my lineup</h2>
-        <ComboList combos={putCombos} userId={userId} empty="Use Put combo on a public combo to add it here." />
-      </section> : null}
-      {activeTab === "career" ? (
-        <section className="tabs">
-          <div className="card"><CareerEntryForm /></div>
-          <div className="list">
-            <h2>Career</h2>
-            {careerEntries.length ? careerEntries.map((entry) => (
-              <div className="card career-row" key={entry.id}>
-                <div>
-                  <span className="tag">{entry.playedAt.toLocaleDateString()}</span>
-                  <h3>{entry.tournamentName}</h3>
-                  <p className="meta">{entry.wins}-{entry.losses}{entry.draws ? `-${entry.draws}` : ""}{entry.placement ? ` - ${entry.placement}` : ""}</p>
-                  {entry.notes ? <p>{entry.notes}</p> : null}
-                </div>
-                <CareerDeleteButton id={entry.id} />
-              </div>
-            )) : <p className="meta">No tournament records yet.</p>}
-          </div>
-        </section>
-      ) : null}
-    </div>
-  );
+  return <ProfileClient initialData={initialData} initialTab={activeTab} sessionName={session.user.name || session.user.username || session.user.email} />;
 }

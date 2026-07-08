@@ -15,6 +15,15 @@ async function sendJson(url: string, method: string, data?: unknown) {
   }
 }
 
+function clearProfileCache() {
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith("profile-cache:")) sessionStorage.removeItem(key);
+    }
+  } catch {}
+}
+
 export function ProfileEditForm({ name, image, bio }: { name?: string | null; image?: string | null; bio?: string | null }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -32,6 +41,7 @@ export function ProfileEditForm({ name, image, bio }: { name?: string | null; im
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error || "Save failed.");
       }
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -63,6 +73,7 @@ export function CareerEntryForm() {
     try {
       await sendJson("/api/profile", "POST", Object.fromEntries(form));
       formElement.reset();
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -95,6 +106,7 @@ export function CareerDeleteButton({ id }: { id: string }) {
     setError("");
     try {
       await sendJson(`/api/profile?id=${encodeURIComponent(id)}`, "DELETE");
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed.");
@@ -108,3 +120,4 @@ export function CareerDeleteButton({ id }: { id: string }) {
     </div>
   );
 }
+
