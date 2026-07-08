@@ -1197,3 +1197,40 @@ textarea {
     justify-content: flex-start;
   }
 }
+
+.profile-shell {
+  min-height: clamp(188px, 24vw, 260px);
+}
+
+.profile-head {
+  min-height: clamp(118px, 16vw, 168px);
+}
+
+.profile-head__body {
+  min-width: 0;
+}
+
+.profile-head__body h1 {
+  overflow-wrap: anywhere;
+}
+
+.profile-avatar {
+  flex: 0 0 auto;
+  height: clamp(92px, 14vw, 150px);
+}
+
+.profile-tabs {
+  min-height: 52px;
+}
+
+.profile-tab-loading .card {
+  min-height: 220px;
+}
+
+.profile-snapshot {
+  min-height: 154px;
+}
+
+.career-row {
+  min-height: 164px;
+}

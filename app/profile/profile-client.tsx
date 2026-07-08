@@ -26,7 +26,7 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "career", label: "Career" }
 ];
 
-const cacheVersion = "v2";
+const cacheVersion = "v3";
 const ttlMs = 5 * 60 * 1000;
 
 function cacheKey(userId: string, tab: ProfileTab) {
@@ -63,14 +63,6 @@ function mergeProfilePayload(current: ProfilePayload, incoming: ProfilePayload):
   };
 }
 
-function hasTabData(data: ProfilePayload, tab: ProfileTab) {
-  if (tab === "overview") return true;
-  if (tab === "posts") return Boolean(data.myCombos);
-  if (tab === "starred") return Boolean(data.starredCombos);
-  if (tab === "lineup") return Boolean(data.putCombos);
-  return Boolean(data.careerEntries);
-}
-
 function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; empty: string }) {
   if (!combos.length) return <p className="meta">{empty}</p>;
 
@@ -102,28 +94,42 @@ function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; e
   );
 }
 
-export function ProfileClient({ initialData, initialTab, sessionName }: { initialData: ProfilePayload; initialTab: ProfileTab; sessionName?: string | null }) {
+function LoadingRows() {
+  return (
+    <div className="list profile-tab-loading" aria-live="polite">
+      <p className="meta">Loading profile data...</p>
+      <div className="card" aria-hidden="true" />
+    </div>
+  );
+}
+
+export function ProfileClient({
+  initialData,
+  initialTab,
+  sessionName,
+  initialReady = true
+}: {
+  initialData: ProfilePayload;
+  initialTab: ProfileTab;
+  sessionName?: string | null;
+  initialReady?: boolean;
+}) {
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
   const [data, setData] = useState<ProfilePayload>(initialData);
-  const [loading, setLoading] = useState(false);
+  const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(() => new Set(initialReady ? [initialTab] : []));
+  const [loading, setLoading] = useState(!initialReady);
   const [error, setError] = useState("");
   const requestRef = useRef<AbortController | null>(null);
   const userId = initialData.user.id;
 
-  useEffect(() => {
-    writeCache(userId, initialTab, initialData);
-  }, [initialData, initialTab, userId]);
-
-  async function selectTab(tab: ProfileTab) {
-    setActiveTab(tab);
-    window.history.replaceState(null, "", `/profile?tab=${tab}`);
-    if (hasTabData(data, tab)) return;
-
+  async function loadTab(tab: ProfileTab) {
     const cached = readCache(userId, tab);
     if (cached) {
       setData((current) => mergeProfilePayload(current, cached));
+      setLoadedTabs((current) => new Set(current).add(tab));
       return;
     }
+
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -135,6 +141,7 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
       const fresh = (await response.json()) as ProfilePayload;
       if (controller.signal.aborted) return;
       setData((current) => mergeProfilePayload(current, fresh));
+      setLoadedTabs((current) => new Set(current).add(tab));
       writeCache(userId, tab, fresh);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -147,21 +154,38 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
     }
   }
 
+  useEffect(() => {
+    if (initialReady) writeCache(userId, initialTab, initialData);
+  }, [initialData, initialReady, initialTab, userId]);
+
+  useEffect(() => {
+    if (!loadedTabs.has(activeTab)) void loadTab(activeTab);
+    return () => requestRef.current?.abort();
+  }, []);
+
+  async function selectTab(tab: ProfileTab) {
+    setActiveTab(tab);
+    window.history.replaceState(null, "", `/profile?tab=${tab}`);
+    if (loadedTabs.has(tab)) return;
+    await loadTab(tab);
+  }
+
+  const activeTabLoaded = loadedTabs.has(activeTab);
   const title = useMemo(() => data.user.name || data.user.username || sessionName || data.user.email || "My profile", [data, sessionName]);
 
   return (
     <div className="list">
-      <section className="band">
+      <section className="band profile-shell">
         <span className="tag tag--filled">Profile</span>
         <div className="profile-head">
           {data.user.image ? <img className="profile-avatar" src={data.user.image} alt="" /> : <div className="profile-avatar" aria-hidden="true" />}
-          <div>
+          <div className="profile-head__body">
             <h1>{title}</h1>
             {data.user.bio ? <p>{data.user.bio}</p> : <p className="meta">Add a short description to introduce your Beyblade career.</p>}
           </div>
         </div>
       </section>
-      <nav className="dashboard-tabs" aria-label="Profile sections">
+      <nav className="dashboard-tabs profile-tabs" aria-label="Profile sections">
         {tabs.map((tab) => (
           <button className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} type="button" onClick={() => selectTab(tab.id)} key={tab.id}>
             {tab.label}
@@ -169,45 +193,49 @@ export function ProfileClient({ initialData, initialTab, sessionName }: { initia
         ))}
       </nav>
       {error ? <p className="danger">{error}</p> : null}
-      {loading ? <p className="meta">Loading...</p> : null}
+      {loading && activeTabLoaded ? <p className="meta">Loading...</p> : null}
       {activeTab === "overview" ? (
-        <section className="tabs">
-          <div className="card"><ProfileEditForm name={data.user.name} image={data.user.image} bio={data.user.bio} /></div>
-          <div className="list">
-            <div className="card">
-              <h2>Snapshot</h2>
-              <p>{data.stats.comboCount} posted combo{data.stats.comboCount === 1 ? "" : "s"} - {data.stats.putCount} lineup put{data.stats.putCount === 1 ? "" : "s"}</p>
-              <p>{data.stats.careerCount} tournament record{data.stats.careerCount === 1 ? "" : "s"} logged.</p>
-            </div>
-            <div className="card">
-              <h2>Account data</h2>
-              <p className="danger">Inactive accounts may be deleted after 90 days. Export your data if you want a backup.</p>
-              <a className="button secondary" href="/api/profile/export" download>Export my data</a>
-            </div>
-          </div>
-        </section>
-      ) : null}
-      {activeTab === "posts" ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : null}
-      {activeTab === "starred" ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : null}
-      {activeTab === "lineup" ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : null}
-      {activeTab === "career" ? (
-        <section className="tabs">
-          <div className="card"><CareerEntryForm /></div>
-          <div className="list">
-            <h2>Career</h2>
-            {data.careerEntries?.length ? data.careerEntries.map((entry) => (
-              <div className="card career-row" key={entry.id}>
-                <div>
-                  <span className="tag">{new Date(entry.playedAt).toLocaleDateString()}</span>
-                  <h3>{entry.tournamentName}</h3>
-                  <p className="meta">{entry.wins}-{entry.losses}{entry.draws ? `-${entry.draws}` : ""}{entry.placement ? ` - ${entry.placement}` : ""}</p>
-                  {entry.notes ? <p>{entry.notes}</p> : null}
-                </div>
-                <CareerDeleteButton id={entry.id} />
+        activeTabLoaded ? (
+          <section className="tabs">
+            <div className="card"><ProfileEditForm name={data.user.name} image={data.user.image} bio={data.user.bio} /></div>
+            <div className="list">
+              <div className="card profile-snapshot">
+                <h2>Snapshot</h2>
+                <p>{data.stats.comboCount} posted combo{data.stats.comboCount === 1 ? "" : "s"} - {data.stats.putCount} lineup put{data.stats.putCount === 1 ? "" : "s"}</p>
+                <p>{data.stats.careerCount} tournament record{data.stats.careerCount === 1 ? "" : "s"} logged.</p>
               </div>
-            )) : <p className="meta">No tournament records yet.</p>}
-          </div>
-        </section>
+              <div className="card">
+                <h2>Account data</h2>
+                <p className="danger">Inactive accounts may be deleted after 90 days. Export your data if you want a backup.</p>
+                <a className="button secondary" href="/api/profile/export" download>Export my data</a>
+              </div>
+            </div>
+          </section>
+        ) : <LoadingRows />
+      ) : null}
+      {activeTab === "posts" ? activeTabLoaded ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : <LoadingRows /> : null}
+      {activeTab === "starred" ? activeTabLoaded ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : <LoadingRows /> : null}
+      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : <LoadingRows /> : null}
+      {activeTab === "career" ? (
+        activeTabLoaded ? (
+          <section className="tabs">
+            <div className="card"><CareerEntryForm /></div>
+            <div className="list">
+              <h2>Career</h2>
+              {data.careerEntries?.length ? data.careerEntries.map((entry) => (
+                <div className="card career-row" key={entry.id}>
+                  <div>
+                    <span className="tag">{new Date(entry.playedAt).toLocaleDateString()}</span>
+                    <h3>{entry.tournamentName}</h3>
+                    <p className="meta">{entry.wins}-{entry.losses}{entry.draws ? `-${entry.draws}` : ""}{entry.placement ? ` - ${entry.placement}` : ""}</p>
+                    {entry.notes ? <p>{entry.notes}</p> : null}
+                  </div>
+                  <CareerDeleteButton id={entry.id} />
+                </div>
+              )) : <p className="meta">No tournament records yet.</p>}
+            </div>
+          </section>
+        ) : <LoadingRows />
       ) : null}
     </div>
   );
