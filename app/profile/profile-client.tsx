@@ -18,6 +18,11 @@ type ProfilePayload = {
   careerEntries?: any[];
 };
 
+type ProfileTabPayload = Partial<Omit<ProfilePayload, "user" | "stats">> & {
+  user?: Partial<ProfilePayload["user"]>;
+  stats?: ProfilePayload["stats"];
+};
+
 const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "overview", label: "Overview" },
   { id: "posts", label: "Posts" },
@@ -33,11 +38,11 @@ function cacheKey(userId: string, tab: ProfileTab) {
   return `profile-cache:${cacheVersion}:${userId}:${tab}`;
 }
 
-function readCache(userId: string, tab: ProfileTab): ProfilePayload | null {
+function readCache(userId: string, tab: ProfileTab): ProfileTabPayload | null {
   try {
     const raw = sessionStorage.getItem(cacheKey(userId, tab));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { savedAt: number; data: ProfilePayload };
+    const parsed = JSON.parse(raw) as { savedAt: number; data: ProfileTabPayload };
     if (Date.now() - parsed.savedAt > ttlMs) return null;
     return parsed.data;
   } catch {
@@ -45,16 +50,16 @@ function readCache(userId: string, tab: ProfileTab): ProfilePayload | null {
   }
 }
 
-function writeCache(userId: string, tab: ProfileTab, data: ProfilePayload) {
+function writeCache(userId: string, tab: ProfileTab, data: ProfileTabPayload) {
   try {
     sessionStorage.setItem(cacheKey(userId, tab), JSON.stringify({ savedAt: Date.now(), data }));
   } catch {}
 }
 
-function mergeProfilePayload(current: ProfilePayload, incoming: ProfilePayload): ProfilePayload {
+function mergeProfilePayload(current: ProfilePayload, incoming: ProfileTabPayload): ProfilePayload {
   return {
     ...current,
-    user: { ...current.user, ...incoming.user },
+    user: incoming.user ? { ...current.user, ...incoming.user } : current.user,
     stats: incoming.stats || current.stats,
     myCombos: incoming.myCombos ?? current.myCombos,
     starredCombos: incoming.starredCombos ?? current.starredCombos,
@@ -77,7 +82,7 @@ function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; e
         return (
           <div className="card" key={combo.id}>
             {combo.photos?.[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
-            <Link href={`/combos/${combo.id}`}><h3>{combo.name}</h3></Link>
+            <Link href={`/combos/${combo.id}`} prefetch={false}><h3>{combo.name}</h3></Link>
             <p className="meta">Creator: {combo.owner?.name || combo.owner?.username || "Unknown"}</p>
             <p className="meta">
               {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
@@ -136,9 +141,9 @@ export function ProfileClient({
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`/api/profile?tab=${tab}`, { cache: "no-store", signal: controller.signal });
+      const response = await fetch(`/api/profile?tab=${tab}&partial=1`, { cache: "no-store", signal: controller.signal });
       if (!response.ok) throw new Error("Could not load profile data.");
-      const fresh = (await response.json()) as ProfilePayload;
+      const fresh = (await response.json()) as ProfileTabPayload;
       if (controller.signal.aborted) return;
       setData((current) => mergeProfilePayload(current, fresh));
       setLoadedTabs((current) => new Set(current).add(tab));
@@ -240,3 +245,4 @@ export function ProfileClient({
     </div>
   );
 }
+

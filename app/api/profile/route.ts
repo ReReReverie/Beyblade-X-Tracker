@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { uploadImage } from "@/lib/cloudinary";
-import { getProfilePayload, parseProfileTab } from "@/lib/profile-data";
+import { getProfilePayload, getProfileTabPayload, parseProfileTab } from "@/lib/profile-data";
 import { prisma } from "@/lib/prisma";
 import { careerEntrySchema, profileUpdateSchema } from "@/lib/validation";
 
@@ -10,8 +10,10 @@ export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Sign in to view your profile." }, { status: 401 });
 
-  const tab = parseProfileTab(new URL(request.url).searchParams.get("tab"));
-  return NextResponse.json(await getProfilePayload(session.user.id, tab, session.user.role));
+  const url = new URL(request.url);
+  const tab = parseProfileTab(url.searchParams.get("tab"));
+  const partial = url.searchParams.get("partial") === "1";
+  return NextResponse.json(partial ? await getProfileTabPayload(session.user.id, tab) : await getProfilePayload(session.user.id, tab, session.user.role));
 }
 
 export async function PATCH(request: Request) {
@@ -85,5 +87,4 @@ export async function DELETE(request: Request) {
   await prisma.careerEntry.deleteMany({ where: { id, userId: session.user.id } });
   return NextResponse.json({ ok: true });
 }
-
 

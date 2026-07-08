@@ -75,6 +75,17 @@ function getTabData(userId: string, tab: ProfileTab) {
   return Promise.resolve([]);
 }
 
+export async function getProfileTabPayload(userId: string, tab: ProfileTab) {
+  const tabData = await getTabData(userId, tab);
+
+  return {
+    myCombos: tab === "posts" ? tabData : undefined,
+    starredCombos: tab === "starred" ? tabData : undefined,
+    putCombos: tab === "lineup" ? tabData : undefined,
+    careerEntries: tab === "career" ? tabData : undefined
+  };
+}
+
 export async function getProfilePayload(userId: string, tab: ProfileTab, fallbackRole?: string) {
   const [user, stats, tabData] = await Promise.all([
     prisma.user.findUnique({
@@ -102,3 +113,4 @@ export async function getProfilePayload(userId: string, tab: ProfileTab, fallbac
     careerEntries: tab === "career" ? tabData : undefined
   };
 }
+
