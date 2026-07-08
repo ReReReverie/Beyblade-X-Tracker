@@ -106,8 +106,9 @@ export function CombosClient({ initialData }: { initialData: OverviewResponse })
           })}
         </div>
       ) : (
-        <p className="meta">No public combos yet. Import parts from the catalog in your dashboard, build a combo, set visibility to Public, and it will appear here.</p>
+        <p className="meta">No public combos yet. Import parts from the catalog in Create, build a combo, set visibility to Public, and it will appear here.</p>
       )}
     </div>
   );
 }
+

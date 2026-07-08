@@ -342,7 +342,7 @@ export async function POST(request: Request) {
       combo,
       remaining: usage.remaining,
       message: combo.created
-        ? `Created ${combo.name}.${combo.createdParts.length ? ` Also created missing parts: ${combo.createdParts.join(", ")}.` : ""} Add images manually from Dashboard > Log > Add photo.`
+        ? `Created ${combo.name}.${combo.createdParts.length ? ` Also created missing parts: ${combo.createdParts.join(", ")}.` : ""} Add images manually from Create > Log > Add photo.`
         : `That combo already exists: ${combo.name}. You can now log battles by typing: ${combo.name} vs another combo 1-0.`
     });
   } catch (error) {
@@ -357,3 +357,4 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
+

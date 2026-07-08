@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
+import { applyCacheHeaders, privateCacheControl, publicCacheControl } from "@/lib/cache";
 import { getComboViewerState, getPrivateComboDetailData, getPublicComboDetailData } from "@/lib/combo-detail-data";
 
 export const revalidate = 300;
@@ -18,10 +18,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const viewerState = await getComboViewerState(data.combo.id, userId);
-
-  return applyCacheHeaders(NextResponse.json({
+  const response = NextResponse.json({
     ...data,
     ...viewerState,
     isOwner: data.combo.ownerId === userId
-  }), publicCacheControl, publicData ? undefined : "Cookie");
+  });
+
+  return applyCacheHeaders(response, userId ? privateCacheControl : publicCacheControl, userId ? "Cookie" : undefined);
 }

@@ -181,7 +181,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div className="dashboard">
       <section className="dashboard-head">
         <div>
-          <span className="tag tag--filled">Dashboard</span>
+          <span className="tag tag--filled">Create</span>
           <h1>Garage</h1>
           {session.user.role === "ADMIN" ? <p className="meta">Signed in as admin.</p> : null}
         </div>
@@ -191,7 +191,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div><strong>{battlesCount}</strong><span>Battles</span></div>
         </div>
       </section>
-      <nav className="dashboard-tabs" aria-label="Dashboard sections">
+      <nav className="dashboard-tabs" aria-label="Create sections">
         {tabLinks.map((tab) => (
           <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={`/dashboard?tab=${tab.id}`} key={tab.id}>
             {tab.label}

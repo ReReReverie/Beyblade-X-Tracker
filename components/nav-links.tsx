@@ -44,7 +44,7 @@ export function NavLinks() {
         <>
           {session?.user?.role === "ADMIN" ? <Link className="button secondary" href="/admin">Admin</Link> : null}
           <Link className="button secondary" href="/profile">Profile</Link>
-          <Link className="button" href="/dashboard">Dashboard</Link>
+          <Link className="button" href="/dashboard">Create</Link>
           <SessionControls />
         </>
       ) : loaded ? (
@@ -55,3 +55,4 @@ export function NavLinks() {
     </div>
   );
 }
+
