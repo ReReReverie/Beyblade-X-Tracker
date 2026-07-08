@@ -967,8 +967,9 @@ textarea {
   background: var(--base);
   border: var(--border);
   box-shadow: 5px 5px 0 var(--ink);
+  height: 128px;
   object-fit: cover;
-  width: clamp(92px, 14vw, 150px);
+  width: 128px;
 }
 
 .profile-avatar:empty::before {
@@ -1216,7 +1217,6 @@ textarea {
 
 .profile-avatar {
   flex: 0 0 auto;
-  height: clamp(92px, 14vw, 150px);
 }
 
 .profile-tabs {
@@ -1234,3 +1234,4 @@ textarea {
 .career-row {
   min-height: 164px;
 }
+

@@ -1,28 +1,64 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { MutableRefObject } from "react";
 import { usePathname } from "next/navigation";
 import { loadingOverlayEventName } from "@/components/loading-overlay-events";
 
 const TRIGGER_SELECTOR = "a[href]";
+const NAVIGATION_OVERLAY_DELAY_MS = 250;
+const MAX_OVERLAY_MS = 4500;
 
 export function ButtonLoadingOverlay() {
   const [visible, setVisible] = useState(false);
   const pendingLocation = useRef<string | null>(null);
+  const showTimer = useRef<number | null>(null);
+  const hideTimer = useRef<number | null>(null);
   const pathname = usePathname();
+
+  function clearTimer(timer: MutableRefObject<number | null>) {
+    if (timer.current === null) return;
+    window.clearTimeout(timer.current);
+    timer.current = null;
+  }
+
+  function hideOverlay() {
+    clearTimer(showTimer);
+    clearTimer(hideTimer);
+    pendingLocation.current = null;
+    setVisible(false);
+  }
+
+  function scheduleOverlayShow(destination: string) {
+    clearTimer(showTimer);
+    clearTimer(hideTimer);
+    pendingLocation.current = destination;
+    showTimer.current = window.setTimeout(() => {
+      showTimer.current = null;
+      setVisible(true);
+      hideTimer.current = window.setTimeout(hideOverlay, MAX_OVERLAY_MS);
+    }, NAVIGATION_OVERLAY_DELAY_MS);
+  }
+
+  function showOverlayNow() {
+    clearTimer(showTimer);
+    clearTimer(hideTimer);
+    setVisible(true);
+    hideTimer.current = window.setTimeout(hideOverlay, MAX_OVERLAY_MS);
+  }
 
   useEffect(() => {
     const currentLocation = `${window.location.pathname}${window.location.search}`;
     if (pendingLocation.current && pendingLocation.current === currentLocation) {
-      pendingLocation.current = null;
-      setVisible(false);
+      hideOverlay();
     }
   }, [pathname]);
 
   useEffect(() => {
     function handleOverlay(event: Event) {
       const detail = (event as CustomEvent<{ visible?: boolean }>).detail;
-      if (typeof detail?.visible === "boolean") setVisible(detail.visible);
+      if (detail?.visible === true) showOverlayNow();
+      if (detail?.visible === false) hideOverlay();
     }
 
     function showOverlay(event: MouseEvent) {
@@ -40,8 +76,7 @@ export function ButtonLoadingOverlay() {
       const destination = `${url.pathname}${url.search}`;
       if (destination === `${window.location.pathname}${window.location.search}`) return;
 
-      pendingLocation.current = destination;
-      setVisible(true);
+      scheduleOverlayShow(destination);
     }
 
     document.addEventListener("click", showOverlay, true);
@@ -49,7 +84,7 @@ export function ButtonLoadingOverlay() {
     return () => {
       document.removeEventListener("click", showOverlay, true);
       window.removeEventListener(loadingOverlayEventName, handleOverlay);
-      pendingLocation.current = null;
+      hideOverlay();
     };
   }, []);
 
