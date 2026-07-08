@@ -166,6 +166,7 @@ model PartCatalog {
   @@index([role])
   @@index([series])
   @@index([metaTier])
+  @@index([metaTier, type, name])
 }
 
 model Part {
@@ -194,10 +195,12 @@ model Part {
   comboParts  ComboPart[]
 
   @@index([ownerId, type])
+  @@index([ownerId, createdAt])
   @@index([catalogPartId])
   @@index([role])
   @@index([series])
   @@index([visibility])
+  @@index([visibility, createdAt])
   @@index([manufacturer])
   @@index([createdAt])
 }
@@ -216,6 +219,8 @@ model PartPhoto {
   part Part @relation(fields: [partId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
+  @@index([ownerId, createdAt])
+  @@index([partId, visibility, createdAt])
   @@index([visibility])
 }
 
@@ -247,7 +252,10 @@ model Combo {
   deckSlots  DeckSlot[]
 
   @@index([ownerId])
+  @@index([ownerId, createdAt])
+  @@index([ownerId, bitPartId, ratchetPartId])
   @@index([visibility])
+  @@index([visibility, createdAt])
   @@index([createdAt])
 }
 
@@ -267,7 +275,9 @@ model Deck {
   wins     Battle[]   @relation("BattleDeckWinner")
 
   @@index([ownerId])
+  @@index([ownerId, createdAt])
   @@index([visibility])
+  @@index([visibility, createdAt])
   @@index([createdAt])
 }
 
@@ -297,6 +307,7 @@ model ComboStar {
   @@unique([comboId, userId])
   @@index([comboId])
   @@index([userId])
+  @@index([userId, comboId])
   @@index([createdAt])
 }
 
@@ -312,6 +323,7 @@ model ComboPut {
   @@unique([comboId, userId])
   @@index([comboId])
   @@index([userId])
+  @@index([userId, comboId])
   @@index([createdAt])
 }
 
@@ -345,6 +357,7 @@ model FeaturedCombo {
   combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
 
   @@index([slot, startsAt, endsAt])
+  @@index([startsAt, endsAt])
   @@index([comboId])
   @@index([endsAt])
 }
@@ -391,6 +404,7 @@ model VisitorActivity {
 
   @@index([lastSeen])
   @@index([userId])
+  @@index([userId, lastSeen])
 }
 
 model Report {
@@ -407,7 +421,9 @@ model Report {
   reporter User? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
 
   @@index([status])
+  @@index([status, createdAt])
   @@index([kind])
+  @@index([kind, status, createdAt])
   @@index([createdAt])
 }
 
@@ -438,6 +454,8 @@ model ComboPhoto {
   combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
+  @@index([ownerId, createdAt])
+  @@index([comboId, visibility, createdAt])
   @@index([visibility])
 }
 
@@ -467,16 +485,28 @@ model Battle {
   deckWinner Deck? @relation("BattleDeckWinner", fields: [deckWinnerId], references: [id], onDelete: Restrict)
 
   @@index([ownerId])
+  @@index([ownerId, createdAt])
+  @@index([ownerId, playedAt])
   @@index([format])
   @@index([visibility])
+  @@index([visibility, playedAt])
   @@index([comboAId])
+  @@index([comboAId, visibility, playedAt])
   @@index([comboBId])
+  @@index([comboBId, visibility, playedAt])
   @@index([winnerId])
+  @@index([winnerId, visibility])
   @@index([deckAId])
+  @@index([deckAId, visibility])
   @@index([deckBId])
+  @@index([deckBId, visibility])
   @@index([deckWinnerId])
+  @@index([deckWinnerId, visibility])
   @@index([playedAt])
 }
+
+
+
 
 
 

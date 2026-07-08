@@ -16,6 +16,12 @@ export const dynamic = "force-dynamic";
 
 type DashboardTab = "log" | "parts" | "combos" | "history" | "profile";
 
+const dashboardComboInclude = {
+  parts: { include: { part: true }, orderBy: { role: "asc" as const } },
+  photos: { take: 1, orderBy: { createdAt: "desc" as const } },
+  _count: { select: { wins: true, battlesA: true, battlesB: true } }
+};
+
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/auth/signin");
@@ -39,6 +45,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   let decks: any[] = [];
   let battles: any[] = [];
   let catalogParts: any[] = [];
+  let followedCount = 0;
 
   if (activeTab === "log") {
     [parts, combos, decks, catalogParts] = await Promise.all([
@@ -50,13 +57,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       }),
       prisma.combo.findMany({
         where: { ownerId: userId },
-        include: {
-          parts: { include: { part: true }, orderBy: { role: "asc" } },
-          photos: { take: 1, orderBy: { createdAt: "desc" } },
-          wins: { select: { id: true } },
-          battlesA: { select: { id: true } },
-          battlesB: { select: { id: true } }
-        },
+        select: { id: true, name: true },
         orderBy: { createdAt: "desc" },
         take: 40
       }),
@@ -81,13 +82,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     [combos, decks, battles] = await Promise.all([
       prisma.combo.findMany({
         where: { ownerId: userId },
-        include: {
-          parts: { include: { part: true }, orderBy: { role: "asc" } },
-          photos: { take: 1, orderBy: { createdAt: "desc" } },
-          wins: { select: { id: true } },
-          battlesA: { select: { id: true } },
-          battlesB: { select: { id: true } }
-        },
+        include: dashboardComboInclude,
         orderBy: { createdAt: "desc" },
         take: 40
       }),
@@ -99,7 +94,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       }),
       prisma.battle.findMany({
         where: { ownerId: userId },
-        include: { comboA: true, comboB: true, winner: true, deckA: true, deckB: true, deckWinner: true },
+        select: { id: true, comboAId: true, comboBId: true, winnerId: true, playedAt: true },
         orderBy: { playedAt: "desc" },
         take: 240
       })
@@ -109,38 +104,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       where: { ownerId: userId },
       include: { comboA: true, comboB: true, winner: true, deckA: true, deckB: true, deckWinner: true },
       orderBy: { playedAt: "desc" },
-      take: 240
+      take: 30
     });
   } else if (activeTab === "profile") {
-    [followedCombos, combos] = await Promise.all([
+    [followedCombos, combos, followedCount] = await Promise.all([
       prisma.combo.findMany({
         where: {
           visibility: "PUBLIC",
           stars: { some: { userId } },
           NOT: { ownerId: userId }
         },
-        include: {
-          parts: { include: { part: true }, orderBy: { role: "asc" } },
-          photos: { take: 1, orderBy: { createdAt: "desc" } },
-          wins: { select: { id: true } },
-          battlesA: { select: { id: true } },
-          battlesB: { select: { id: true } }
-        },
+        include: dashboardComboInclude,
         orderBy: { createdAt: "desc" },
         take: 40
       }),
       prisma.combo.findMany({
         where: { ownerId: userId },
-        include: {
-          parts: { include: { part: true }, orderBy: { role: "asc" } },
-          photos: { take: 1, orderBy: { createdAt: "desc" } },
-          wins: { select: { id: true } },
-          battlesA: { select: { id: true } },
-          battlesB: { select: { id: true } }
-        },
+        select: { id: true, name: true },
         orderBy: { createdAt: "desc" },
         take: 40
-      })
+      }),
+      prisma.comboStar.count({ where: { userId, combo: { visibility: "PUBLIC", NOT: { ownerId: userId } } } })
     ]);
   }
 
@@ -228,8 +212,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <h2>Your combos</h2>
             <div className="compact-grid">
               {combos.map((combo) => {
-                const wins = combo.wins.length;
-                const total = combo.battlesA.length + combo.battlesB.length;
+                const wins = combo._count.wins;
+                const total = combo._count.battlesA + combo._count.battlesB;
                 const comboWeightValue = comboWeight(combo);
                 return (
                   <CollapsibleComboCard comboId={combo.id} battles={battlesForCombo(combo.id, battles)} key={combo.id}>
@@ -263,7 +247,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <section>
           <h2>Recent battles</h2>
           <div className="list">
-            {battles.slice(0, 30).map((battle) => (
+            {battles.map((battle) => (
               <div className="card" key={battle.id}>
                 <strong>
                   {battle.format === "THREE_V_THREE"
@@ -283,18 +267,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div className="card">
             <h2>Profile</h2>
             <p className="meta">{session.user.name || session.user.username || session.user.email || "Signed in user"}</p>
-            <p>{combos.length} posted combo{combos.length === 1 ? "" : "s"} - {followedCombos.length} followed combo{followedCombos.length === 1 ? "" : "s"}</p>
+            <p>{combosCount} posted combo{combosCount === 1 ? "" : "s"} - {followedCount} followed combo{followedCount === 1 ? "" : "s"}</p>
           </div>
           <section>
             <h2>Followed combos</h2>
             {followedCombos.length ? (
               <div className="grid">
                 {followedCombos.map((combo) => {
-                  const wins = combo.wins.length;
-                  const total = combo.battlesA.length + combo.battlesB.length;
+                  const wins = combo._count.wins;
+                  const total = combo._count.battlesA + combo._count.battlesB;
                   const comboWeightValue = comboWeight(combo);
                   return (
-                    <CollapsibleComboCard comboId={combo.id} battles={battlesForCombo(combo.id, battles)} key={combo.id}>
+                    <CollapsibleComboCard comboId={combo.id} battles={[]} key={combo.id}>
                       {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
                       <h3>{combo.name}</h3>
                       <p className="meta">
@@ -314,4 +298,3 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     </div>
   );
 }
-

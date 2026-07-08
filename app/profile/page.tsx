@@ -14,19 +14,30 @@ export const dynamic = "force-dynamic";
 type ProfileCombo = Awaited<ReturnType<typeof getProfileCombos>>[number];
 type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
 
+function profileComboInclude(userId: string, publicOnly = false) {
+  const publicWhere = publicOnly ? { visibility: "PUBLIC" as const } : undefined;
+  return {
+    owner: { select: { name: true, username: true } },
+    parts: { include: { part: true }, orderBy: { role: "asc" as const } },
+    photos: { where: publicWhere, take: 1, orderBy: { createdAt: "desc" as const } },
+    stars: { where: { userId }, select: { userId: true } },
+    puts: { where: { userId }, select: { userId: true } },
+    _count: {
+      select: {
+        stars: true,
+        puts: true,
+        wins: publicOnly ? { where: { visibility: "PUBLIC" as const } } : true,
+        battlesA: publicOnly ? { where: { visibility: "PUBLIC" as const } } : true,
+        battlesB: publicOnly ? { where: { visibility: "PUBLIC" as const } } : true
+      }
+    }
+  };
+}
+
 async function getProfileCombos(userId: string) {
   return prisma.combo.findMany({
     where: { ownerId: userId },
-    include: {
-      owner: { select: { name: true, username: true } },
-      parts: { include: { part: true }, orderBy: { role: "asc" } },
-      photos: { take: 1, orderBy: { createdAt: "desc" } },
-      stars: { select: { userId: true } },
-      puts: { select: { userId: true } },
-      wins: { select: { id: true } },
-      battlesA: { select: { id: true } },
-      battlesB: { select: { id: true } }
-    },
+    include: profileComboInclude(userId),
     orderBy: { createdAt: "desc" },
     take: 60
   });
@@ -38,8 +49,8 @@ function ComboList({ combos, userId, empty }: { combos: ProfileCombo[]; userId: 
   return (
     <div className="grid">
       {combos.map((combo) => {
-        const wins = combo.wins.length;
-        const total = combo.battlesA.length + combo.battlesB.length;
+        const wins = combo._count.wins;
+        const total = combo._count.battlesA + combo._count.battlesB;
         const comboWeightValue = comboWeight(combo);
         return (
           <div className="card" key={combo.id}>
@@ -54,12 +65,12 @@ function ComboList({ combos, userId, empty }: { combos: ProfileCombo[]; userId: 
             </p>
             <StarButton
               comboId={combo.id}
-              initialCount={combo.stars.length}
+              initialCount={combo._count.stars}
               initiallyStarred={combo.stars.some((star) => star.userId === userId)}
             />
             <PutComboButton
               comboId={combo.id}
-              initialCount={combo.puts.length}
+              initialCount={combo._count.puts}
               initiallyPut={combo.puts.some((put) => put.userId === userId)}
             />
           </div>
@@ -80,41 +91,40 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     requestedTab === "posts" || requestedTab === "starred" || requestedTab === "lineup" || requestedTab === "career"
       ? requestedTab
       : "overview";
-  const [user, myCombos, starredCombos, putCombos, careerEntries] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true, image: true, bio: true } }),
-    getProfileCombos(userId),
-    prisma.combo.findMany({
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true, image: true, bio: true } });
+  let myCombos: ProfileCombo[] = [];
+  let starredCombos: ProfileCombo[] = [];
+  let putCombos: ProfileCombo[] = [];
+  let careerEntries: Awaited<ReturnType<typeof prisma.careerEntry.findMany>> = [];
+  let snapshot = { combos: 0, puts: 0, career: 0 };
+
+  if (activeTab === "overview") {
+    const [combosCount, putsCount, careerCount] = await Promise.all([
+      prisma.combo.count({ where: { ownerId: userId } }),
+      prisma.comboPut.count({ where: { userId } }),
+      prisma.careerEntry.count({ where: { userId } })
+    ]);
+    snapshot = { combos: combosCount, puts: putsCount, career: careerCount };
+  } else if (activeTab === "posts") {
+    myCombos = await getProfileCombos(userId);
+  } else if (activeTab === "starred") {
+    starredCombos = await prisma.combo.findMany({
       where: { stars: { some: { userId } }, visibility: "PUBLIC" },
-      include: {
-        owner: { select: { name: true, username: true } },
-        parts: { include: { part: true }, orderBy: { role: "asc" } },
-        photos: { where: { visibility: "PUBLIC" }, take: 1 },
-        stars: { select: { userId: true } },
-        puts: { select: { userId: true } },
-        wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
-        battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
-        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
-      },
+      include: profileComboInclude(userId, true),
       orderBy: { createdAt: "desc" },
       take: 60
-    }),
-    prisma.combo.findMany({
+    });
+  } else if (activeTab === "lineup") {
+    putCombos = await prisma.combo.findMany({
       where: { puts: { some: { userId } }, visibility: "PUBLIC" },
-      include: {
-        owner: { select: { name: true, username: true } },
-        parts: { include: { part: true }, orderBy: { role: "asc" } },
-        photos: { where: { visibility: "PUBLIC" }, take: 1 },
-        stars: { select: { userId: true } },
-        puts: { select: { userId: true } },
-        wins: { where: { visibility: "PUBLIC" }, select: { id: true } },
-        battlesA: { where: { visibility: "PUBLIC" }, select: { id: true } },
-        battlesB: { where: { visibility: "PUBLIC" }, select: { id: true } }
-      },
+      include: profileComboInclude(userId, true),
       orderBy: { createdAt: "desc" },
       take: 60
-    }),
-    prisma.careerEntry.findMany({ where: { userId }, orderBy: { playedAt: "desc" }, take: 100 })
-  ]);
+    });
+  } else {
+    careerEntries = await prisma.careerEntry.findMany({ where: { userId }, orderBy: { playedAt: "desc" }, take: 100 });
+  }
+
   const tabLinks: Array<{ id: ProfileTab; label: string }> = [
     { id: "overview", label: "Overview" },
     { id: "posts", label: "Posts" },
@@ -148,8 +158,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           <div className="list">
             <div className="card">
               <h2>Snapshot</h2>
-              <p>{myCombos.length} posted combo{myCombos.length === 1 ? "" : "s"} - {putCombos.length} lineup put{putCombos.length === 1 ? "" : "s"}</p>
-              <p>{careerEntries.length} tournament record{careerEntries.length === 1 ? "" : "s"} logged.</p>
+              <p>{snapshot.combos} posted combo{snapshot.combos === 1 ? "" : "s"} - {snapshot.puts} lineup put{snapshot.puts === 1 ? "" : "s"}</p>
+              <p>{snapshot.career} tournament record{snapshot.career === 1 ? "" : "s"} logged.</p>
             </div>
             <div className="card">
               <h2>Account data</h2>
