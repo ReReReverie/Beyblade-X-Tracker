@@ -7,7 +7,7 @@ import { loadingOverlayEventName } from "@/components/loading-overlay-events";
 
 const TRIGGER_SELECTOR = "a[href]";
 const NAVIGATION_OVERLAY_DELAY_MS = 250;
-const MAX_OVERLAY_MS = 4500;
+const MAX_OVERLAY_MS = 1500;
 
 export function ButtonLoadingOverlay() {
   const [visible, setVisible] = useState(false);
@@ -29,6 +29,13 @@ export function ButtonLoadingOverlay() {
     setVisible(false);
   }
 
+  function hideIfNavigationReached() {
+    const currentLocation = `${window.location.pathname}${window.location.search}`;
+    if (!pendingLocation.current || pendingLocation.current === currentLocation) {
+      hideOverlay();
+    }
+  }
+
   function scheduleOverlayShow(destination: string) {
     clearTimer(showTimer);
     clearTimer(hideTimer);
@@ -43,18 +50,19 @@ export function ButtonLoadingOverlay() {
   function showOverlayNow() {
     clearTimer(showTimer);
     clearTimer(hideTimer);
+    pendingLocation.current = null;
     setVisible(true);
     hideTimer.current = window.setTimeout(hideOverlay, MAX_OVERLAY_MS);
   }
 
   useEffect(() => {
-    const currentLocation = `${window.location.pathname}${window.location.search}`;
-    if (pendingLocation.current && pendingLocation.current === currentLocation) {
-      hideOverlay();
-    }
+    hideIfNavigationReached();
   }, [pathname]);
 
   useEffect(() => {
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
     function handleOverlay(event: Event) {
       const detail = (event as CustomEvent<{ visible?: boolean }>).detail;
       if (detail?.visible === true) showOverlayNow();
@@ -79,11 +87,31 @@ export function ButtonLoadingOverlay() {
       scheduleOverlayShow(destination);
     }
 
+    function handleHistoryChange() {
+      window.setTimeout(hideIfNavigationReached, 0);
+    }
+
+    window.history.pushState = function pushState(...args) {
+      const result = originalPushState.apply(this, args);
+      handleHistoryChange();
+      return result;
+    };
+
+    window.history.replaceState = function replaceState(...args) {
+      const result = originalReplaceState.apply(this, args);
+      handleHistoryChange();
+      return result;
+    };
+
     document.addEventListener("click", showOverlay, true);
+    window.addEventListener("popstate", handleHistoryChange);
     window.addEventListener(loadingOverlayEventName, handleOverlay);
     return () => {
       document.removeEventListener("click", showOverlay, true);
+      window.removeEventListener("popstate", handleHistoryChange);
       window.removeEventListener(loadingOverlayEventName, handleOverlay);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
       hideOverlay();
     };
   }, []);
