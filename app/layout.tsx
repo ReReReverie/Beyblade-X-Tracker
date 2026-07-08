@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ActivityHeartbeat } from "@/components/activity-heartbeat";
-import { ButtonLoadingOverlay } from "@/components/button-loading-overlay";
 import { ChatBubble } from "@/components/chat-bubble";
 import { NavLinks } from "@/components/nav-links";
 import { SiteFooter } from "@/components/site-footer";
@@ -27,7 +26,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Suspense>
           </nav>
           <ActivityHeartbeat />
-          <ButtonLoadingOverlay />
           {children}
           <SiteFooter />
           <ChatBubble />

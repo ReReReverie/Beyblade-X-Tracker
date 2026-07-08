@@ -3,16 +3,13 @@
 import Link from "next/link";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
-import { WRGraph } from "@/components/wr-graph";
-import { battlesForCombo } from "@/lib/battle-history";
 import { formatManufacturer, pct } from "@/lib/format";
-import type { PublicCombo, PublicBattle, PublicDeck, PublicFeature } from "@/lib/public-data";
+import type { PublicCombo, PublicDeck, PublicFeature } from "@/lib/public-data";
 
 type OverviewResponse = {
   combos: PublicCombo[];
   decks: PublicDeck[];
   features: PublicFeature[];
-  battleHistory: PublicBattle[];
 };
 
 function comboWeightValue(combo: PublicCombo) {
@@ -30,7 +27,6 @@ export function CombosClient({ initialData }: { initialData: OverviewResponse })
   const combos = initialData.combos;
   const decks = initialData.decks;
   const features = initialData.features;
-  const battleHistory = initialData.battleHistory;
 
   return (
     <div className="list">
@@ -98,7 +94,6 @@ export function CombosClient({ initialData }: { initialData: OverviewResponse })
                 <p className="meta">
                   {combo.parts.map((entry) => `${entry.part.name} (${formatManufacturer(entry.part.manufacturer)})`).join(" / ")}
                 </p>
-                <WRGraph comboId={combo.id} battles={battlesForCombo(combo.id, battleHistory)} />
                 <StarButton comboId={combo.id} initialCount={combo.starsCount} initiallyStarred={combo.initiallyStarred} />
                 <PutComboButton comboId={combo.id} initialCount={combo.putsCount} initiallyPut={combo.initiallyPut} />
               </Link>

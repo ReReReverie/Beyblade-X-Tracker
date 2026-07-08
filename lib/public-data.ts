@@ -148,7 +148,7 @@ async function getPublicHomeDataUncached() {
         where: { visibility: "PUBLIC", OR: [{ comboAId: { in: comboIds } }, { comboBId: { in: comboIds } }] },
         select: { id: true, comboAId: true, comboBId: true, winnerId: true, playedAt: true },
         orderBy: { playedAt: "desc" },
-        take: 360
+        take: 120
       }))
     : [];
 
@@ -162,7 +162,7 @@ async function getPublicCombosOverviewDataUncached() {
       where: { visibility: "PUBLIC" },
       select: comboSelect,
       orderBy: { createdAt: "desc" },
-      take: 36
+      take: 12
     })),
     timed("overview decks query", () => prisma.deck.findMany({
       where: { visibility: "PUBLIC" },
@@ -180,7 +180,7 @@ async function getPublicCombosOverviewDataUncached() {
         }
       },
       orderBy: { createdAt: "desc" },
-      take: 18
+      take: 6
     })),
     timed("overview featured query", () => prisma.featuredCombo.findMany({
       where: { startsAt: { lte: now }, endsAt: { gt: now }, combo: { visibility: "PUBLIC" } },
@@ -198,15 +198,6 @@ async function getPublicCombosOverviewDataUncached() {
   ]);
 
   const publicCombos = combos.map(serializeCombo);
-  const comboIds = publicCombos.map((combo) => combo.id);
-  const battleHistory = comboIds.length
-    ? await timed("overview battle history query", () => prisma.battle.findMany({
-        where: { visibility: "PUBLIC", OR: [{ comboAId: { in: comboIds } }, { comboBId: { in: comboIds } }] },
-        select: { id: true, comboAId: true, comboBId: true, winnerId: true, playedAt: true },
-        orderBy: { playedAt: "desc" },
-        take: 720
-      }))
-    : [];
   const manualFeatureBySlot = new Map(activeFeatures.map((feature) => [feature.slot, feature]));
   const automaticFeatures: PublicFeature[] = [];
   for (const { slot, title } of autoSlots) {
@@ -237,8 +228,7 @@ async function getPublicCombosOverviewDataUncached() {
         combo: serializeCombo(feature.combo)
       })),
       ...automaticFeatures
-    ],
-    battleHistory: battleHistory.map(serializeBattle)
+    ]
   };
 }
 
