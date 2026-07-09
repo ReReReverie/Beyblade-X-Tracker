@@ -122,7 +122,6 @@ export function ProfileClient({
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
   const [data, setData] = useState<ProfilePayload>(initialData);
   const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(() => new Set(initialReady ? [initialTab] : []));
-  const [loading, setLoading] = useState(!initialReady);
   const [error, setError] = useState("");
   const requestRef = useRef<AbortController | null>(null);
   const userId = initialData.user.id;
@@ -138,7 +137,6 @@ export function ProfileClient({
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
-    setLoading(true);
     setError("");
     try {
       const response = await fetch(`/api/profile?tab=${tab}&partial=1`, { cache: "no-store", signal: controller.signal });
@@ -154,7 +152,6 @@ export function ProfileClient({
     } finally {
       if (requestRef.current === controller) {
         requestRef.current = null;
-        setLoading(false);
       }
     }
   }
@@ -168,44 +165,12 @@ export function ProfileClient({
     return () => requestRef.current?.abort();
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
 
-    async function preloadTabs() {
-      for (const tab of tabs) {
-        if (cancelled || tab.id === initialTab || loadedTabs.has(tab.id)) continue;
-
-        const cached = readCache(userId, tab.id);
-        if (cached) {
-          setData((current) => mergeProfilePayload(current, cached));
-          setLoadedTabs((current) => new Set(current).add(tab.id));
-          continue;
-        }
-
-        try {
-          const response = await fetch(`/api/profile?tab=${tab.id}&partial=1`, { cache: "no-store" });
-          if (!response.ok || cancelled) continue;
-          const fresh = (await response.json()) as ProfileTabPayload;
-          if (cancelled) continue;
-          setData((current) => mergeProfilePayload(current, fresh));
-          setLoadedTabs((current) => new Set(current).add(tab.id));
-          writeCache(userId, tab.id, fresh);
-        } catch {}
-      }
-    }
-
-    const timer = window.setTimeout(() => void preloadTabs(), 250);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [initialTab, userId]);
-
-  async function selectTab(tab: ProfileTab) {
+  function selectTab(tab: ProfileTab) {
     setActiveTab(tab);
     window.history.replaceState(null, "", `/profile?tab=${tab}`);
     if (loadedTabs.has(tab)) return;
-    await loadTab(tab);
+    void loadTab(tab);
   }
 
   const activeTabLoaded = loadedTabs.has(activeTab);
@@ -231,7 +196,6 @@ export function ProfileClient({
         ))}
       </nav>
       {error ? <p className="danger">{error}</p> : null}
-      {loading && activeTabLoaded ? <p className="meta">Loading...</p> : null}
       {activeTab === "overview" ? (
         activeTabLoaded ? (
           <section className="tabs">
