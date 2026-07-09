@@ -42,7 +42,7 @@ function getTabData(userId: string, tab: ProfileTab) {
       where: { ownerId: userId },
       include: profileComboInclude(userId),
       orderBy: { createdAt: "desc" },
-      take: 60
+      take: 10
     });
   }
 
@@ -51,7 +51,7 @@ function getTabData(userId: string, tab: ProfileTab) {
       where: { stars: { some: { userId } }, visibility: "PUBLIC" },
       include: profileComboInclude(userId, true),
       orderBy: { createdAt: "desc" },
-      take: 60
+      take: 10
     });
   }
 
@@ -60,7 +60,7 @@ function getTabData(userId: string, tab: ProfileTab) {
       where: { puts: { some: { userId } }, visibility: "PUBLIC" },
       include: profileComboInclude(userId, true),
       orderBy: { createdAt: "desc" },
-      take: 60
+      take: 10
     });
   }
 
@@ -68,7 +68,7 @@ function getTabData(userId: string, tab: ProfileTab) {
     return prisma.careerEntry.findMany({
       where: { userId },
       orderBy: { playedAt: "desc" },
-      take: 100
+      take: 10
     });
   }
 
@@ -113,4 +113,5 @@ export async function getProfilePayload(userId: string, tab: ProfileTab, fallbac
     careerEntries: tab === "career" ? tabData : undefined
   };
 }
+
 
