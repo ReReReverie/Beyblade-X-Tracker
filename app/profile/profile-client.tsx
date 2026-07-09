@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { hideLoadingOverlay } from "@/components/loading-overlay-events";
 import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/components/profile-forms";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
@@ -167,6 +168,7 @@ export function ProfileClient({
 
 
   function selectTab(tab: ProfileTab) {
+    hideLoadingOverlay();
     setActiveTab(tab);
     window.history.replaceState(null, "", `/profile?tab=${tab}`);
     if (loadedTabs.has(tab)) return;
@@ -242,4 +244,5 @@ export function ProfileClient({
     </div>
   );
 }
+
 
