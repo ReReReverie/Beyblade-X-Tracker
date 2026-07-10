@@ -105,8 +105,12 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   const assistBlades = optionsByRole(blades, "ASSIST_BLADE");
   const overBlades = optionsByRole(blades, "OVER_BLADE");
   const metalBlades = optionsByRole(blades, "METAL_BLADE");
+  const selectedBlade = blades.find((part) => part.id === selectedBladeId);
+  const selectedOverBlade = blades.find((part) => part.id === selectedOverBladeId);
   const selectedBit = bits.find((part) => part.id === selectedBitId);
+  const bladeIntegrated = selectedBlade?.ratchetIntegration === "BLADE" || selectedOverBlade?.ratchetIntegration === "BLADE";
   const bitIntegrated = selectedBit?.ratchetIntegration === "BIT";
+  const ratchetIntegrated = bladeIntegrated || bitIntegrated;
 
   useEffect(() => {
     setSelectedBladeId("");
@@ -119,8 +123,8 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   }, [tab]);
 
   useEffect(() => {
-    if (bitIntegrated) setSelectedRatchetId("");
-  }, [bitIntegrated]);
+    if (ratchetIntegrated) setSelectedRatchetId("");
+  }, [ratchetIntegrated]);
 
   function selectField(label: string, value: string, onChange: (value: string) => void, options: Option[]) {
     return (
@@ -166,7 +170,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
         payload.metalBladeId = selectedMetalBladeId;
         payload.assistBladeId = selectedAssistBladeId;
       }
-      if (bitIntegrated || !selectedRatchetId) delete payload.ratchetId;
+      if (ratchetIntegrated || !selectedRatchetId) delete payload.ratchetId;
       else payload.ratchetId = selectedRatchetId;
 
       await postJson("/api/combos", payload);
@@ -200,7 +204,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
 
       <div className="combo-form__status" aria-live="polite">
         <span className="tag tag--filled">Series: {tabLabel(tab)}</span>
-        <span className={bitIntegrated ? "tag tag--filled combo-form__tag--alert" : "tag"}>{bitIntegrated ? "Ratchet built into bit" : "Ratchet selectable"}</span>
+        <span className={ratchetIntegrated ? "tag tag--filled combo-form__tag--alert" : "tag"}>{bladeIntegrated ? "Ratchet built into blade" : bitIntegrated ? "Ratchet built into bit" : "Ratchet selectable"}</span>
       </div>
 
       {tab === "uxbx" ? selectField("Blade", selectedBladeId, setSelectedBladeId, bxUxBlades) : null}
@@ -220,7 +224,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
         </>
       ) : null}
 
-      {!bitIntegrated ? (
+      {!ratchetIntegrated ? (
         <label className="combo-form__field">
           <span>Ratchet</span>
           <select name="ratchetId" value={selectedRatchetId} onChange={(event) => setSelectedRatchetId(event.target.value)}>
@@ -229,7 +233,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
           </select>
           <span className="meta">Ratchets remain fully cross-compatible.</span>
         </label>
-      ) : <p className="meta combo-form__notice">Ratchet is built into this bit; no separate ratchet needed.</p>}
+      ) : <p className="meta combo-form__notice">Ratchet is built into the selected {bladeIntegrated ? "blade" : "bit"}; no separate ratchet needed.</p>}
 
       <label className="combo-form__field">
         <span>Bit</span>
@@ -379,4 +383,5 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     </form>
   );
 }
+
 

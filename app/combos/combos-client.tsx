@@ -83,20 +83,37 @@ export function CombosClient({ initialData }: { initialData: OverviewResponse })
             const wins = combo.winsCount;
             const total = combo.battlesACount + combo.battlesBCount;
             const comboWeight = comboWeightValue(combo);
+            const condition = comboConditionValue(combo);
+            const record = `${wins}-${total - wins}`;
             return (
-              <Link className="card public-combo-card" key={combo.id} href={`/combos/${combo.id}`}>
-                {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
-                <h2>{combo.name}</h2>
-                <p className="meta">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
-                <p className="meta">
-                  {comboWeight !== null ? `${comboWeight.toFixed(2)} g` : "Weight unavailable"} - Condition {comboConditionValue(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)})
-                </p>
-                <p className="meta">
+              <article className="card public-combo-card" key={combo.id}>
+                <Link className="public-combo-card__main" href={`/combos/${combo.id}`}>
+                  {combo.photos[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
+                  <h2>{combo.name}</h2>
+                </Link>
+                <p className="meta public-combo-card__creator">Creator: {combo.owner.name || combo.owner.username || "Unknown"}</p>
+                <div className="public-combo-card__stats" aria-label="Combo stats">
+                  <span>
+                    <strong>{comboWeight !== null ? `${comboWeight.toFixed(2)}g` : "N/A"}</strong>
+                    Weight
+                  </span>
+                  <span>
+                    <strong>{condition}/10</strong>
+                    Condition
+                  </span>
+                  <span>
+                    <strong>{record}</strong>
+                    {pct(wins, total)}
+                  </span>
+                </div>
+                <p className="meta public-combo-card__parts">
                   {combo.parts.map((entry) => `${entry.part.name} (${formatManufacturer(entry.part.manufacturer)})`).join(" / ")}
                 </p>
-                <StarButton comboId={combo.id} initialCount={combo.starsCount} initiallyStarred={combo.initiallyStarred} />
-                <PutComboButton comboId={combo.id} initialCount={combo.putsCount} initiallyPut={combo.initiallyPut} />
-              </Link>
+                <div className="public-combo-card__actions">
+                  <StarButton comboId={combo.id} initialCount={combo.starsCount} initiallyStarred={combo.initiallyStarred} />
+                  <PutComboButton comboId={combo.id} initialCount={combo.putsCount} initiallyPut={combo.initiallyPut} />
+                </div>
+              </article>
             );
           })}
         </div>

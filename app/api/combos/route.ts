@@ -126,6 +126,9 @@ export async function POST(request: Request) {
     if (bitPart.ratchetIntegration === "BIT" && submittedRatchetId) {
       return NextResponse.json({ error: "Turbo and Operate include the ratchet, so remove the separate ratchet." }, { status: 400 });
     }
+    if (bladeParts.some((entry) => entry.part?.ratchetIntegration === "BLADE") && submittedRatchetId) {
+      return NextResponse.json({ error: "The selected blade includes the ratchet, so remove the separate ratchet." }, { status: 400 });
+    }
 
     for (const { field, part } of bladeParts) {
       const role = expectedRole(mode, field);
