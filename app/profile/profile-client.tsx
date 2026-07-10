@@ -100,12 +100,69 @@ function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; e
   );
 }
 
-function LoadingRows() {
+function SkeletonLine({ className = "" }: { className?: string }) {
+  return <span className={`skeleton skeleton--line ${className}`} />;
+}
+
+function ComboCardSkeleton() {
   return (
-    <div className="list profile-tab-loading" aria-live="polite">
-      <p className="meta">Loading profile data...</p>
-      <div className="card" aria-hidden="true" />
+    <div className="card skeleton-card profile-combo-skeleton" aria-hidden="true">
+      <div className="skeleton skeleton--photo" />
+      <SkeletonLine className="skeleton--title" />
+      <SkeletonLine />
+      <SkeletonLine className="skeleton--wide" />
+      <div className="profile-skeleton-actions">
+        <div className="skeleton skeleton--button" />
+        <div className="skeleton skeleton--button" />
+      </div>
     </div>
+  );
+}
+
+function FormSkeleton() {
+  return (
+    <div className="card skeleton-card profile-form-skeleton" aria-hidden="true">
+      <SkeletonLine className="skeleton--title" />
+      <SkeletonLine />
+      <SkeletonLine />
+      <div className="skeleton skeleton--textarea" />
+      <div className="skeleton skeleton--button" />
+    </div>
+  );
+}
+
+function LoadingRows({ tab }: { tab: ProfileTab }) {
+  if (tab === "posts" || tab === "starred" || tab === "lineup") {
+    return (
+      <section className="list profile-tab-loading" aria-live="polite" aria-label="Loading profile data">
+        <SkeletonLine className="skeleton--heading" />
+        <div className="grid">
+          <ComboCardSkeleton />
+          <ComboCardSkeleton />
+          <ComboCardSkeleton />
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="tabs profile-tab-loading" aria-live="polite" aria-label="Loading profile data">
+      <FormSkeleton />
+      <div className="list">
+        <div className="card skeleton-card" aria-hidden="true">
+          <SkeletonLine className="skeleton--title" />
+          <SkeletonLine />
+          <SkeletonLine className="skeleton--wide" />
+        </div>
+        {tab === "career" ? (
+          <div className="card skeleton-card" aria-hidden="true">
+            <SkeletonLine className="skeleton--short" />
+            <SkeletonLine className="skeleton--title" />
+            <SkeletonLine />
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -200,8 +257,8 @@ export function ProfileClient({
       {error ? <p className="danger">{error}</p> : null}
       {activeTab === "overview" ? (
         activeTabLoaded ? (
-          <section className="tabs">
-            <div className="card"><ProfileEditForm name={data.user.name} image={data.user.image} bio={data.user.bio} /></div>
+          <section className="tabs profile-tab-panel">
+            <div className="card profile-form-card"><ProfileEditForm name={data.user.name} image={data.user.image} bio={data.user.bio} /></div>
             <div className="list">
               <div className="card profile-snapshot">
                 <h2>Snapshot</h2>
@@ -215,15 +272,15 @@ export function ProfileClient({
               </div>
             </div>
           </section>
-        ) : <LoadingRows />
+        ) : <LoadingRows tab={activeTab} />
       ) : null}
-      {activeTab === "posts" ? activeTabLoaded ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : <LoadingRows /> : null}
-      {activeTab === "starred" ? activeTabLoaded ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : <LoadingRows /> : null}
-      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : <LoadingRows /> : null}
+      {activeTab === "posts" ? activeTabLoaded ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : <LoadingRows tab={activeTab} /> : null}
+      {activeTab === "starred" ? activeTabLoaded ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : <LoadingRows tab={activeTab} /> : null}
+      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : <LoadingRows tab={activeTab} /> : null}
       {activeTab === "career" ? (
         activeTabLoaded ? (
-          <section className="tabs">
-            <div className="card"><CareerEntryForm /></div>
+          <section className="tabs profile-tab-panel">
+            <div className="card profile-form-card"><CareerEntryForm /></div>
             <div className="list">
               <h2>Career</h2>
               {data.careerEntries?.length ? data.careerEntries.map((entry) => (
@@ -239,10 +296,13 @@ export function ProfileClient({
               )) : <p className="meta">No tournament records yet.</p>}
             </div>
           </section>
-        ) : <LoadingRows />
+        ) : <LoadingRows tab={activeTab} />
       ) : null}
     </div>
   );
 }
+
+
+
 
 

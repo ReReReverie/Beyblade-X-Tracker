@@ -403,6 +403,41 @@ button.secondary {
   height: 44px;
   width: 160px;
 }
+.skeleton--photo {
+  aspect-ratio: 4 / 3;
+}
+
+.skeleton--textarea {
+  height: 96px;
+}
+
+.skeleton--heading {
+  height: 34px;
+  width: min(360px, 70%);
+}
+
+.skeleton--wide {
+  width: 88%;
+}
+
+.skeleton--short {
+  width: 36%;
+}
+
+.profile-skeleton-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.profile-combo-skeleton {
+  min-height: 420px;
+}
+
+.profile-form-skeleton {
+  min-height: 360px;
+}
 
 @keyframes skeleton-shimmer {
   0% {
@@ -1226,6 +1261,45 @@ textarea {
   min-height: 220px;
 }
 
+
+.profile-tab-panel {
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.profile-tab-panel > *,
+.profile-form-card,
+.profile-form-card form,
+.profile-form-card label,
+.profile-tab-panel .list {
+  min-width: 0;
+}
+
+.profile-form-card h2 {
+  font-size: clamp(1.8rem, 4.5vw, 3.4rem);
+  overflow-wrap: anywhere;
+}
+
+.profile-form-card:hover,
+.profile-tab-panel .card:hover {
+  transform: none;
+}
+
+.profile-form-card input,
+.profile-form-card textarea {
+  min-width: 0;
+}
+
+.profile-form-card .form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+  .profile-tab-panel {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+}
 .profile-snapshot {
   min-height: 154px;
 }
@@ -1233,4 +1307,6 @@ textarea {
 .career-row {
   min-height: 164px;
 }
+
+
 
