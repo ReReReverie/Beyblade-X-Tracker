@@ -47,9 +47,9 @@ export function ComboComments({ comboId, comments, signedIn }: { comboId: string
       <h2>Comments</h2>
       {signedIn ? (
         <form onSubmit={submit}>
-          <label>
+          <label htmlFor="combo-comment">
             Add comment
-            <textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={1000} required />
+            <textarea id="combo-comment" name="comment" value={body} onChange={(event) => setBody(event.target.value)} maxLength={1000} required />
           </label>
           {error ? <p className="danger">{error}</p> : null}
           <button type="submit" disabled={saving}>{saving ? "Posting..." : "Post comment"}</button>

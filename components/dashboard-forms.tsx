@@ -126,7 +126,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
     return (
       <label className="combo-form__field">
         <span>{label}</span>
-        <select value={value} onChange={(event) => onChange(event.target.value)}>
+        <select id={`combo-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} value={value} onChange={(event) => onChange(event.target.value)}>
           <option value="">Choose {label.toLowerCase()}</option>
           {options.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
         </select>

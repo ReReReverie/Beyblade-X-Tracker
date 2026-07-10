@@ -34,9 +34,9 @@ export function ComboVisibilityForm({ comboId, initialVisibility }: { comboId: s
 
   return (
     <div className="inline-control">
-      <label>
+      <label htmlFor={`combo-visibility-${comboId}`}>
         Post access
-        <select value={visibility} onChange={(event) => update(event.target.value as "PUBLIC" | "PRIVATE") }>
+        <select id={`combo-visibility-${comboId}`} name="visibility" value={visibility} onChange={(event) => update(event.target.value as "PUBLIC" | "PRIVATE") }>
           <option value="PUBLIC">Public: others can add battle data</option>
           <option value="PRIVATE">Private: only you can add battle data</option>
         </select>

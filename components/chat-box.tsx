@@ -72,9 +72,9 @@ export function ChatBox({ signedIn, initialRemaining }: { signedIn: boolean; ini
           ))}
         </div>
         <form className="chat-input" onSubmit={submit}>
-          <label>
+          <label htmlFor="chat-message">
             Message
-            <input disabled={!signedIn || remaining <= 0 || busy} value={text} onChange={(event) => setText(event.target.value)} placeholder="Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0" />
+            <input id="chat-message" name="message" disabled={!signedIn || remaining <= 0 || busy} value={text} onChange={(event) => setText(event.target.value)} placeholder="Wizard Rod 1-60 Hexa vs Phoenix Wing 3-60 Rush 1-0" />
           </label>
           <button disabled={!signedIn || remaining <= 0 || busy} type="submit">{busy ? "Creating" : "Send"}</button>
         </form>
