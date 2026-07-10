@@ -1,7 +1,7 @@
 "use client";
 
 const EVENT_NAME = "beyblade-loading-overlay";
-const MAX_OVERLAY_MS = 1500;
+const MAX_OVERLAY_MS = 1000;
 let hideTimer: number | null = null;
 
 function dispatchOverlay(visible: boolean) {

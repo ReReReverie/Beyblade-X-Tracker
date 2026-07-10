@@ -334,12 +334,11 @@ button.secondary {
 
 .loading-overlay {
   align-items: center;
-  backdrop-filter: blur(2px);
-  background: rgba(0, 0, 0, 0.08);
   display: grid;
   inset: 0;
   justify-items: center;
   padding-top: 84px;
+  pointer-events: none;
   position: fixed;
   z-index: 60;
 }
