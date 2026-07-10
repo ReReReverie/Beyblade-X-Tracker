@@ -33,7 +33,9 @@ export function ButtonLoadingOverlay() {
   }, [pathname]);
 
   useEffect(() => {
-    function handleClick() {
+    function handleClick(event: MouseEvent) {
+      const target = event.target;
+      if (target instanceof Element && target.closest(".profile-tabs")) return;
       showOverlay();
     }
 
