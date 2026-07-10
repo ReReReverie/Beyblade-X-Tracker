@@ -368,6 +368,7 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
   return (
     <form onSubmit={submit}>
       <h2>Add photo</h2>
+      <p className="meta">Only parts and combos you own appear as photo targets.</p>
       <label>Photo type<select name="targetType" value={targetType} onChange={(e) => setTargetType(e.target.value)}><option value="part">Part</option><option value="combo">Combo</option></select></label>
       <label>Target<select name="targetId">{targets.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
@@ -378,3 +379,4 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     </form>
   );
 }
+
