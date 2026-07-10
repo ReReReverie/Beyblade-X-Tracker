@@ -92,7 +92,7 @@ export function SignUpForm() {
       return;
     }
     notifyAuthSessionChanged();
-    router.push("/dashboard");
+    router.push("/");
     router.refresh();
   }
 
@@ -119,4 +119,5 @@ export function SignUpForm() {
     </form>
   );
 }
+
 

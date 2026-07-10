@@ -57,7 +57,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       }),
       prisma.combo.findMany({
         where: { ownerId: userId },
-        select: { id: true, name: true },
+        select: {
+          id: true,
+          name: true,
+          parts: { include: { part: true }, orderBy: { role: "asc" as const } }
+        },
         orderBy: { createdAt: "desc" },
         take: 40
       }),
@@ -120,7 +124,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       }),
       prisma.combo.findMany({
         where: { ownerId: userId },
-        select: { id: true, name: true },
+        select: {
+          id: true,
+          name: true,
+          parts: { include: { part: true }, orderBy: { role: "asc" as const } }
+        },
         orderBy: { createdAt: "desc" },
         take: 40
       }),
@@ -152,7 +160,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
   const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
   const deckOptions = ownedDecks.map((deck) => ({ id: deck.id, name: deck.name }));
-  const partOptions = parts.map((part) => ({ id: part.id, name: `${part.name} (${formatPartType(part.type)})` }));
+  const photoPartMap = new Map<string, { id: string; name: string }>();
+  for (const part of parts) {
+    photoPartMap.set(part.id, { id: part.id, name: `${part.name} (${formatPartType(part.type)})` });
+  }
+  for (const combo of combos) {
+    for (const entry of combo.parts || []) {
+      const part = entry.part;
+      if (part) photoPartMap.set(part.id, { id: part.id, name: `${part.name} (${formatPartType(part.type)})` });
+    }
+  }
+  const partOptions = Array.from(photoPartMap.values());
   const tabLinks: Array<{ id: DashboardTab; label: string }> = [
     { id: "log", label: "Log" },
     { id: "parts", label: "Parts" },
@@ -298,4 +316,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     </div>
   );
 }
+
+
 

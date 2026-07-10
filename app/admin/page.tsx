@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { AdminComboDeleteButton } from "@/components/admin-combo-delete-button";
+import { AdminUserDeleteButton } from "@/components/admin-user-delete-button";
 import { FeaturedComboDeleteButton } from "@/components/featured-combo-delete-button";
 import { FeaturedComboForm } from "@/components/featured-combo-form";
 import { authOptions } from "@/lib/auth";
@@ -15,7 +16,7 @@ export default async function AdminPage() {
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   const activeSince = new Date(Date.now() - 2 * 60 * 1000);
-  const [activeUsers, totalUsers, openBugs, openRequests, activity, publicCombos, adminCombos, features] = await Promise.all([
+  const [activeUsers, totalUsers, openBugs, openRequests, activity, publicCombos, adminCombos, features, users] = await Promise.all([
     prisma.visitorActivity.count({ where: { lastSeen: { gte: activeSince } } }),
     prisma.user.count(),
     prisma.report.count({ where: { kind: "BUG", status: "OPEN" } }),
@@ -38,6 +39,19 @@ export default async function AdminPage() {
       orderBy: [{ endsAt: "desc" }, { createdAt: "desc" }],
       take: 24,
       include: { combo: { select: { name: true } } }
+    }),
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        _count: { select: { parts: true, combos: true, decks: true, battles: true, comments: true, careerEntries: true } }
+      }
     })
   ]);
 
@@ -93,6 +107,27 @@ export default async function AdminPage() {
             </div>
           </section>
           <section>
+            <h2>Accounts</h2>
+            <div className="list">
+              {users.map((user) => {
+                const label = user.name || user.username || user.email || user.id;
+                return (
+                  <div className="card part-row" key={user.id}>
+                    <div>
+                      <span className="tag">{user.role}</span>
+                      <h3>{label}</h3>
+                      <p className="meta">{user.username ? `@${user.username}` : "No username"} - {user.email || "No email"} - Joined {user.createdAt.toLocaleString()}</p>
+                      <p className="meta">
+                        Parts {user._count.parts} - Combos {user._count.combos} - Decks {user._count.decks} - Battles {user._count.battles} - Comments {user._count.comments} - Career {user._count.careerEntries}
+                      </p>
+                    </div>
+                    <AdminUserDeleteButton id={user.id} label={label} disabled={user.id === session.user.id} />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+          <section>
             <h2>Recent activity</h2>
             <div className="list">
               {activity.map((item) => (
@@ -108,4 +143,6 @@ export default async function AdminPage() {
     </div>
   );
 }
+
+
 
