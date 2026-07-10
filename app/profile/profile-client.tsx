@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { hideLoadingOverlay } from "@/components/loading-overlay-events";
-import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/components/profile-forms";
-import { PutComboButton } from "@/components/put-combo-button";
-import { StarButton } from "@/components/star-button";
+import { CareerDeleteButton as CareerDeleteButtonComponent, CareerEntryForm as CareerEntryFormComponent, ProfileEditForm as ProfileEditFormComponent } from "@/components/profile-forms";
+import { PutComboButton as PutComboButtonComponent } from "@/components/put-combo-button";
+import { StarButton as StarButtonComponent } from "@/components/star-button";
 import { formatManufacturer, formatVisibility, pct } from "@/lib/format";
 import type { ProfileTab } from "@/lib/profile-data";
 import { comboCondition, comboWeight } from "@/lib/stats";
@@ -32,8 +32,13 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "career", label: "Career" }
 ];
 
-const cacheVersion = "v3";
+const cacheVersion = "v4";
 const ttlMs = 5 * 60 * 1000;
+const ProfileEditForm = ProfileEditFormComponent || null;
+const CareerEntryForm = CareerEntryFormComponent || null;
+const CareerDeleteButton = CareerDeleteButtonComponent || null;
+const StarButton = StarButtonComponent || null;
+const PutComboButton = PutComboButtonComponent || null;
 
 function cacheKey(userId: string, tab: ProfileTab) {
   return `profile-cache:${cacheVersion}:${userId}:${tab}`;
@@ -91,8 +96,8 @@ function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; e
             <p className="meta">
               {combo.parts.map((entry: any) => `${entry.part.name} (${formatManufacturer(entry.part.manufacturer)})`).join(" / ")}
             </p>
-            <StarButton comboId={combo.id} initialCount={combo._count?.stars ?? combo.stars?.length ?? 0} initiallyStarred={combo.stars?.some((star: any) => star.userId === userId)} />
-            <PutComboButton comboId={combo.id} initialCount={combo._count?.puts ?? combo.puts?.length ?? 0} initiallyPut={combo.puts?.some((put: any) => put.userId === userId) || Boolean(combo.puts?.length)} />
+            {StarButton ? <StarButton comboId={combo.id} initialCount={combo._count?.stars ?? combo.stars?.length ?? 0} initiallyStarred={combo.stars?.some((star: any) => star.userId === userId)} /> : null}
+            {PutComboButton ? <PutComboButton comboId={combo.id} initialCount={combo._count?.puts ?? combo.puts?.length ?? 0} initiallyPut={combo.puts?.some((put: any) => put.userId === userId) || Boolean(combo.puts?.length)} /> : null}
           </div>
         );
       })}
@@ -258,7 +263,7 @@ export function ProfileClient({
       {activeTab === "overview" ? (
         activeTabLoaded ? (
           <section className="tabs profile-tab-panel">
-            <div className="card profile-form-card"><ProfileEditForm name={data.user.name} image={data.user.image} bio={data.user.bio} /></div>
+            <div className="card profile-form-card">{ProfileEditForm ? <ProfileEditForm name={data.user.name} image={data.user.image} bio={data.user.bio} /> : null}</div>
             <div className="list">
               <div className="card profile-snapshot">
                 <h2>Snapshot</h2>
@@ -280,7 +285,7 @@ export function ProfileClient({
       {activeTab === "career" ? (
         activeTabLoaded ? (
           <section className="tabs profile-tab-panel">
-            <div className="card profile-form-card"><CareerEntryForm /></div>
+            <div className="card profile-form-card">{CareerEntryForm ? <CareerEntryForm /> : null}</div>
             <div className="list">
               <h2>Career</h2>
               {data.careerEntries?.length ? data.careerEntries.map((entry) => (
@@ -291,7 +296,7 @@ export function ProfileClient({
                     <p className="meta">{entry.wins}-{entry.losses}{entry.draws ? `-${entry.draws}` : ""}{entry.placement ? ` - ${entry.placement}` : ""}</p>
                     {entry.notes ? <p>{entry.notes}</p> : null}
                   </div>
-                  <CareerDeleteButton id={entry.id} />
+                  {CareerDeleteButton ? <CareerDeleteButton id={entry.id} /> : null}
                 </div>
               )) : <p className="meta">No tournament records yet.</p>}
             </div>
@@ -301,6 +306,8 @@ export function ProfileClient({
     </div>
   );
 }
+
+
 
 
 
