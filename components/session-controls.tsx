@@ -20,9 +20,9 @@ export function SessionControls() {
 
   return (
     <>
-      <label className="nav-setting">
+      <label className="nav-setting" htmlFor="theme-mode">
         Theme
-        <select value={themeMode} onChange={(event) => setThemeMode(event.target.value as ThemeMode)}>
+        <select id="theme-mode" name="themeMode" value={themeMode} onChange={(event) => setThemeMode(event.target.value as ThemeMode)}>
           <option value="system">System</option>
           <option value="light">Light</option>
           <option value="dark">Dark</option>
