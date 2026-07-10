@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { notifyAuthSessionChanged } from "@/components/auth-session-events";
 import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
 export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
@@ -25,6 +26,7 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
       setError("Username/email or password did not match.");
       return;
     }
+    notifyAuthSessionChanged();
     router.push("/dashboard");
     router.refresh();
   }
@@ -89,6 +91,7 @@ export function SignUpForm() {
       setError("Account created, but automatic sign in failed. Please sign in.");
       return;
     }
+    notifyAuthSessionChanged();
     router.push("/dashboard");
     router.refresh();
   }
@@ -116,3 +119,4 @@ export function SignUpForm() {
     </form>
   );
 }
+

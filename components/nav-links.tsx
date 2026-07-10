@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { authSessionChangedEvent } from "@/components/auth-session-events";
 import { SessionControls } from "@/components/session-controls";
 
 type SessionPayload = {
@@ -27,9 +28,15 @@ export function NavLinks() {
       }
     }
 
+    function reloadSession() {
+      void loadSession();
+    }
+
     void loadSession();
+    window.addEventListener(authSessionChangedEvent, reloadSession);
     return () => {
       cancelled = true;
+      window.removeEventListener(authSessionChangedEvent, reloadSession);
     };
   }, []);
 
@@ -55,5 +62,3 @@ export function NavLinks() {
     </div>
   );
 }
-
-
