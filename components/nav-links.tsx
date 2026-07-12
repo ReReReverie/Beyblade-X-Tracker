@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authSessionChangedEvent } from "@/components/auth-session-events";
+import { showLoadingOverlay } from "@/components/loading-overlay-events";
 import { SessionControls } from "@/components/session-controls";
 
 type SessionPayload = {
@@ -12,6 +14,7 @@ type SessionPayload = {
 } | null;
 
 export function NavLinks() {
+  const pathname = usePathname();
   const [session, setSession] = useState<SessionPayload>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -42,20 +45,26 @@ export function NavLinks() {
 
   const signedIn = Boolean(session?.user);
 
+  function handleNavClick(href: string) {
+    if (pathname !== href) {
+      showLoadingOverlay();
+    }
+  }
+
   return (
     <div className="navlinks">
-      <Link className="button secondary" href="/combos" prefetch={false}>
+      <Link className="button secondary" href="/combos" prefetch={false} onClick={() => handleNavClick("/combos")}>
         Public combos
       </Link>
       {signedIn ? (
         <>
-          {session?.user?.role === "ADMIN" ? <Link className="button secondary" href="/admin" prefetch={false}>Admin</Link> : null}
-          <Link className="button secondary" href="/profile" prefetch={false}>Profile</Link>
-          <Link className="button" href="/dashboard" prefetch={false}>Create</Link>
+          {session?.user?.role === "ADMIN" ? <Link className="button secondary" href="/admin" prefetch={false} onClick={() => handleNavClick("/admin")}>Admin</Link> : null}
+          <Link className="button secondary" href="/profile" prefetch={false} onClick={() => handleNavClick("/profile")}>Profile</Link>
+          <Link className="button" href="/dashboard" prefetch={false} onClick={() => handleNavClick("/dashboard")}>Create</Link>
           <SessionControls />
         </>
       ) : loaded ? (
-        <Link className="button" href="/auth/signin">
+        <Link className="button" href="/auth/signin" onClick={() => handleNavClick("/auth/signin")}>
           Sign in
         </Link>
       ) : null}
