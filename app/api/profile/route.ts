@@ -50,13 +50,14 @@ export async function PATCH(request: Request) {
     imageUrl = parsed.data.image || undefined;
   }
 
+  const updateData: Record<string, unknown> = {};
+  if (name !== undefined) updateData.name = name.trim() || null;
+  if (bio !== undefined) updateData.bio = bio.trim() || null;
+  if (imageUrl !== undefined) updateData.image = imageUrl;
+
   const user = await prisma.user.update({
     where: { id: session.user.id },
-    data: {
-      name: name || null,
-      ...(imageUrl !== undefined ? { image: imageUrl } : {}),
-      bio: bio || null
-    },
+    data: updateData,
     select: { id: true, name: true, image: true, bio: true }
   });
 

@@ -43,11 +43,10 @@ export async function POST(request: Request) {
           notes: parsed.data.notes
         }
       });
+
       revalidateTag("public-combo-detail");
       revalidateTag("public-combos");
-      revalidateTag("public-combo-detail");
-    revalidateTag("public-combos");
-    return NextResponse.json({ battle });
+      return NextResponse.json({ battle });
     }
 
     if (!parsed.data.comboAId || !parsed.data.comboBId || !parsed.data.winnerId || parsed.data.comboAId === parsed.data.comboBId) {

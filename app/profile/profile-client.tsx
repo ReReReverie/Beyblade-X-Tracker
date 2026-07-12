@@ -225,7 +225,8 @@ export function ProfileClient({
 
   useEffect(() => {
     if (!loadedTabs.has(activeTab)) void loadTab(activeTab);
-    return () => requestRef.current?.abort();
+    return () => { requestRef.current?.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 

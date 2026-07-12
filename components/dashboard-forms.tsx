@@ -275,9 +275,9 @@ export function DeckForm({ combos }: { combos: Option[] }) {
     <form onSubmit={submit}>
       <h2>Build deck</h2>
       <label>Name<input name="name" required /></label>
-      <label>Combo 1<select name="comboOneId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-      <label>Combo 2<select name="comboTwoId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-      <label>Combo 3<select name="comboThreeId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Combo 1<select name="comboOneId" required><option value="">Choose combo</option>{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Combo 2<select name="comboTwoId" required><option value="">Choose combo</option>{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Combo 3<select name="comboThreeId" required><option value="">Choose combo</option>{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
       <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
       <label>Notes<textarea name="notes" /></label>
       {error ? <p className="danger">{error}</p> : null}
@@ -315,17 +315,17 @@ export function BattleForm({ combos, decks }: { combos: Option[]; decks: Option[
       <label>Format<select name="format" value={format} onChange={(event) => setFormat(event.target.value)}><option value="ONE_V_ONE">1v1 combo</option><option value="THREE_V_THREE">3v3 deck</option></select></label>
       {format === "ONE_V_ONE" ? (
         <>
-          <label>Combo A<select name="comboAId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-          <label>Combo B<select name="comboBId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Combo A<select name="comboAId" required><option value="">Choose combo</option>{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Combo B<select name="comboBId" required><option value="">Choose combo</option>{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label>Combo A RPM<input name="comboARpm" type="number" min="1" max="99999" step="1" /></label>
           <label>Combo B RPM<input name="comboBRpm" type="number" min="1" max="99999" step="1" /></label>
-          <label>Winner<select name="winnerId">{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Winner<select name="winnerId" required><option value="">Choose winner</option>{combos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         </>
       ) : (
         <>
-          <label>Deck A<select name="deckAId">{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
-          <label>Deck B<select name="deckBId">{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
-          <label>Winner<select name="deckWinnerId">{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+          <label>Deck A<select name="deckAId" required><option value="">Choose deck</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+          <label>Deck B<select name="deckBId" required><option value="">Choose deck</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+          <label>Winner<select name="deckWinnerId" required><option value="">Choose winner</option>{decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
         </>
       )}
       <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
@@ -374,7 +374,7 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
       <h2>Add photo</h2>
       <p className="meta">Only parts and combos you own appear as photo targets.</p>
       <label>Photo type<select name="targetType" value={targetType} onChange={(e) => setTargetType(e.target.value)}><option value="part">Part</option><option value="combo">Combo</option></select></label>
-      <label>Target<select name="targetId">{targets.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label>Target<select name="targetId" required><option value="">Choose target</option>{targets.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label>Visibility<select name="visibility"><option value="PUBLIC">Public</option><option value="PRIVATE">Private</option></select></label>
       <label>Image<input name="file" type="file" accept="image/jpeg,image/png,image/webp" required /></label>
       <p className="meta">Images are compressed to WebP before upload. Max 1 MB.</p>

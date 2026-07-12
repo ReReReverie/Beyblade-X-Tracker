@@ -266,6 +266,15 @@ async function findOrCreateCombo(userId: string, input: string, parts: Part[], g
 
 async function consumeChat(userId: string) {
   const day = startOfUtcDay();
+
+  const existing = await prisma.chatUsage.findUnique({
+    where: { userId_day: { userId, day } }
+  });
+
+  if (existing && existing.count >= dailyLimit) {
+    return { allowed: false, remaining: 0 };
+  }
+
   const usage = await prisma.chatUsage.upsert({
     where: { userId_day: { userId, day } },
     create: { userId, day, count: 1 },
