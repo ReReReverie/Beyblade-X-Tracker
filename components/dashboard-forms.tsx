@@ -28,6 +28,15 @@ function optionsByRole(parts: Option[], role: PartRole) {
 
 const maxUploadBytes = 1 * 1024 * 1024;
 
+function clearProfileCache() {
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith("profile-cache:")) sessionStorage.removeItem(key);
+    }
+  } catch {}
+}
+
 async function postJson(url: string, data: unknown) {
   const response = await fetch(url, {
     method: "POST",
@@ -184,6 +193,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
       setSelectedRatchetId("");
       setSelectedBitId("");
       setTab("uxbx");
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -263,6 +273,7 @@ export function DeckForm({ combos }: { combos: Option[] }) {
     try {
       await postJson("/api/decks", Object.fromEntries(form));
       formElement.reset();
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -301,6 +312,7 @@ export function BattleForm({ combos, decks }: { combos: Option[]; decks: Option[
       await postJson("/api/battles", Object.fromEntries(form));
       formElement.reset();
       setFormat("ONE_V_ONE");
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -359,6 +371,7 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
       const response = await fetch("/api/upload", { method: "POST", body: form });
       if (!response.ok) throw new Error((await response.json()).error || "Upload failed.");
       formElement.reset();
+      clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
