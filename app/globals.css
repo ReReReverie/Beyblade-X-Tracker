@@ -411,7 +411,7 @@ button.secondary {
 
 .loading-overlay {
   align-items: center;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.4);
   display: grid;
   inset: 0;
   justify-items: center;
