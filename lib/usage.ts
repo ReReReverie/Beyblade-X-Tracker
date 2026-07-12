@@ -27,77 +27,61 @@ const limits = {
 };
 
 export async function enforcePartCreation(ownerId: string) {
-  const total = await prisma.part.count({ where: { ownerId } });
+  const [total, dailyCreated] = await Promise.all([
+    prisma.part.count({ where: { ownerId } }),
+    prisma.part.count({ where: { ownerId, createdAt: { gte: startOfUtcDay() } } })
+  ]);
+
   if (total >= limits.parts.total) {
     throw new Error("Part limit reached. Delete unused parts before adding more.");
   }
-
-  const dailyCreated = await prisma.part.count({
-    where: {
-      ownerId,
-      createdAt: { gte: startOfUtcDay() }
-    }
-  });
   if (dailyCreated >= limits.parts.daily) {
     throw new Error("Daily part creation limit reached. Try again tomorrow.");
   }
 }
 
 export async function enforceComboCreation(ownerId: string) {
-  const total = await prisma.combo.count({ where: { ownerId } });
+  const [total, dailyCreated] = await Promise.all([
+    prisma.combo.count({ where: { ownerId } }),
+    prisma.combo.count({ where: { ownerId, createdAt: { gte: startOfUtcDay() } } })
+  ]);
+
   if (total >= limits.combos.total) {
     throw new Error("Combo limit reached. Delete old combos before adding more.");
   }
-
-  const dailyCreated = await prisma.combo.count({
-    where: {
-      ownerId,
-      createdAt: { gte: startOfUtcDay() }
-    }
-  });
   if (dailyCreated >= limits.combos.daily) {
     throw new Error("Daily combo creation limit reached. Try again tomorrow.");
   }
 }
 
 export async function enforceBattleCreation(ownerId: string) {
-  const total = await prisma.battle.count({ where: { ownerId } });
+  const [total, dailyCreated] = await Promise.all([
+    prisma.battle.count({ where: { ownerId } }),
+    prisma.battle.count({ where: { ownerId, createdAt: { gte: startOfUtcDay() } } })
+  ]);
+
   if (total >= limits.battles.total) {
     throw new Error("Battle limit reached. Delete old battles before adding more.");
   }
-
-  const dailyCreated = await prisma.battle.count({
-    where: {
-      ownerId,
-      createdAt: { gte: startOfUtcDay() }
-    }
-  });
   if (dailyCreated >= limits.battles.daily) {
     throw new Error("Daily battle creation limit reached. Try again tomorrow.");
   }
 }
 
 export async function enforceUploadCreation(ownerId: string) {
-  const partPhotos = await prisma.partPhoto.count({ where: { ownerId } });
-  const comboPhotos = await prisma.comboPhoto.count({ where: { ownerId } });
+  const today = startOfUtcDay();
+
+  const [partPhotos, comboPhotos, dailyPartPhotos, dailyComboPhotos] = await Promise.all([
+    prisma.partPhoto.count({ where: { ownerId } }),
+    prisma.comboPhoto.count({ where: { ownerId } }),
+    prisma.partPhoto.count({ where: { ownerId, createdAt: { gte: today } } }),
+    prisma.comboPhoto.count({ where: { ownerId, createdAt: { gte: today } } })
+  ]);
+
   const total = partPhotos + comboPhotos;
   if (total >= limits.uploads.total) {
     throw new Error("Image upload limit reached. Delete older photos before adding more.");
   }
-
-  const today = startOfUtcDay();
-  const dailyPartPhotos = await prisma.partPhoto.count({
-    where: {
-      ownerId,
-      createdAt: { gte: today }
-    }
-  });
-  const dailyComboPhotos = await prisma.comboPhoto.count({
-    where: {
-      ownerId,
-      createdAt: { gte: today }
-    }
-  });
   if (dailyPartPhotos + dailyComboPhotos >= limits.uploads.daily) {
     throw new Error("Daily image upload limit reached. Try again tomorrow.");
   }
