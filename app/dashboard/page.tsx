@@ -243,7 +243,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     </p>
                     <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
                     <ComboPartEditForm
-                      comboId={combo.id}
                       parts={combo.parts.map((entry: any) => ({
                         id: entry.part.id,
                         name: entry.part.name,

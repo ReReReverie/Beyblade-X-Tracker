@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
@@ -21,21 +21,35 @@ type PartState = {
   manufacturer: string;
 };
 
-export function ComboPartEditForm({ comboId, parts }: { comboId: string; parts: PartEntry[] }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [partErrors, setPartErrors] = useState<Record<string, string>>({});
-
-  const initialState: PartState[] = parts.map((p) => ({
+function deriveState(parts: PartEntry[]): PartState[] {
+  return parts.map((p) => ({
     id: p.id,
     name: p.name,
     role: p.role,
     weightGrams: p.weightGrams != null ? String(Number(p.weightGrams)) : "",
     manufacturer: p.manufacturer || "UNKNOWN",
   }));
+}
+
+function validateWeight(value: string): string | null {
+  if (value === "") return null;
+  const num = Number(value);
+  if (isNaN(num)) return "Weight must be a number.";
+  if (num <= 0) return "Weight must be greater than zero.";
+  if (num > 999.99) return "Weight must not exceed 999.99 g.";
+  return null;
+}
+
+export function ComboPartEditForm({ parts }: { parts: PartEntry[] }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [partErrors, setPartErrors] = useState<Record<string, string>>({});
+
+  const initialState = useMemo(() => deriveState(parts), [parts]);
 
   const [fields, setFields] = useState<PartState[]>(initialState);
+  const [savedState, setSavedState] = useState<PartState[]>(initialState);
 
   function updateField(index: number, key: "weightGrams" | "manufacturer", value: string) {
     setFields((prev) => {
@@ -49,9 +63,23 @@ export function ComboPartEditForm({ comboId, parts }: { comboId: string; parts: 
     setError("");
     setPartErrors({});
 
+    // Client-side validation
+    const validationErrors: Record<string, string> = {};
+    for (const field of fields) {
+      const weightError = validateWeight(field.weightGrams);
+      if (weightError) {
+        validationErrors[field.id] = weightError;
+      }
+    }
+    if (Object.keys(validationErrors).length > 0) {
+      setPartErrors(validationErrors);
+      setError("Please fix validation errors before saving.");
+      return;
+    }
+
     const modified = fields.filter((field, i) => {
-      const original = initialState[i];
-      return field.weightGrams !== original.weightGrams || field.manufacturer !== original.manufacturer;
+      const baseline = savedState[i];
+      return field.weightGrams !== baseline.weightGrams || field.manufacturer !== baseline.manufacturer;
     });
 
     if (modified.length === 0) {
@@ -66,9 +94,7 @@ export function ComboPartEditForm({ comboId, parts }: { comboId: string; parts: 
       await Promise.all(
         modified.map(async (field) => {
           const body: Record<string, unknown> = { id: field.id };
-          if (field.weightGrams) {
-            body.weightGrams = Number(field.weightGrams);
-          }
+          body.weightGrams = field.weightGrams === "" ? null : Number(field.weightGrams);
           body.manufacturer = field.manufacturer;
 
           const response = await fetch("/api/parts", {
@@ -88,6 +114,7 @@ export function ComboPartEditForm({ comboId, parts }: { comboId: string; parts: 
         setPartErrors(errors);
         setError("Some parts could not be saved.");
       } else {
+        setSavedState([...fields]);
         setOpen(false);
         router.refresh();
       }
