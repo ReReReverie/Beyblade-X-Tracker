@@ -41,8 +41,10 @@ if (process.env.GOOGLE_AUTH_ENABLED === "true" && process.env.GOOGLE_CLIENT_ID &
   );
 }
 
+const useAdapter = process.env.GOOGLE_AUTH_ENABLED === "true" && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  ...(useAdapter ? { adapter: PrismaAdapter(prisma) } : {}),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/signin"
