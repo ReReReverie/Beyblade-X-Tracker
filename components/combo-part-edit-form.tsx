@@ -11,6 +11,8 @@ type PartEntry = {
   role: string;
   weightGrams: string | number | null;
   manufacturer: string;
+  catalogWeightGrams: string | number | null;
+  catalogManufacturer: string | null;
 };
 
 type PartState = {
@@ -19,6 +21,8 @@ type PartState = {
   role: string;
   weightGrams: string;
   manufacturer: string;
+  catalogWeightGrams: string;
+  catalogManufacturer: string;
 };
 
 function deriveState(parts: PartEntry[]): PartState[] {
@@ -28,6 +32,8 @@ function deriveState(parts: PartEntry[]): PartState[] {
     role: p.role,
     weightGrams: p.weightGrams != null ? String(Number(p.weightGrams)) : "",
     manufacturer: p.manufacturer || "UNKNOWN",
+    catalogWeightGrams: p.catalogWeightGrams != null ? String(Number(p.catalogWeightGrams)) : "",
+    catalogManufacturer: p.catalogManufacturer || "UNKNOWN",
   }));
 }
 
@@ -40,7 +46,16 @@ function validateWeight(value: string): string | null {
   return null;
 }
 
-export function ComboPartEditForm({ parts }: { parts: PartEntry[] }) {
+function formatManufacturerLabel(value: string): string {
+  switch (value) {
+    case "HASBRO": return "Hasbro";
+    case "TAKARA_TOMY": return "Takara Tomy";
+    case "FAKE": return "Fake";
+    default: return "Unknown";
+  }
+}
+
+export function ComboPartEditForm({ comboId, parts }: { comboId: string; parts: PartEntry[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
@@ -93,8 +108,10 @@ export function ComboPartEditForm({ parts }: { parts: PartEntry[] }) {
     try {
       await Promise.all(
         modified.map(async (field) => {
-          const body: Record<string, unknown> = { id: field.id };
+          const body: Record<string, unknown> = { id: field.id, comboId };
+          // Send null when weight is cleared so API reverts to catalog default
           body.weightGrams = field.weightGrams === "" ? null : Number(field.weightGrams);
+          // Send the manufacturer value (API handles UNKNOWN as revert-to-default)
           body.manufacturer = field.manufacturer;
 
           const response = await fetch("/api/parts", {
@@ -152,6 +169,7 @@ export function ComboPartEditForm({ parts }: { parts: PartEntry[] }) {
                   step="0.01"
                   min="0.01"
                   max="999.99"
+                  placeholder={field.catalogWeightGrams ? `Default: ${field.catalogWeightGrams}` : "No default"}
                   value={field.weightGrams}
                   onChange={(e) => updateField(index, "weightGrams", e.target.value)}
                 />
@@ -162,7 +180,11 @@ export function ComboPartEditForm({ parts }: { parts: PartEntry[] }) {
                   value={field.manufacturer}
                   onChange={(e) => updateField(index, "manufacturer", e.target.value)}
                 >
-                  <option value="UNKNOWN">Unknown</option>
+                  <option value="UNKNOWN">
+                    {field.catalogManufacturer && field.catalogManufacturer !== "UNKNOWN"
+                      ? `Default (${formatManufacturerLabel(field.catalogManufacturer)})`
+                      : "Unknown"}
+                  </option>
                   <option value="HASBRO">Hasbro</option>
                   <option value="TAKARA_TOMY">Takara Tomy</option>
                   <option value="FAKE">Fake</option>

@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 type DashboardTab = "log" | "parts" | "combos" | "history" | "profile";
 
 const dashboardComboInclude = {
-  parts: { include: { part: true }, orderBy: { role: "asc" as const } },
+  parts: { include: { part: { include: { catalogPart: true } } }, orderBy: { role: "asc" as const } },
   photos: { take: 1, orderBy: { createdAt: "desc" as const } },
   _count: { select: { wins: true, battlesA: true, battlesB: true } }
 };
@@ -243,6 +243,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     </p>
                     <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
                     <ComboPartEditForm
+                      comboId={combo.id}
                       parts={combo.parts.map((entry: any) => ({
                         id: entry.part.id,
                         name: entry.part.name,
@@ -250,6 +251,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                         role: entry.role,
                         weightGrams: entry.part.weightGrams,
                         manufacturer: entry.part.manufacturer,
+                        catalogWeightGrams: entry.part.catalogPart?.weightGrams ?? null,
+                        catalogManufacturer: entry.part.catalogPart?.manufacturer ?? null,
                       }))}
                     />
                     <DeleteButton endpoint="combos" id={combo.id} label="Delete" />
