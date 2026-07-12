@@ -15,7 +15,7 @@ export default async function AdminPage() {
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   const activeSince = new Date(Date.now() - 2 * 60 * 1000);
-  const [activeUsers, totalUsers, openBugs, openRequests, activity, publicCombos, adminCombos, features] = await Promise.all([
+  const [activeUsers, totalUsers, openBugs, openRequests, activity, publicCombos, adminCombos, features, users] = await Promise.all([
     prisma.visitorActivity.count({ where: { lastSeen: { gte: activeSince } } }),
     prisma.user.count(),
     prisma.report.count({ where: { kind: "BUG", status: "OPEN" } }),
@@ -66,6 +66,11 @@ export default async function AdminPage() {
       </section>
       <section className="tabs admin-layout">
         <div className="list">
+          <div className="card">
+            <h2>Stats</h2>
+            <p>{activeUsers} active now - {totalUsers} total users</p>
+            <p>{openBugs} open bugs - {openRequests} open requests</p>
+          </div>
           <div className="card"><FeaturedComboForm combos={publicCombos} /></div>
         </div>
         <div className="admin-feed">
@@ -113,6 +118,23 @@ export default async function AdminPage() {
                 <div className="card part-row" key={item.id}>
                   <strong>{item.path}</strong>
                   <span className="meta">{item.lastSeen.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2>Recent users</h2>
+            <div className="list">
+              {users.map((user) => (
+                <div className="card part-row" key={user.id}>
+                  <div>
+                    <span className="tag">{user.role}</span>
+                    <h3>{user.name || user.username || user.email || "No name"}</h3>
+                    <p className="meta">
+                      Parts {user._count.parts} - Combos {user._count.combos} - Battles {user._count.battles} - Joined {user.createdAt.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

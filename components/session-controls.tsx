@@ -1,21 +1,28 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ThemeMode = "system" | "light" | "dark";
 
 export function SessionControls() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("system");
+  const initialized = useRef(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("themeMode") as ThemeMode | null;
     if (stored === "light" || stored === "dark" || stored === "system") setThemeMode(stored);
+    initialized.current = true;
   }, []);
 
   useEffect(() => {
+    if (!initialized.current) return;
     window.localStorage.setItem("themeMode", themeMode);
-    document.documentElement.dataset.theme = themeMode;
+    if (themeMode === "system") {
+      delete document.documentElement.dataset.theme;
+    } else {
+      document.documentElement.dataset.theme = themeMode;
+    }
   }, [themeMode]);
 
   return (

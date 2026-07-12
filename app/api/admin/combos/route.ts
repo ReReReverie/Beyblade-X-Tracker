@@ -22,6 +22,11 @@ export async function DELETE(request: Request) {
   if (!combo) return NextResponse.json({ error: "Combo not found." }, { status: 404 });
 
   await prisma.$transaction([
+    prisma.comboComment.deleteMany({ where: { comboId: id } }),
+    prisma.comboStar.deleteMany({ where: { comboId: id } }),
+    prisma.comboPut.deleteMany({ where: { comboId: id } }),
+    prisma.comboPhoto.deleteMany({ where: { comboId: id } }),
+    prisma.comboPart.deleteMany({ where: { comboId: id } }),
     prisma.battle.deleteMany({
       where: {
         OR: [{ comboAId: id }, { comboBId: id }, { winnerId: id }]

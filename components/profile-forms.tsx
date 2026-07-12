@@ -101,21 +101,27 @@ export function CareerEntryForm() {
 export function CareerDeleteButton({ id }: { id: string }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function remove() {
     setError("");
+    setLoading(true);
     try {
       await sendJson(`/api/profile?id=${encodeURIComponent(id)}`, "DELETE");
       clearProfileCache();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed.");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <div className="delete-control delete-control--compact">
-      <button className="button button-small button-danger" type="button" onClick={remove}>Delete</button>
+      <button className="button button-small button-danger" type="button" onClick={remove} disabled={loading}>
+        {loading ? "Deleting\u2026" : "Delete"}
+      </button>
       {error ? <span className="meta danger">{error}</span> : null}
     </div>
   );

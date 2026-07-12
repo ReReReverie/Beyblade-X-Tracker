@@ -10,6 +10,7 @@ export function ComboVisibilityForm({ comboId, initialVisibility }: { comboId: s
   const [error, setError] = useState("");
 
   async function update(nextVisibility: "PUBLIC" | "PRIVATE") {
+    const previousVisibility = visibility;
     setVisibility(nextVisibility);
     setError("");
     showLoadingOverlay();
@@ -20,7 +21,7 @@ export function ComboVisibilityForm({ comboId, initialVisibility }: { comboId: s
         body: JSON.stringify({ id: comboId, visibility: nextVisibility })
       });
       if (!response.ok) {
-        setVisibility(visibility);
+        setVisibility(previousVisibility);
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error || "Could not update visibility.");
       }
