@@ -103,8 +103,9 @@ model User {
   careerEntries CareerEntry[]
   reports  Report[]
 
+  // @@index([username]) — REMOVED: already covered by @unique on username
   @@index([createdAt])
-  @@index([username])
+  @@index([role, createdAt])
 }
 
 model Account {
@@ -124,6 +125,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -133,6 +135,8 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -165,7 +169,7 @@ model PartCatalog {
   @@index([type])
   @@index([role])
   @@index([series])
-  @@index([metaTier])
+  // @@index([metaTier]) — REMOVED: covered by composite below
   @@index([metaTier, type, name])
 }
 
@@ -197,12 +201,12 @@ model Part {
   @@index([ownerId, type])
   @@index([ownerId, createdAt])
   @@index([catalogPartId])
-  @@index([role])
-  @@index([series])
-  @@index([visibility])
+  // @@index([role]) — REMOVED: low-cardinality enum, rarely queried alone
+  // @@index([series]) — REMOVED: low-cardinality enum, rarely queried alone
+  // @@index([visibility]) — REMOVED: covered by [visibility, createdAt]
   @@index([visibility, createdAt])
-  @@index([manufacturer])
-  @@index([createdAt])
+  // @@index([manufacturer]) — REMOVED: low-cardinality enum, not queried alone
+  // @@index([createdAt]) — REMOVED: covered by [ownerId, createdAt] and [visibility, createdAt]
 }
 
 model PartPhoto {
@@ -218,10 +222,10 @@ model PartPhoto {
 
   part Part @relation(fields: [partId], references: [id], onDelete: Cascade)
 
-  @@index([ownerId])
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
   @@index([ownerId, createdAt])
   @@index([partId, visibility, createdAt])
-  @@index([visibility])
+  // @@index([visibility]) — REMOVED: low cardinality, rarely queried alone
 }
 
 model Combo {
@@ -232,9 +236,9 @@ model Combo {
   notes      String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
-    bladePartId  String
-    ratchetPartId String?
-    bitPartId    String
+  bladePartId  String
+  ratchetPartId String?
+  bitPartId    String
 
   owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   bladePart  Part         @relation("ComboBlade", fields: [bladePartId], references: [id], onDelete: Restrict)
@@ -251,12 +255,14 @@ model Combo {
   comments   ComboComment[]
   deckSlots  DeckSlot[]
 
-  @@index([ownerId])
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
   @@index([ownerId, createdAt])
   @@index([ownerId, bitPartId, ratchetPartId])
-  @@index([visibility])
+  // @@index([visibility]) — REMOVED: covered by [visibility, createdAt]
   @@index([visibility, createdAt])
-  @@index([createdAt])
+  // @@index([createdAt]) — REMOVED: covered by composites above
+  @@index([bladePartId])
+  @@index([bitPartId])
 }
 
 model Deck {
@@ -274,11 +280,11 @@ model Deck {
   battlesB Battle[]   @relation("BattleDeckB")
   wins     Battle[]   @relation("BattleDeckWinner")
 
-  @@index([ownerId])
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
   @@index([ownerId, createdAt])
-  @@index([visibility])
+  // @@index([visibility]) — REMOVED: covered by [visibility, createdAt]
   @@index([visibility, createdAt])
-  @@index([createdAt])
+  // @@index([createdAt]) — REMOVED: covered by composites above
 }
 
 model DeckSlot {
@@ -305,9 +311,9 @@ model ComboStar {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([comboId, userId])
-  @@index([comboId])
+  // @@index([comboId]) — REMOVED: leading column of @@unique above
   @@index([userId])
-  @@index([userId, comboId])
+  // @@index([userId, comboId]) — REMOVED: lookups use @@unique([comboId, userId])
   @@index([createdAt])
 }
 
@@ -321,9 +327,9 @@ model ComboPut {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([comboId, userId])
-  @@index([comboId])
+  // @@index([comboId]) — REMOVED: leading column of @@unique above
   @@index([userId])
-  @@index([userId, comboId])
+  // @@index([userId, comboId]) — REMOVED: lookups use @@unique([comboId, userId])
   @@index([createdAt])
 }
 
@@ -357,7 +363,7 @@ model FeaturedCombo {
   combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
 
   @@index([slot, startsAt, endsAt])
-  @@index([startsAt, endsAt])
+  // @@index([startsAt, endsAt]) — REMOVED: the slot composite covers range scans
   @@index([comboId])
   @@index([endsAt])
 }
@@ -373,7 +379,7 @@ model ChatUsage {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, day])
-  @@index([day])
+  // @@index([day]) — REMOVED: all queries filter by userId first via @@unique
 }
 
 model CareerEntry {
@@ -402,8 +408,8 @@ model VisitorActivity {
   lastSeen  DateTime @default(now())
   createdAt DateTime @default(now())
 
-  @@index([lastSeen])
-  @@index([userId])
+  // @@index([lastSeen]) — REMOVED: covered by [userId, lastSeen]
+  // @@index([userId]) — REMOVED: covered by [userId, lastSeen]
   @@index([userId, lastSeen])
 }
 
@@ -420,11 +426,12 @@ model Report {
 
   reporter User? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
 
-  @@index([status])
+  // @@index([status]) — REMOVED: covered by [status, createdAt]
   @@index([status, createdAt])
-  @@index([kind])
+  // @@index([kind]) — REMOVED: covered by [kind, status, createdAt]
   @@index([kind, status, createdAt])
-  @@index([createdAt])
+  // @@index([createdAt]) — REMOVED: covered by composites above
+  @@index([reporterId])
 }
 
 model ComboPart {
@@ -438,6 +445,7 @@ model ComboPart {
 
   @@unique([comboId, role])
   @@index([partId])
+  @@index([comboId, partId])
 }
 
 model ComboPhoto {
@@ -453,10 +461,10 @@ model ComboPhoto {
 
   combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
 
-  @@index([ownerId])
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
   @@index([ownerId, createdAt])
   @@index([comboId, visibility, createdAt])
-  @@index([visibility])
+  // @@index([visibility]) — REMOVED: low cardinality, rarely queried alone
 }
 
 model Battle {
@@ -484,29 +492,22 @@ model Battle {
   deckB Deck? @relation("BattleDeckB", fields: [deckBId], references: [id], onDelete: Restrict)
   deckWinner Deck? @relation("BattleDeckWinner", fields: [deckWinnerId], references: [id], onDelete: Restrict)
 
-  @@index([ownerId])
+  // Owner queries (profile, usage enforcement)
   @@index([ownerId, createdAt])
   @@index([ownerId, playedAt])
-  @@index([format])
-  @@index([visibility])
+
+  // Public feed / listing queries (visibility + time ordering)
   @@index([visibility, playedAt])
-  @@index([comboAId])
+
+  // Combo battle history (the most common query pattern)
   @@index([comboAId, visibility, playedAt])
-  @@index([comboBId])
   @@index([comboBId, visibility, playedAt])
-  @@index([winnerId])
+
+  // Winner stats
   @@index([winnerId, visibility])
-  @@index([deckAId])
+
+  // Deck battle history
   @@index([deckAId, visibility])
-  @@index([deckBId])
   @@index([deckBId, visibility])
-  @@index([deckWinnerId])
   @@index([deckWinnerId, visibility])
-  @@index([playedAt])
 }
-
-
-
-
-
-

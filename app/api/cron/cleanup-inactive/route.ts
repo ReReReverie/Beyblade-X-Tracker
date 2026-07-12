@@ -9,19 +9,21 @@ export async function GET(request: Request) {
   }
 
   const inactiveCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  const activeUserIds = await prisma.visitorActivity.findMany({
-    where: { userId: { not: null }, lastSeen: { gte: inactiveCutoff } },
-    distinct: ["userId"],
-    select: { userId: true }
-  });
-  const activeIds = activeUserIds.map((item) => item.userId).filter((id): id is string => Boolean(id));
-  const inactiveDeleted = await prisma.user.deleteMany({
-    where: {
-      role: "USER",
-      createdAt: { lt: inactiveCutoff },
-      id: { notIn: activeIds }
-    }
-  });
 
-  return NextResponse.json({ inactiveDeleted: inactiveDeleted.count });
+  // Use a single efficient query instead of loading all active IDs into memory.
+  // Delete users who: have role USER, were created before cutoff, AND have no
+  // recent visitor activity (no row with lastSeen >= cutoff linked to their userId).
+  const inactiveDeleted = await prisma.$executeRaw`
+    DELETE FROM "User"
+    WHERE "role" = 'USER'
+      AND "createdAt" < ${inactiveCutoff}
+      AND "id" NOT IN (
+        SELECT DISTINCT "userId"
+        FROM "VisitorActivity"
+        WHERE "userId" IS NOT NULL
+          AND "lastSeen" >= ${inactiveCutoff}
+      )
+  `;
+
+  return NextResponse.json({ inactiveDeleted });
 }

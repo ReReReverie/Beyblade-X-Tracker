@@ -144,14 +144,20 @@ export async function POST(request: Request) {
     ].sort((a, b) => (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99));
 
     const comboPartIds = comboPartEntries.map((entry) => entry.part.id).sort();
-    const possibleDuplicates = await prisma.combo.findMany({
-      where: { ownerId, bitPartId: bitPart.id, ratchetPartId: ratchetPart?.id ?? null },
-      include: { parts: { select: { partId: true } } }
+    const existingDuplicate = await prisma.combo.findFirst({
+      where: {
+        ownerId,
+        bitPartId: bitPart.id,
+        ratchetPartId: ratchetPart?.id ?? null,
+        parts: {
+          every: { partId: { in: comboPartIds } }
+        }
+      },
+      select: { id: true, parts: { select: { partId: true } } }
     });
-    const duplicate = possibleDuplicates.find((combo) => {
-      const ids = combo.parts.map((entry) => entry.partId).sort();
-      return ids.length === comboPartIds.length && ids.every((id, index) => id === comboPartIds[index]);
-    });
+    const duplicate = existingDuplicate && existingDuplicate.parts.length === comboPartIds.length
+      ? existingDuplicate
+      : undefined;
     if (duplicate) {
       return NextResponse.json({ error: "That combo already exists for your account." }, { status: 409 });
     }
@@ -210,9 +216,13 @@ export async function GET(request: Request) {
     include: {
       parts: { include: { part: true }, orderBy: { role: "asc" } },
       photos: { where: { visibility: "PUBLIC" }, take: 1 },
-      wins: { select: { id: true } },
-      battlesA: { select: { id: true } },
-      battlesB: { select: { id: true } }
+      _count: {
+        select: {
+          wins: { where: { visibility: "PUBLIC" } },
+          battlesA: { where: { visibility: "PUBLIC" } },
+          battlesB: { where: { visibility: "PUBLIC" } }
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
     skip: (page - 1) * take,
