@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { CollapsibleComboCard } from "@/components/collapsible-combo-card";
+import { ComboPartEditForm } from "@/components/combo-part-edit-form";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { BattleForm, ComboForm, DeckForm, PhotoForm } from "@/components/dashboard-forms";
 import { PartCard } from "@/components/part-card";
@@ -241,6 +242,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {comboWeightValue !== null ? `${comboWeightValue.toFixed(2)} g` : "Weight unavailable"} - Condition {comboCondition(combo)}/10 - {wins}-{total - wins} ({pct(wins, total)}) - {formatVisibility(combo.visibility)}
                     </p>
                     <ComboVisibilityForm comboId={combo.id} initialVisibility={combo.visibility} />
+                    <ComboPartEditForm
+                      comboId={combo.id}
+                      parts={combo.parts.map((entry: any) => ({
+                        id: entry.part.id,
+                        name: entry.part.name,
+                        type: entry.part.type,
+                        role: entry.role,
+                        weightGrams: entry.part.weightGrams,
+                        manufacturer: entry.part.manufacturer,
+                      }))}
+                    />
                     <DeleteButton endpoint="combos" id={combo.id} label="Delete" />
                   </CollapsibleComboCard>
                 );
