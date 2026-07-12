@@ -1386,5 +1386,34 @@ textarea {
   min-height: 164px;
 }
 
+.combo-part-edit {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.6rem;
+}
+
+.combo-part-edit-row {
+  display: grid;
+  gap: 0.4rem 0.8rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: end;
+}
+
+.combo-part-edit-row label {
+  font-size: 0.75rem;
+}
+
+.combo-part-edit-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  align-self: center;
+}
+
+@media (max-width: 600px) {
+  .combo-part-edit-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 

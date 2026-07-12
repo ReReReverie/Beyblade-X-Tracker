@@ -18,12 +18,13 @@ export const partSchema = z.object({
 
 export const updatePartSchema = z.object({
   id: z.string().min(1),
+  comboId: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(80).optional(),
   type: z.nativeEnum(PartType).optional(),
-  manufacturer: z.nativeEnum(Manufacturer).optional(),
+  manufacturer: z.nativeEnum(Manufacturer).optional().nullable(),
   weightGrams: z.preprocess(
-    (value) => (value === "" || value === null || value === undefined ? undefined : value),
-    z.coerce.number().positive().max(999.99).optional()
+    (value) => (value === "" || value === undefined ? null : value),
+    z.coerce.number().positive().max(999.99).optional().nullable()
   ),
   conditionRating: z.coerce.number().min(0).max(10).optional(),
   visibility: visibilitySchema.optional(),
