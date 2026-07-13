@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix all seed data typos and add new PartSeries enum values (UX_EXPANDED, BX_EXPANDED) with corresponding data corrections in meta-parts.ts and a new Prisma migration",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Update prisma/schema.prisma - Add UX_EXPANDED and BX_EXPANDED to the PartSeries enum (after CX_EXPANDED)",
     "Step 2: Create a new Prisma migration file at prisma/migrations/20260709000000_add_ux_bx_expanded_series/migration.sql with content: ALTER TYPE \"PartSeries\" ADD VALUE 'UX_EXPANDED';\nALTER TYPE \"PartSeries\" ADD VALUE 'BX_EXPANDED';",
@@ -34,5 +34,5 @@
     "Run 'bunx tsc --noEmit' to verify TypeScript compiles without errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes verified. prisma generate and tsc --noEmit both pass cleanly. The prior commit had incorrectly changed WhaleWave to WhalesWave in wikiBladeNames - this was reverted to WhaleWave. Glory Valk added after Bullet Griffon entry. Dran Strike (in wikiHasbroOnlyBladeNames) will get BX_EXPANDED via the fallback since formatWikiName('DranStrike') produces 'Dran Strike' which is in bxExpandedBladeNames."
 }
