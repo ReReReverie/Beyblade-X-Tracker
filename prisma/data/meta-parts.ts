@@ -21,7 +21,7 @@ const uxBladeNames = new Set([
   "Golem Rock",
   "Hack Viking",
   "Hells Hammer",
-  "Hover Wyvern",
+  "Wyvern Hover",
   "Impact Drake",
   "Knight Mail",
   "Leon Crest",
@@ -138,13 +138,13 @@ export const metaParts: MetaPartSeed[] = [
     notes: "Height-versatile attacker. Meta on 1-60 through 7-60 Rush and Level setups."
   },
   {
-    slug: "hover-wyvern",
-    name: "Hover Wyvern",
+    slug: "wyvern-hover",
+    name: "Wyvern Hover",
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
     weightGrams: "34.50",
     metaTier: "S",
-    notes: "UX attack blade with strong Over/Xtreme Zone reversal. Pairs with 1-60/1-70 Rush. Available from both TT and Hasbro."
+    notes: "UX attack blade with strong Over/Xtreme Zone reversal. Pairs with 1-60/1-70 Rush. Hasbro equivalent: Hover Wyvern."
   },
   {
     slug: "emperor-blast-heavy",
@@ -294,7 +294,7 @@ export const metaParts: MetaPartSeed[] = [
     manufacturer: "TAKARA_TOMY",
     weightGrams: "6.05",
     metaTier: "A",
-    notes: "Simple-type ratchet for Clock Mirage stamina builds. Pairs with Under Needle."
+    notes: "Simple Type Ratchet (RBT-Ratchet) - O-type joint. 4 protrusions at 5.5mm height. Compatible with Clock Mirage. Simple-type ratchet for Clock Mirage stamina builds. Pairs with Under Needle."
   },
   {
     slug: "ratchet-5-60",
@@ -312,7 +312,7 @@ export const metaParts: MetaPartSeed[] = [
     manufacturer: "TAKARA_TOMY",
     weightGrams: "6.72",
     metaTier: "A",
-    notes: "70-height ratchet for Shark Scale Low Rush and Hover Wyvern attack variants."
+    notes: "70-height ratchet for Shark Scale Low Rush and Wyvern Hover attack variants."
   },
   {
     slug: "ratchet-4-60",
@@ -635,6 +635,37 @@ export const metaParts: MetaPartSeed[] = [
     notes: "Ultra low profile ratchet. Promotes low-height smash attacks."
   },
 
+  // ── Simple Type Ratchets (RBT-Ratchet, O-type joint, Clock Mirage compatible) ──
+  {
+    slug: "ratchet-9-65",
+    name: "9-65",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    notes: "Simple Type Ratchet (RBT-Ratchet) - O-type joint. 9 protrusions at 6.5mm height. Compatible with Clock Mirage."
+  },
+  {
+    slug: "ratchet-7-55",
+    name: "7-55",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    notes: "Simple Type Ratchet (RBT-Ratchet) - O-type joint. 7 protrusions at 5.5mm height. Compatible with Clock Mirage."
+  },
+  {
+    slug: "ratchet-3-85",
+    name: "3-85",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    notes: "Simple Type Ratchet (RBT-Ratchet) - O-type joint. 3 protrusions at 8.5mm height. Compatible with Clock Mirage."
+  },
+  {
+    slug: "ratchet-m-85",
+    name: "M-85",
+    type: "RATCHET",
+    manufacturer: "TAKARA_TOMY",
+    weightGrams: "10.60",
+    notes: "Simple Type Ratchet (RBT-Ratchet) - O-type joint. Heaviest ratchet at 10.6g. Compatible with Clock Mirage."
+  },
+
   // ── Extra competitive bits ──────────────────────────────────────────────────
   {
     slug: "bit-needle",
@@ -761,7 +792,7 @@ export const metaParts: MetaPartSeed[] = [
     manufacturer: "HASBRO",
     series: PartSeries.UX_EXPANDED,
     ratchetIntegration: RatchetIntegration.BLADE,
-    notes: "Hasbro-exclusive ratchet-integrated blade. Hasbro equivalent of Bullet Griffon."
+    notes: "Hasbro-equivalent ratchet-integrated blade. Same mold as Bullet Griffon."
   },
   {
     slug: "glory-valk",
@@ -912,6 +943,7 @@ const wikiBladeNames = [
   "ShinobiShadow",
   "SilverWolf",
   "WizardRod",
+  "WyvernHover",
   // Unique Line ratchet-integrated (UX_EXPANDED - TT)
   "HellsNether",
   // BX_EXPANDED (Expand Blades)
@@ -944,8 +976,66 @@ const wikiHasbroOnlyBladeNames = [
   "Stun Medusa"
 ];
 
+/**
+ * Hasbro equivalents of TT blades that share the same mold but have different names.
+ * Key: TT PascalCase name, Value: Hasbro display name.
+ * BulletGriffon is omitted because "Rocket Griffon" already exists in metaParts.
+ */
+const wikiHasbroEquivalentBladeNames: Record<string, string> = {
+  DranSword: "Sword Dran",
+  KnightShield: "Helm Knight",
+  WizardArrow: "Arrow Wizard",
+  HellsScythe: "Scythe Incendio",
+  KnightLance: "Lance Knight",
+  LeonClaw: "Claw Leon",
+  DranBuster: "Buster Dran",
+  WizardRod: "Wand Wizard",
+  ShinobiShadow: "Shadow Shinobi",
+  CrimsonGaruda: "Scarlet Garuda",
+  SilverWolf: "Sterling Wolf",
+  GolemRock: "Rock Golem",
+  PhoenixWing: "Soar Phoenix",
+  SharkScale: "Scale Shark",
+  PhoenixRudder: "Rudder Phoenix",
+  PhoenixFeather: "Feather Phoenix",
+  SamuraiCalibur: "Steel Samurai",
+  RhinoHorn: "Horn Rhino",
+  SharkEdge: "Keel Shark",
+  UnicornSting: "Sting Unicorn",
+  TyrannoBeat: "Roar Tyranno",
+  SphinxCowl: "Cowl Sphinx",
+  BlackShell: "Obsidian Shell",
+  DranDagger: "Dagger Dran",
+  WhaleWave: "Tide Whale",
+  ViperTail: "Tail Viper",
+  HellsChain: "Chain Incendio",
+  HellsHammer: "Hammer Incendio",
+  WyvernGale: "Gale Wyvern",
+  ShinobiKnife: "Knife Shinobi",
+  WeissTiger: "Pearl Tiger",
+  LeonCrest: "Crest Leon",
+  GhostCircle: "Circle Ghost",
+  ScorpioSpear: "Spear Scorpio",
+  MummyCurse: "Curse Mummy",
+  MeteorDragoon: "Meteoroid Dragoon",
+  TriceraPress: "Ridge Triceratops",
+  DranStrike: "Strike Dran",
+  SiegSuperion: "Suppress Superion",
+  GloryValkyrie: "Glory Valkerion",
+  KnightMail: "Mail Knight",
+  BatGust: "Gust Bat",
+  SamuraiSaber: "Saber Samurai",
+  SharkGill: "Gill Shark",
+  GoatTackle: "Tackle Goat",
+  BearScratch: "Savage Bear",
+  CrocCrunch: "Bite Croc",
+  WyvernHover: "Hover Wyvern"
+};
+
 // CX-exclusive ratchets (0-60, 1-50, 4-55, 5-50, 6-60, 6-80, 8-70) are intentionally
 // omitted from this array because they are covered by `cxRatchetNames`.
+// Simple-type ratchets (9-65, 7-55, 3-85, M-85) are intentionally omitted from this
+// array because they have explicit entries in `metaParts` with detailed annotations.
 const wikiRatchetNames = [
   // Unique Line ratchets
   "0-70",
@@ -954,13 +1044,10 @@ const wikiRatchetNames = [
   "1-80",
   "2-70",
   "3-70",
-  "3-85",
   "4-50",
   "5-70",
-  "7-55",
   "7-60",
   "7-70",
-  "9-65",
   "9-70",
   // Basic Line ratchets
   "1-70",
@@ -977,7 +1064,6 @@ const wikiRatchetNames = [
   "7-80",
   "9-60",
   "9-80",
-  "M-85"
 ];
 
 const wikiBitNames = [
@@ -1071,6 +1157,12 @@ const wikiGeneratedParts: MetaPartSeed[] = [
   ...wikiHasbroOnlyBladeNames.map((name) => ({
     slug: slugifyWikiName(name),
     name: formatWikiName(name),
+    type: "BLADE" as PartType,
+    manufacturer: "HASBRO" as Manufacturer
+  })),
+  ...Object.entries(wikiHasbroEquivalentBladeNames).map(([, hasbroName]) => ({
+    slug: slugifyWikiName(hasbroName),
+    name: hasbroName,
     type: "BLADE" as PartType,
     manufacturer: "HASBRO" as Manufacturer
   })),
