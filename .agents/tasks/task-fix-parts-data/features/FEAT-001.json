@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Update prisma/data/meta-parts.ts with comprehensive, correctly-attributed Hasbro and Takara Tomy Beyblade X parts based on authoritative Beyblade Wiki data scraped from the Fandom API.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update the `wikiBladeNames` array (Takara Tomy Basic Line blades) to include ALL blades from the wiki Basic Line that have a Takara Tomy name. Add missing ones: ShinobiKnife, SharkGill (TT name for Gill Shark), CrocCrunch (TT name for Bite Croc), TyrannoRoar, BearScratch, SamuraiSteel, GoatTackle, PteraSwing, MammothTusk, ShinobiShadow (already in list), DragoonStorm, StormPegasis, VictoryValkyrie, Trypio.",
     "Update the `wikiHasbroOnlyBladeNames` array to contain ONLY blades where the Takara Tomy name is N/A on the wiki. Based on wiki data: 'Hack Viking' and 'Stun Medusa' are true Hasbro exclusives (N/A for TT). 'Clamp Crab' and 'Yell Kong' from Basic Line Hasbro Debut are also Hasbro-exclusive (N/A for TT). Remove blades that actually have TT equivalents: BatGust, TriceraSpiky, CyclopsEye, DranStrike, HeavensRing, SiegSuperion, DranzerSpiral, DrigerSlash, DracielShield, Lightning L-Drago variants, Rock Leone, StormSpriggan, XenoXcalibur all have TT names and should be in wikiBladeNames instead.",
@@ -35,5 +35,5 @@
     "Run `node -e \"const m = require('./prisma/data/meta-parts'); console.log('Total parts:', m.allMetaParts.length)\"` via tsx to verify the module loads and exports correctly"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes compile cleanly. Total parts: 264 (171 blades, 36 ratchets, 57 bits). Node v22.22.3 was available via nvm. The GloryValkyrie PascalCase entry in wikiBladeNames generates a 'Glory Valkyrie' blade that is distinct from the hand-curated 'Glory Valk' slug (both exist as separate entries in allMetaParts). The uxExpandedBladeNames Set contains both 'Glory Valk' and 'Glory Valkyrie' to catch both forms."
 }
