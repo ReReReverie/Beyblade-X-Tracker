@@ -1247,6 +1247,51 @@ textarea {
   padding: 1rem;
 }
 
+.chat-message__body p {
+  margin: 0.15rem 0;
+  line-height: 1.5;
+}
+
+.chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.chat-suggestion-chip {
+  background: var(--surface);
+  border: 1.5px solid var(--ink);
+  border-radius: 2rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.chat-suggestion-chip:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--base);
+  transform: translateY(-1px);
+}
+
+.chat-suggestion-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.chat-typing {
+  color: var(--muted, #666);
+  font-style: italic;
+  animation: chatPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chatPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 @media (max-width: 820px) {
   .hero,
   .tabs,
