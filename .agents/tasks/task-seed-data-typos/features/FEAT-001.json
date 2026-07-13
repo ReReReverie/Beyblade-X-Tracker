@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix all seed data typos and add new PartSeries enum values (UX_EXPANDED, BX_EXPANDED) with corresponding data corrections in meta-parts.ts and a new Prisma migration",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Update prisma/schema.prisma - Add UX_EXPANDED and BX_EXPANDED to the PartSeries enum (after CX_EXPANDED)",
+    "Step 2: Create a new Prisma migration file at prisma/migrations/20260709000000_add_ux_bx_expanded_series/migration.sql with content: ALTER TYPE \"PartSeries\" ADD VALUE 'UX_EXPANDED';\nALTER TYPE \"PartSeries\" ADD VALUE 'BX_EXPANDED';",
+    "Step 3: In prisma/data/meta-parts.ts - Fix 'Whales Wave' to 'Whale Wave' in the uxBladeNames Set (line 25 area)",
+    "Step 4: In prisma/data/meta-parts.ts - Fix the metaParts entry: change slug from 'whales-wave' to 'whale-wave' and name from 'Whales Wave' to 'Whale Wave' (around line 462-463)",
+    "Step 5: In prisma/data/meta-parts.ts - Fix 'WhalesWave' to 'WhaleWave' in the wikiBladeNames array (around line 795). The formatWikiName function will produce 'Whale Wave' from 'WhaleWave'.",
+    "Step 6: In prisma/data/meta-parts.ts - Add two new Sets after cxExpandedBladeNames: 'uxExpandedBladeNames' containing 'Bullet Griffon' and 'Glory Valk', and 'bxExpandedBladeNames' containing 'Dran Strike'",
+    "Step 7: In prisma/data/meta-parts.ts - Update the applyMetaPartMetadata function's series fallback chain to include the new sets. The chain should be: cxExpandedBladeNames -> CX_EXPANDED, cxBladeNames -> CX, uxExpandedBladeNames -> UX_EXPANDED, uxBladeNames -> UX, bxExpandedBladeNames -> BX_EXPANDED, default -> BX",
+    "Step 8: In prisma/data/meta-parts.ts - Update Bullet Griffon's explicit series from PartSeries.UX to PartSeries.UX_EXPANDED in its metaParts entry (around line 730)",
+    "Step 9: In prisma/data/meta-parts.ts - Add a new metaParts entry for 'Glory Valk' with slug 'glory-valk', type BLADE, manufacturer TAKARA_TOMY, series PartSeries.UX_EXPANDED. Place it near the other UX blades. Give it a minimal notes field like 'UX expanded line blade.'",
+    "Step 10: In prisma/data/meta-parts.ts - Remove the metaParts entry with slug 'bit-disc-ball' and name 'Disc Ball' (the one around line 682 with weightGrams '2.60' and metaTier 'A')",
+    "Step 11: In prisma/data/meta-parts.ts - In the wikiBitNames array, change 'Disc Ball' to 'Discball' (one word, around line 878)"
+  ],
+  "acceptance_criteria": [
+    "prisma/schema.prisma PartSeries enum contains BX, UX, CX, CX_EXPANDED, UX_EXPANDED, BX_EXPANDED",
+    "A new migration SQL file exists that adds UX_EXPANDED and BX_EXPANDED to the PartSeries enum",
+    "All occurrences of 'Whales Wave' are replaced with 'Whale Wave' (in uxBladeNames, metaParts slug/name, wikiBladeNames)",
+    "Bullet Griffon has series: PartSeries.UX_EXPANDED",
+    "Dran Strike (in wikiHasbroOnlyBladeNames) will get series BX_EXPANDED via the fallback logic in applyMetaPartMetadata",
+    "Glory Valk exists as a new blade entry",
+    "The metaParts entry with slug 'bit-disc-ball' is removed",
+    "wikiBitNames contains 'Discball' instead of 'Disc Ball'",
+    "bunx prisma generate succeeds without errors",
+    "bunx tsc --noEmit succeeds without errors"
+  ],
+  "verification": [
+    "Run 'bun install' to install dependencies",
+    "Run 'bunx prisma generate' to verify the schema is valid and types generate correctly",
+    "Run 'bunx tsc --noEmit' to verify TypeScript compiles without errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

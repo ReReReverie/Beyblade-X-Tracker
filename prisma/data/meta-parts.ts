@@ -22,13 +22,17 @@ const uxBladeNames = new Set([
   "Phoenix Rudder",
   "Shark Scale",
   "Silver Wolf",
-  "Whales Wave",
+  "Whale Wave",
   "Wizard Rod"
 ]);
 
 const cxBladeNames = new Set(["Emperor Blast Heavy"]);
 
 const cxExpandedBladeNames = new Set<string>([]);
+
+const uxExpandedBladeNames = new Set(["Bullet Griffon", "Glory Valk"]);
+
+const bxExpandedBladeNames = new Set(["Dran Strike"]);
 
 export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
   if (part.type !== "BLADE") {
@@ -48,9 +52,13 @@ export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
         ? PartSeries.CX_EXPANDED
         : cxBladeNames.has(part.name)
           ? PartSeries.CX
-          : uxBladeNames.has(part.name)
-            ? PartSeries.UX
-            : PartSeries.BX),
+          : uxExpandedBladeNames.has(part.name)
+            ? PartSeries.UX_EXPANDED
+            : uxBladeNames.has(part.name)
+              ? PartSeries.UX
+              : bxExpandedBladeNames.has(part.name)
+                ? PartSeries.BX_EXPANDED
+                : PartSeries.BX),
     ratchetIntegration: part.ratchetIntegration ?? RatchetIntegration.NONE,
     role: part.role ?? PartRole.BLADE
   };
@@ -459,8 +467,8 @@ export const metaParts: MetaPartSeed[] = [
     notes: "6-winged attacker with high burst power. Excels on 3-60 Flat or Rush."
   },
   {
-    slug: "whales-wave",
-    name: "Whales Wave",
+    slug: "whale-wave",
+    name: "Whale Wave",
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
     weightGrams: "36.50",
@@ -679,15 +687,6 @@ export const metaParts: MetaPartSeed[] = [
     notes: "Defensive bit with a solid metal tip. Highly resistant to stadium exits."
   },
   {
-    slug: "bit-disc-ball",
-    name: "Disc Ball",
-    type: "BIT",
-    manufacturer: "TAKARA_TOMY",
-    weightGrams: "2.60",
-    metaTier: "A",
-    notes: "Stamina bit with a wide disk shield. Excellent Life After Death (LAD)."
-  },
-  {
     slug: "bit-glide",
     name: "Glide",
     type: "BIT",
@@ -728,10 +727,18 @@ export const metaParts: MetaPartSeed[] = [
     name: "Bullet Griffon",
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
-    series: PartSeries.UX,
+    series: PartSeries.UX_EXPANDED,
     ratchetIntegration: RatchetIntegration.BLADE,
     weightGrams: "63.20",
     notes: "UX-19 ratchet-integrated blade. Splits into Bullet (attack) and Griffon (defense) halves mid-battle."
+  },
+  {
+    slug: "glory-valk",
+    name: "Glory Valk",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    series: PartSeries.UX_EXPANDED,
+    notes: "UX expanded line blade."
   },
   {
     slug: "turbo",
@@ -792,7 +799,7 @@ const wikiBladeNames = [
   "UnicornSting",
   "ViperTail",
   "WeissTiger",
-  "WhalesWave",
+  "WhaleWave",
   "WizardArrow",
   "WyvernGale",
   "AeroPegasus",
@@ -875,7 +882,7 @@ const wikiRatchetNames = [
 const wikiBitNames = [
   "Accel",
   "Bound Spike",
-  "Disc Ball",
+  "Discball",
   "Free Ball",
   "Glide",
   "Hexa",
