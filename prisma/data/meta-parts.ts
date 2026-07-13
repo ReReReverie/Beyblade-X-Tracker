@@ -769,7 +769,8 @@ export const metaParts: MetaPartSeed[] = [
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
     series: PartSeries.UX_EXPANDED,
-    notes: "UX-20 blade. High-stamina attacker with wide contact points. Takara Tomy only, no Hasbro version currently."
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "UX-20 ratchet-integrated blade. High-stamina attacker with wide contact points. Takara Tomy only, no Hasbro version currently."
   },
   {
     slug: "hells-nether",
