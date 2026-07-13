@@ -44,7 +44,20 @@ export function ChatBox({ signedIn, initialRemaining }: { signedIn: boolean; ini
       id: 1,
       role: "bot",
       body: signedIn
-        ? "I'm your Beyblade X assistant. I can create combos, log battles, check your stats, manage decks, and more. Type 'help' to see all commands."
+        ? [
+            "**Beyblade X Assistant** — Create combos, log battles, view stats, and manage your collection via chat.",
+            "",
+            "**Commands:**",
+            "help — See all commands & examples",
+            "my parts — Browse your part inventory",
+            "my combos — List your recent combos",
+            "my stats — Win rate & battle record",
+            "my battles — Recent battle history",
+            "my decks — View your 3v3 decks",
+            "create deck — Build a new deck",
+            "",
+            "Or just type a combo (e.g. Phoenix Wing 9-60 Point) or battle (e.g. ComboA vs ComboB 1-0)."
+          ].join("\n")
         : "Sign in first, then I can help you manage your combos, parts, battles, and decks.",
       suggestions: signedIn ? ["help", "my stats", "my combos", "my parts"] : undefined
     }
