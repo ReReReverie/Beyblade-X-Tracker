@@ -20,7 +20,7 @@ export default async function ChatPage() {
       <section className="band">
         <span className="tag tag--filled">Assistant</span>
         <h1>Tracker chat</h1>
-        <p>Text a combo and the assistant will create it from your saved parts. Photos still upload manually.</p>
+        <p>Your all-in-one Beyblade X assistant. Create combos, log battles, check stats, manage decks, and browse your inventory — all from chat. Type <strong>help</strong> to see every command.</p>
       </section>
       <ChatBox signedIn={Boolean(sessionUser)} initialRemaining={remaining} />
     </div>
