@@ -21,6 +21,7 @@ const uxBladeNames = new Set([
   "Golem Rock",
   "Hack Viking",
   "Hells Hammer",
+  "Hover Wyvern",
   "Impact Drake",
   "Knight Mail",
   "Leon Crest",
@@ -35,8 +36,7 @@ const uxBladeNames = new Set([
   "Silver Wolf",
   "Stun Medusa",
   "Whale Wave",
-  "Wizard Rod",
-  "Wyvern Hover"
+  "Wizard Rod"
 ]);
 
 const cxBladeNames = new Set(["Emperor Blast Heavy"]);
@@ -47,7 +47,6 @@ const uxExpandedBladeNames = new Set([
   "Bullet Griffon",
   "Cutter Shinobi",
   "Glory Valk",
-  "Glory Valkyrie",
   "Hells Nether",
   "Rampart Aegis",
   "Seize Jaguar",
@@ -902,10 +901,8 @@ const wikiBladeNames = [
   "ShinobiShadow",
   "SilverWolf",
   "WizardRod",
-  "WyvernHover",
   // Unique Line ratchet-integrated (UX_EXPANDED - TT)
   "BulletGriffon",
-  "GloryValkyrie",
   "HellsNether",
   // BX_EXPANDED (Expand Blades)
   "CyclopsEye",
@@ -937,6 +934,8 @@ const wikiHasbroOnlyBladeNames = [
   "Stun Medusa"
 ];
 
+// CX-exclusive ratchets (0-60, 1-50, 4-55, 5-50, 6-60, 6-80, 8-70) are intentionally
+// omitted from this array because they are covered by `cxRatchetNames`.
 const wikiRatchetNames = [
   // Unique Line ratchets
   "0-70",
@@ -1026,7 +1025,7 @@ const wikiBitNames = [
 ];
 
 const cxLockChipNames = [
-  "Bahamut", "Brachio", "Bucks", "Cerberus", "Croc", "Drake", "Dran", "Enlil", "Eva", "Fox", "Hells", "Hornet", "Knight", "Kraken", "Leon", "Emperor", "Pegasus", "Perseus", "Phoenix", "Ragna", "Rhino", "Sol", "Stag", "Tiga", "Unicorn", "Valkerion", "Valkyrie", "Whale", "Wolf", "Wizard"
+  "Bahamut", "Brachio", "Bucks", "Cerberus", "Croc", "Drake", "Dran", "Enlil", "Eva", "Fox", "Hells", "Hornet", "Knight", "Kraken", "Leon", "Emperor", "Pegasus", "Perseus", "Phoenix", "Ragna", "Rhino", "Sol", "Tiga", "Unicorn", "Valkerion", "Valkyrie", "Whale", "Wolf", "Wizard"
 ];
 
 const cxMainBladeNames = [
