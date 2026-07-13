@@ -234,18 +234,23 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
     <form className="combo-form" onSubmit={submit}>
       <h2>Build combo</h2>
       <p className="meta">Combo names are generated from selected parts automatically.</p>
-      <div className="tab-buttons" role="tablist" aria-label="Part groups">
-        <button type="button" className={tab === "uxbx" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("uxbx")}>BX / UX</button>
-        <button type="button" className={tab === "cx" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cx")}>CX</button>
-        <button type="button" className={tab === "cxExpanded" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cxExpanded")}>CX-Expanded</button>
-      </div>
+      <label className="combo-form__field">
+        <span>Series</span>
+        <select value={tab} onChange={(event) => setTab(event.target.value as ComboTab)} aria-label="Part groups">
+          <option value="uxbx">BX / UX</option>
+          <option value="cx">CX</option>
+          <option value="cxExpanded">CX-Expanded</option>
+        </select>
+      </label>
 
-      <fieldset className="flex flex-wrap gap-2 border-0 p-0 mt-2 mb-2">
-        <legend className="sr-only">Filter by manufacturer</legend>
-        <button type="button" className={manufacturerFilter === "ALL" ? "secondary tab-button--active text-xs px-3 py-1" : "secondary text-xs px-3 py-1"} onClick={() => setManufacturerFilter("ALL")}>All</button>
-        <button type="button" className={manufacturerFilter === "TAKARA_TOMY" ? "secondary tab-button--active text-xs px-3 py-1" : "secondary text-xs px-3 py-1"} onClick={() => setManufacturerFilter("TAKARA_TOMY")}>Takara Tomy</button>
-        <button type="button" className={manufacturerFilter === "HASBRO" ? "secondary tab-button--active text-xs px-3 py-1" : "secondary text-xs px-3 py-1"} onClick={() => setManufacturerFilter("HASBRO")}>Hasbro</button>
-      </fieldset>
+      <label className="combo-form__field">
+        <span>Manufacturer</span>
+        <select value={manufacturerFilter} onChange={(event) => setManufacturerFilter(event.target.value as "ALL" | "TAKARA_TOMY" | "HASBRO")} aria-label="Filter by manufacturer">
+          <option value="ALL">All</option>
+          <option value="TAKARA_TOMY">Takara Tomy</option>
+          <option value="HASBRO">Hasbro</option>
+        </select>
+      </label>
 
       <div className="combo-form__status" aria-live="polite">
         <span className="tag tag--filled">Series: {tabLabel(tab)}</span>
