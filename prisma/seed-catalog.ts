@@ -71,7 +71,7 @@ export async function seedCatalog() {
 
   // Clean up orphaned catalog entries from previous incorrect seed data
   await prisma.partCatalog.deleteMany({
-    where: { slug: { in: ["whales-wave", "bit-disc-ball"] } }
+    where: { slug: { in: ["whales-wave", "bit-disc-ball", "bit-disk-ball"] } }
   });
 
   // Gather remote Custom Line parts and merge with the built-in catalog
