@@ -36,5 +36,5 @@
     "Run 'npx next lint' to check for lint issues"
   ],
   "blocked_reason": null,
-  "findings": "ESLint/next lint has a pre-existing compatibility issue with @rushstack/eslint-patch and ESLint 9.39.4 (fails with 'Failed to patch ESLint because the calling module was not recognized'). This is unrelated to the changes made. TypeScript compilation (npx tsc --noEmit) passes cleanly. Node.js had to be installed via mise (node@22) as it was not pre-installed in the sandbox."
+  "findings": "ESLint/next lint has a pre-existing compatibility issue with @rushstack/eslint-patch and ESLint 9.39.4 (fails with 'Failed to patch ESLint because the calling module was not recognized'). This is unrelated to the changes made. TypeScript compilation (npx tsc --noEmit) passes cleanly. Node.js had to be installed via mise (node@22) as it was not pre-installed in the sandbox. Post-review fix: added 'bit-disk-ball' to seed-catalog.ts deleteMany cleanup array - the old wiki entry 'Disk Ball' (with a k) produced this slug via slugifyWikiName. The eslint-disable for exhaustive-deps in the phantom-selection useEffect was left as-is; the pattern is intentionally correct (only fire on filter change, read current selections at that moment) and the tradeoff is acceptable."
 }
