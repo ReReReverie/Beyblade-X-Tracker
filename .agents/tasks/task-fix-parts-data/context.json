@@ -1,0 +1,20 @@
+{
+  "project_type": "Next.js app with Prisma ORM and PostgreSQL",
+  "language": "TypeScript",
+  "build_system": "npm with tsx for scripts",
+  "test_framework": "No test framework configured",
+  "build_command": "npx tsc --noEmit",
+  "test_command": "npx tsc --noEmit",
+  "verification_instructions": "Run `npx tsc --noEmit` to verify TypeScript compiles without errors. The seed-catalog.ts imports from meta-parts.ts and must compile cleanly.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install && npx prisma generate",
+  "environment_constraints": "No database available for running actual seed. Validation is TypeScript compilation only. Beyblade Wiki Fandom API accessible at beyblade.fandom.com/api.php.",
+  "contribution_requirements": "Use responsive Tailwind CSS and semantic HTML for UI (not relevant here). Data changes must work with existing seed-catalog.ts upsert logic.",
+  "key_patterns": "meta-parts.ts exports MetaPartSeed type, metaParts (hand-curated), wikiGeneratedParts (auto-generated from name arrays), cxGeneratedParts (CX line from name arrays), and allMetaParts (combined, deduplicated). The applyMetaPartMetadata function infers series from blade name membership in Sets. The seed-catalog.ts uses slug as unique key for upserts.",
+  "relevant_files": [
+    "prisma/data/meta-parts.ts",
+    "prisma/seed-catalog.ts",
+    "prisma/schema.prisma"
+  ],
+  "directory_structure": "prisma/data/meta-parts.ts is the main file to update. prisma/seed-catalog.ts consumes it. prisma/schema.prisma defines enums and PartCatalog model."
+}

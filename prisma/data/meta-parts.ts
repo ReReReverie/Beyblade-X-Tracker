@@ -17,22 +17,44 @@ const uxBladeNames = new Set([
   "Aero Pegasus",
   "Clock Mirage",
   "Dran Buster",
+  "Ghost Circle",
+  "Golem Rock",
+  "Hack Viking",
+  "Hells Hammer",
   "Impact Drake",
+  "Knight Mail",
+  "Leon Crest",
   "Meteor Dragoon",
+  "Mummy Curse",
+  "Orochi Cluster",
   "Phoenix Rudder",
+  "Samurai Saber",
+  "Scorpio Spear",
   "Shark Scale",
+  "Shinobi Shadow",
   "Silver Wolf",
+  "Stun Medusa",
   "Whale Wave",
-  "Wizard Rod"
+  "Wizard Rod",
+  "Wyvern Hover"
 ]);
 
 const cxBladeNames = new Set(["Emperor Blast Heavy"]);
 
 const cxExpandedBladeNames = new Set<string>([]);
 
-const uxExpandedBladeNames = new Set(["Bullet Griffon"]);
+const uxExpandedBladeNames = new Set([
+  "Bullet Griffon",
+  "Cutter Shinobi",
+  "Glory Valk",
+  "Glory Valkyrie",
+  "Hells Nether",
+  "Rampart Aegis",
+  "Seize Jaguar",
+  "Valor Bison"
+]);
 
-const bxExpandedBladeNames = new Set(["Dran Strike"]);
+const bxExpandedBladeNames = new Set(["Cyclops Eye", "Dran Strike", "Heavens Ring", "Sieg Superion"]);
 
 export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
   if (part.type !== "BLADE") {
@@ -222,10 +244,10 @@ export const metaParts: MetaPartSeed[] = [
     slug: "wizard-arrow",
     name: "Wizard Arrow",
     type: "BLADE",
-    manufacturer: "HASBRO",
+    manufacturer: "TAKARA_TOMY",
     weightGrams: "32.77",
     metaTier: "B",
-    notes: "Light defensive blade. Budget-friendly Hasbro option for 4-60 Point builds."
+    notes: "Light defensive blade. Budget-friendly option for 4-60 Point builds."
   },
 
   // ── Meta ratchets ──────────────────────────────────────────────────────────
@@ -296,10 +318,10 @@ export const metaParts: MetaPartSeed[] = [
     slug: "ratchet-4-60",
     name: "4-60",
     type: "RATCHET",
-    manufacturer: "HASBRO",
+    manufacturer: "TAKARA_TOMY",
     weightGrams: "6.12",
     metaTier: "B",
-    notes: "Common Hasbro ratchet. Used in budget defense and balance builds."
+    notes: "Common ratchet. Used in budget defense and balance builds."
   },
   {
     slug: "ratchet-3-80",
@@ -424,10 +446,10 @@ export const metaParts: MetaPartSeed[] = [
     slug: "bit-point",
     name: "Point",
     type: "BIT",
-    manufacturer: "HASBRO",
+    manufacturer: "TAKARA_TOMY",
     weightGrams: "2.17",
     metaTier: "B",
-    notes: "Balanced movement bit. Common in Hasbro defense builds."
+    notes: "Balanced movement bit. Common in defense builds."
   },
   // ── Extra competitive blades ────────────────────────────────────────────────
   {
@@ -741,6 +763,51 @@ export const metaParts: MetaPartSeed[] = [
     notes: "UX expanded line blade. High-stamina attacker with wide contact points."
   },
   {
+    slug: "hells-nether",
+    name: "Hells Nether",
+    type: "BLADE",
+    manufacturer: "TAKARA_TOMY",
+    series: PartSeries.UX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "UX ratchet-integrated blade. Heavy attack platform with integrated ratchet."
+  },
+  {
+    slug: "cutter-shinobi",
+    name: "Cutter Shinobi",
+    type: "BLADE",
+    manufacturer: "HASBRO",
+    series: PartSeries.UX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "Hasbro-exclusive ratchet-integrated blade."
+  },
+  {
+    slug: "rampart-aegis",
+    name: "Rampart Aegis",
+    type: "BLADE",
+    manufacturer: "HASBRO",
+    series: PartSeries.UX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "Hasbro-exclusive ratchet-integrated blade."
+  },
+  {
+    slug: "seize-jaguar",
+    name: "Seize Jaguar",
+    type: "BLADE",
+    manufacturer: "HASBRO",
+    series: PartSeries.UX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "Hasbro-exclusive ratchet-integrated blade."
+  },
+  {
+    slug: "valor-bison",
+    name: "Valor Bison",
+    type: "BLADE",
+    manufacturer: "HASBRO",
+    series: PartSeries.UX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "Hasbro-exclusive ratchet-integrated blade."
+  },
+  {
     slug: "turbo",
     name: "Turbo",
     type: "BIT",
@@ -776,6 +843,7 @@ const slugifyWikiName = (value: string, prefix = "") => {
 };
 
 const wikiBladeNames = [
+  // Basic Line (Takara Tomy)
   "BlackShell",
   "CobaltDragoon",
   "CobaltDrake",
@@ -802,6 +870,19 @@ const wikiBladeNames = [
   "WhaleWave",
   "WizardArrow",
   "WyvernGale",
+  // Hasbro-debut blades with TT names (Basic Line)
+  "BatGust",
+  "BearScratch",
+  "CrocCrunch",
+  "GoatTackle",
+  "MammothTusk",
+  "PteraSwing",
+  "SamuraiSteel",
+  "SharkGill",
+  "ShinobiKnife",
+  "TriceraSpiky",
+  "TyrannoRoar",
+  // Unique Line (UX)
   "AeroPegasus",
   "ClockMirage",
   "DranBuster",
@@ -820,35 +901,51 @@ const wikiBladeNames = [
   "SharkScale",
   "ShinobiShadow",
   "SilverWolf",
-  "WizardRod"
-];
-
-const wikiHasbroOnlyBladeNames = [
-  "Hack Viking",
-  "Stun Medusa",
-  "BatGust",
-  "TriceraSpiky",
+  "WizardRod",
+  "WyvernHover",
+  // Unique Line ratchet-integrated (UX_EXPANDED - TT)
+  "BulletGriffon",
+  "GloryValkyrie",
+  "HellsNether",
+  // BX_EXPANDED (Expand Blades)
   "CyclopsEye",
   "DranStrike",
   "HeavensRing",
   "SiegSuperion",
+  // X-Over Project
+  "DragoonStorm",
   "DranzerSpiral",
   "DrigerSlash",
   "DracielShield",
+  "StormPegasis",
+  "StormSpriggan",
+  "Trypio",
+  "VictoryValkyrie",
+  "XenoXcalibur",
+  // X-Over Project (pre-formatted names)
   "Lightning L-Drago (Rapid-Hit Type)",
   "Lightning L-Drago (Upper Type)",
-  "Rock Leone",
-  "StormSpriggan",
-  "XenoXcalibur"
+  "Rock Leone"
+];
+
+const wikiHasbroOnlyBladeNames = [
+  // Basic Line Hasbro exclusives (N/A for TT)
+  "Clamp Crab",
+  "Yell Kong",
+  // Unique Line Hasbro exclusives (N/A for TT)
+  "Hack Viking",
+  "Stun Medusa"
 ];
 
 const wikiRatchetNames = [
+  // Unique Line ratchets
   "0-70",
   "0-80",
   "1-60",
   "1-80",
   "2-70",
   "3-70",
+  "3-85",
   "4-50",
   "5-70",
   "7-55",
@@ -856,6 +953,7 @@ const wikiRatchetNames = [
   "7-70",
   "9-65",
   "9-70",
+  // Basic Line ratchets
   "1-70",
   "2-60",
   "2-80",
@@ -864,25 +962,19 @@ const wikiRatchetNames = [
   "4-60",
   "4-70",
   "4-80",
+  "5-60",
   "5-80",
   "6-70",
   "7-80",
   "9-60",
   "9-80",
-  "M-85",
-  "0-60",
-  "1-50",
-  "4-55",
-  "5-50",
-  "6-60",
-  "6-80",
-  "8-70"
+  "M-85"
 ];
 
 const wikiBitNames = [
   "Accel",
   "Bound Spike",
-  "Discball",
+  "Disk Ball",
   "Free Ball",
   "Glide",
   "Hexa",
@@ -908,6 +1000,7 @@ const wikiBitNames = [
   "High Needle",
   "High Taper",
   "Low Flat",
+  "Low Point",
   "Merge",
   "Needle",
   "Orb",
@@ -933,15 +1026,15 @@ const wikiBitNames = [
 ];
 
 const cxLockChipNames = [
-  "Bahamut", "Brachio", "Cerberus", "Croc", "Drake", "Dran", "Enlil", "Eva", "Fox", "Hells", "Hornet", "Knight", "Kraken", "Leon", "Emperor", "Pegasus", "Perseus", "Phoenix", "Ragna", "Rhino", "Sol", "Stag", "Unicorn", "Valkerion", "Whale", "Wolf", "Wizard"
+  "Bahamut", "Brachio", "Bucks", "Cerberus", "Croc", "Drake", "Dran", "Enlil", "Eva", "Fox", "Hells", "Hornet", "Knight", "Kraken", "Leon", "Emperor", "Pegasus", "Perseus", "Phoenix", "Ragna", "Rhino", "Sol", "Stag", "Tiga", "Unicorn", "Valkerion", "Valkyrie", "Whale", "Wolf", "Wizard"
 ];
 
 const cxMainBladeNames = [
   "Antler", "Antlers", "Arc", "Blast", "Brave", "Courage", "Brush", "Dark", "Eclipse", "Umbra", "Fang", "Flame", "Flare", "Fort", "Hunt", "Might", "Reaper", "Volt", "Wriggle"
 ];
 
-const cxMetalBladeNames = ["Blitz", "Delta", "Fortress", "Armor", "Rage", "Whip"];
-const cxOverBladeNames = ["Break", "Flow", "Guard", "Outer", "Peak"];
+const cxMetalBladeNames = ["Blitz", "Delta", "Fortress", "Armor", "Hurricane", "Rage", "Tread", "Whip"];
+const cxOverBladeNames = ["Break", "Flow", "Guard", "I", "Outer", "Peak", "T"];
 
 const cxAssistBladeNames = [
   "Assault", "Bumper", "Charge", "Dual", "Erase", "Free", "Gravity", "Heavy", "Jaggy", "Knuckle", "Massive", "Odd", "Q", "Round", "Slash", "Turn", "Vertical", "Wheel", "Zillion"
