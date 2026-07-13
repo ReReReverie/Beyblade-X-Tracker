@@ -9,7 +9,7 @@ import { PartCard } from "@/components/part-card";
 import { DeleteButton } from "@/components/delete-button";
 import { authOptions } from "@/lib/auth";
 import { battlesForCombo } from "@/lib/battle-history";
-import { formatManufacturer, formatPartType, formatVisibility, pct } from "@/lib/format";
+import { formatPartType, formatVisibility, pct } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { comboCondition, comboWeight } from "@/lib/stats";
 
@@ -139,24 +139,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const blades = catalogParts.filter((part) => part.type === "BLADE").map((part) => ({
     id: part.id,
-    name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
+    name: part.name,
     series: part.series,
     ratchetIntegration: part.ratchetIntegration,
-    role: part.role
+    role: part.role,
+    manufacturer: part.manufacturer
   }));
   const ratchets = catalogParts.filter((part) => part.type === "RATCHET").map((part) => ({
     id: part.id,
-    name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
+    name: part.name,
     series: part.series,
     ratchetIntegration: part.ratchetIntegration,
-    role: part.role
+    role: part.role,
+    manufacturer: part.manufacturer
   }));
   const bits = catalogParts.filter((part) => part.type === "BIT").map((part) => ({
     id: part.id,
-    name: `${part.name} (${formatManufacturer(part.manufacturer)})`,
+    name: part.name,
     series: part.series,
     ratchetIntegration: part.ratchetIntegration,
-    role: part.role
+    role: part.role,
+    manufacturer: part.manufacturer
   }));
   const options = [...combos, ...followedCombos].map((combo) => ({ id: combo.id, name: combo.name }));
   const ownedDecks = decks.filter((deck) => deck.ownerId === userId);
