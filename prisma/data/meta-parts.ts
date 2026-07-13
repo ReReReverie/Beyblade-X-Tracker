@@ -28,7 +28,7 @@ const uxBladeNames = new Set([
 
 const cxBladeNames = new Set(["Emperor Blast Heavy"]);
 
-const cxExpandedBladeNames = new Set(["Bullet Griffon"]);
+const cxExpandedBladeNames = new Set<string>([]);
 
 export function applyMetaPartMetadata(part: MetaPartSeed): MetaPartSeed {
   if (part.type !== "BLADE") {
@@ -792,7 +792,7 @@ const wikiBladeNames = [
   "UnicornSting",
   "ViperTail",
   "WeissTiger",
-  "WhaleWave",
+  "WhalesWave",
   "WizardArrow",
   "WyvernGale",
   "AeroPegasus",
@@ -875,7 +875,7 @@ const wikiRatchetNames = [
 const wikiBitNames = [
   "Accel",
   "Bound Spike",
-  "Disk Ball",
+  "Disc Ball",
   "Free Ball",
   "Glide",
   "Hexa",
