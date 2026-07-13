@@ -68,6 +68,12 @@ async function fetchCustomLineParts() {
 export async function seedCatalog() {
   let created = 0;
   let updated = 0;
+
+  // Clean up orphaned catalog entries from previous incorrect seed data
+  await prisma.partCatalog.deleteMany({
+    where: { slug: { in: ["whales-wave", "bit-disc-ball"] } }
+  });
+
   // Gather remote Custom Line parts and merge with the built-in catalog
   const remoteParts = await fetchCustomLineParts();
   const combined = [...allMetaParts, ...remoteParts.map(applyMetaPartMetadata)];

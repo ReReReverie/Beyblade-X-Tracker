@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "PartSeries" ADD VALUE 'UX_EXPANDED';
+ALTER TYPE "PartSeries" ADD VALUE 'BX_EXPANDED';

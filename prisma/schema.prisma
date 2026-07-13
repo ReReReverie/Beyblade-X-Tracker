@@ -36,6 +36,8 @@ enum PartSeries {
   UX
   CX
   CX_EXPANDED
+  UX_EXPANDED
+  BX_EXPANDED
 }
 
 enum RatchetIntegration {

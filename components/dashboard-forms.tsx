@@ -9,9 +9,10 @@ type PartRole = "BLADE" | "RATCHET" | "BIT" | "LOCK_CHIP" | "MAIN_BLADE" | "ASSI
 type Option = {
   id: string;
   name: string;
-  series?: "BX" | "UX" | "CX" | "CX_EXPANDED" | null;
+  series?: "BX" | "UX" | "CX" | "CX_EXPANDED" | "UX_EXPANDED" | "BX_EXPANDED" | null;
   role?: PartRole | null;
   ratchetIntegration?: "NONE" | "BLADE" | "BIT";
+  manufacturer?: "HASBRO" | "TAKARA_TOMY" | "FAKE" | "UNKNOWN" | null;
 };
 
 type ComboTab = "uxbx" | "cx" | "cxExpanded";
@@ -99,6 +100,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   const router = useRouter();
   const [error, setError] = useState("");
   const [tab, setTab] = useState<ComboTab>("uxbx");
+  const [manufacturerFilter, setManufacturerFilter] = useState<"ALL" | "TAKARA_TOMY" | "HASBRO">("ALL");
   const [selectedBladeId, setSelectedBladeId] = useState("");
   const [selectedLockChipId, setSelectedLockChipId] = useState("");
   const [selectedMainBladeId, setSelectedMainBladeId] = useState("");
@@ -108,12 +110,21 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   const [selectedRatchetId, setSelectedRatchetId] = useState("");
   const [selectedBitId, setSelectedBitId] = useState("");
 
-  const bxUxBlades = blades.filter((part) => part.role === "BLADE" && (part.series === "BX" || part.series === "UX"));
-  const lockChips = optionsByRole(blades, "LOCK_CHIP");
-  const mainBlades = optionsByRole(blades, "MAIN_BLADE");
-  const assistBlades = optionsByRole(blades, "ASSIST_BLADE");
-  const overBlades = optionsByRole(blades, "OVER_BLADE");
-  const metalBlades = optionsByRole(blades, "METAL_BLADE");
+  function filterByManufacturer(options: Option[]) {
+    if (manufacturerFilter === "ALL") return options;
+    return options.filter((part) => part.manufacturer === manufacturerFilter);
+  }
+
+  const filteredBlades = filterByManufacturer(blades);
+  const filteredRatchets = filterByManufacturer(ratchets);
+  const filteredBits = filterByManufacturer(bits);
+
+  const bxUxBlades = filteredBlades.filter((part) => part.role === "BLADE" && (part.series === "BX" || part.series === "UX" || part.series === "UX_EXPANDED" || part.series === "BX_EXPANDED"));
+  const lockChips = optionsByRole(filteredBlades, "LOCK_CHIP");
+  const mainBlades = optionsByRole(filteredBlades, "MAIN_BLADE");
+  const assistBlades = optionsByRole(filteredBlades, "ASSIST_BLADE");
+  const overBlades = optionsByRole(filteredBlades, "OVER_BLADE");
+  const metalBlades = optionsByRole(filteredBlades, "METAL_BLADE");
   const selectedBlade = blades.find((part) => part.id === selectedBladeId);
   const selectedOverBlade = blades.find((part) => part.id === selectedOverBladeId);
   const selectedBit = bits.find((part) => part.id === selectedBitId);
@@ -134,6 +145,23 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
   useEffect(() => {
     if (ratchetIntegrated) setSelectedRatchetId("");
   }, [ratchetIntegrated]);
+
+  // Clear phantom selections when manufacturer filter changes
+  useEffect(() => {
+    const filteredBladeIds = new Set(filterByManufacturer(blades).map((p) => p.id));
+    const filteredRatchetIds = new Set(filterByManufacturer(ratchets).map((p) => p.id));
+    const filteredBitIds = new Set(filterByManufacturer(bits).map((p) => p.id));
+
+    if (selectedBladeId && !filteredBladeIds.has(selectedBladeId)) setSelectedBladeId("");
+    if (selectedLockChipId && !filteredBladeIds.has(selectedLockChipId)) setSelectedLockChipId("");
+    if (selectedMainBladeId && !filteredBladeIds.has(selectedMainBladeId)) setSelectedMainBladeId("");
+    if (selectedAssistBladeId && !filteredBladeIds.has(selectedAssistBladeId)) setSelectedAssistBladeId("");
+    if (selectedOverBladeId && !filteredBladeIds.has(selectedOverBladeId)) setSelectedOverBladeId("");
+    if (selectedMetalBladeId && !filteredBladeIds.has(selectedMetalBladeId)) setSelectedMetalBladeId("");
+    if (selectedRatchetId && !filteredRatchetIds.has(selectedRatchetId)) setSelectedRatchetId("");
+    if (selectedBitId && !filteredBitIds.has(selectedBitId)) setSelectedBitId("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manufacturerFilter]);
 
   function selectField(label: string, value: string, onChange: (value: string) => void, options: Option[]) {
     return (
@@ -212,6 +240,13 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
         <button type="button" className={tab === "cxExpanded" ? "secondary tab-button--active" : "secondary"} onClick={() => setTab("cxExpanded")}>CX-Expanded</button>
       </div>
 
+      <fieldset className="flex flex-wrap gap-2 border-0 p-0 mt-2 mb-2">
+        <legend className="sr-only">Filter by manufacturer</legend>
+        <button type="button" className={manufacturerFilter === "ALL" ? "secondary tab-button--active text-xs px-3 py-1" : "secondary text-xs px-3 py-1"} onClick={() => setManufacturerFilter("ALL")}>All</button>
+        <button type="button" className={manufacturerFilter === "TAKARA_TOMY" ? "secondary tab-button--active text-xs px-3 py-1" : "secondary text-xs px-3 py-1"} onClick={() => setManufacturerFilter("TAKARA_TOMY")}>Takara Tomy</button>
+        <button type="button" className={manufacturerFilter === "HASBRO" ? "secondary tab-button--active text-xs px-3 py-1" : "secondary text-xs px-3 py-1"} onClick={() => setManufacturerFilter("HASBRO")}>Hasbro</button>
+      </fieldset>
+
       <div className="combo-form__status" aria-live="polite">
         <span className="tag tag--filled">Series: {tabLabel(tab)}</span>
         <span className={ratchetIntegrated ? "tag tag--filled combo-form__tag--alert" : "tag"}>{bladeIntegrated ? "Ratchet built into blade" : bitIntegrated ? "Ratchet built into bit" : "Ratchet selectable"}</span>
@@ -239,7 +274,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
           <span>Ratchet</span>
           <select name="ratchetId" value={selectedRatchetId} onChange={(event) => setSelectedRatchetId(event.target.value)}>
             <option value="">No separate ratchet</option>
-            {ratchets.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
+            {filteredRatchets.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
           </select>
           <span className="meta">Ratchets remain fully cross-compatible.</span>
         </label>
@@ -249,7 +284,7 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
         <span>Bit</span>
         <select name="bitId" value={selectedBitId} onChange={(event) => setSelectedBitId(event.target.value)}>
           <option value="">Choose a bit</option>
-          {bits.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
+          {filteredBits.map((part) => <option key={part.id} value={part.id}>{part.name}</option>)}
         </select>
         <span className="meta">Turbo and Operate can be used in any tab and replace the ratchet slot.</span>
       </label>
