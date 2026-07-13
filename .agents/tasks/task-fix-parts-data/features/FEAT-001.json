@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Update prisma/data/meta-parts.ts with comprehensive, correctly-attributed Hasbro and Takara Tomy Beyblade X parts based on authoritative Beyblade Wiki data scraped from the Fandom API.",
+  "status": "completed",
+  "steps": [
+    "Update the `wikiBladeNames` array (Takara Tomy Basic Line blades) to include ALL blades from the wiki Basic Line that have a Takara Tomy name. Add missing ones: ShinobiKnife, SharkGill (TT name for Gill Shark), CrocCrunch (TT name for Bite Croc), TyrannoRoar, BearScratch, SamuraiSteel, GoatTackle, PteraSwing, MammothTusk, ShinobiShadow (already in list), DragoonStorm, StormPegasis, VictoryValkyrie, Trypio.",
+    "Update the `wikiHasbroOnlyBladeNames` array to contain ONLY blades where the Takara Tomy name is N/A on the wiki. Based on wiki data: 'Hack Viking' and 'Stun Medusa' are true Hasbro exclusives (N/A for TT). 'Clamp Crab' and 'Yell Kong' from Basic Line Hasbro Debut are also Hasbro-exclusive (N/A for TT). Remove blades that actually have TT equivalents: BatGust, TriceraSpiky, CyclopsEye, DranStrike, HeavensRing, SiegSuperion, DranzerSpiral, DrigerSlash, DracielShield, Lightning L-Drago variants, Rock Leone, StormSpriggan, XenoXcalibur all have TT names and should be in wikiBladeNames instead.",
+    "Add a new `wikiHasbroDebutBladeNames` array for blades that debuted under Hasbro but also have Takara Tomy names (they are primarily Hasbro-manufactured but not exclusive). These include: BatGust, TriceraSpiky, CyclopsEye, DranStrike, HeavensRing, SiegSuperion. The wiki shows these under 'Hasbro Debut' sections but with valid TT names. Set their manufacturer to HASBRO since Hasbro debuted them.",
+    "Add missing Unique Line ratchet-integrated blades to the data: HellsNether (TT), and Hasbro-exclusive ones: CutterShinobi, RampartAegis, SeizeJaguar, ValorBison. Add them as UX_EXPANDED series with ratchetIntegration: BLADE.",
+    "Update the `uxBladeNames` Set to include all UX (Unique Line) blades that are NOT ratchet-integrated and not already in other sets. Ensure it contains: AeroPegasus, ClockMirage, DranBuster, ImpactDrake, MeteorDragoon, PhoenixRudder, SharkScale, SilverWolf, WhaleWave, WizardRod (already there). Add missing UX blades from wiki: GhostCircle, GolemRock, HellsHammer, KnightMail, LeonCrest, MummyCurse, OrochiCluster, SamuraiSaber, ScorpioSpear, ShinobiShadow.",
+    "Update the `uxExpandedBladeNames` Set to include all UX-Expanded (ratchet-integrated) blades: BulletGriffon, GloryValkyrie (both TT). Also add HellsNether as TT.",
+    "Fix the `bxExpandedBladeNames` Set. The wiki shows 'Expand Blades' in Basic Line: CyclopsEye, DranStrike, HeavensRing, SiegSuperion. Keep DranStrike, add CyclopsEye, HeavensRing, SiegSuperion.",
+    "Update the `wikiRatchetNames` array to include all ratchets from both Basic Line and Unique Line wiki pages. Add missing: 3-85, 4-50. Ensure no duplicates with cxRatchetNames.",
+    "Update the `wikiBitNames` array to add missing bits from wiki: Low Point, Low Flat (from Basic Line Bits), Disk Ball (correct name per wiki, not 'Discball'). Remove 'Discball' and add 'Disk Ball' instead.",
+    "Update the Custom Line data: add new lock chips from wiki: Tiga, Valkyrie (TT name), Bucks (TT name for Stag). Add new metal blades: Hurricane, Tread. Add new over blades: I, T. Remove 'Stag' from lock chips (TT name is 'Bucks'). Note: Keep existing Stag entry but add Bucks and Tiga and Valkyrie as separate entries since the current code uses these as display names.",
+    "Update `cxMetalBladeNames` to add Hurricane and Tread. Update `cxOverBladeNames` to add I and T. Add Tiga, Bucks, and Valkyrie to `cxLockChipNames`.",
+    "Fix manufacturer attribution in the hand-curated `metaParts` array: (a) Hover Wyvern has a TT name WyvernHover per wiki - it debuted as Hasbro but also exists as TT. Keep as HASBRO since it debuted there. (b) Wizard Arrow - per wiki it's a standard Basic Line blade with both TT and Hasbro names, so it should be TAKARA_TOMY (it was originally launched by TT as BX-03). Fix from HASBRO to TAKARA_TOMY. (c) ratchet-4-60 is attributed to HASBRO but 4-60 appears in the Basic Line ratchets on wiki which are all shared TT/Hasbro parts - change to TAKARA_TOMY. (d) bit-point is attributed to HASBRO but Point appears in the Basic Line bits list - change to TAKARA_TOMY.",
+    "Ensure the Hasbro-exclusive ratchet-integrated blades are added to the metaParts array or a new dedicated array with proper attributes: CutterShinobi, RampartAegis, SeizeJaguar, ValorBison (all HASBRO, UX_EXPANDED, ratchetIntegration: BLADE).",
+    "Verify the combined allMetaParts export still works: it should spread metaParts (with applyMetaPartMetadata), cxGeneratedParts, and wikiGeneratedParts, then deduplicate by type:slug key."
+  ],
+  "acceptance_criteria": [
+    "Running `npx tsc --noEmit` in the project root produces no TypeScript errors",
+    "The wikiHasbroOnlyBladeNames array contains ONLY blades where TT name is N/A on the wiki (true Hasbro exclusives)",
+    "All Takara Tomy Basic Line and Unique Line blades with TT names are in wikiBladeNames",
+    "Ratchet-integrated blades (Bullet Griffon, Glory Valkyrie, Hells Nether for TT; Cutter Shinobi, Rampart Aegis, Seize Jaguar, Valor Bison for Hasbro) are properly represented",
+    "All CX line parts including new wiki discoveries (Tiga, Hurricane, Tread, Over Blade I, Over Blade T, Valkyrie, Bucks) are included",
+    "Manufacturer attributions are correct: Wizard Arrow and 4-60 ratchet and Point bit are TAKARA_TOMY, not HASBRO",
+    "All ratchets from wiki (including 3-85 and 4-50) are present",
+    "Bit name 'Discball' is corrected to 'Disk Ball' per wiki",
+    "The file compiles without errors and allMetaParts export works correctly"
+  ],
+  "verification": [
+    "Run `npx tsc --noEmit` to confirm no TypeScript compilation errors",
+    "Run `node -e \"const m = require('./prisma/data/meta-parts'); console.log('Total parts:', m.allMetaParts.length)\"` via tsx to verify the module loads and exports correctly"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes compile cleanly. Total parts: 264 (171 blades, 36 ratchets, 57 bits). Node v22.22.3 was available via nvm. The GloryValkyrie PascalCase entry in wikiBladeNames generates a 'Glory Valkyrie' blade that is distinct from the hand-curated 'Glory Valk' slug (both exist as separate entries in allMetaParts). The uxExpandedBladeNames Set contains both 'Glory Valk' and 'Glory Valkyrie' to catch both forms."
+}

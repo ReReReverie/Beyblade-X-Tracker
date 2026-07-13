@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Address review issues: remove GloryValkyrie duplicate, fix Hover Wyvern/Wyvern Hover duplicate, add cross-array ratchet comment, remove Stag duplicate.",
+  "status": "completed",
+  "steps": [
+    "Remove 'GloryValkyrie' from wikiBladeNames array and 'Glory Valkyrie' from uxExpandedBladeNames Set",
+    "Remove 'WyvernHover' from wikiBladeNames array, remove 'Wyvern Hover' from uxBladeNames Set, and add 'Hover Wyvern' to uxBladeNames Set",
+    "Add a comment above wikiRatchetNames explaining CX-exclusive ratchets are intentionally omitted",
+    "Remove 'Stag' from cxLockChipNames since 'Bucks' is the TT name"
+  ],
+  "acceptance_criteria": [
+    "GloryValkyrie is not in wikiBladeNames",
+    "Glory Valkyrie is not in uxExpandedBladeNames",
+    "WyvernHover is not in wikiBladeNames",
+    "Wyvern Hover is not in uxBladeNames",
+    "Hover Wyvern is in uxBladeNames",
+    "A comment above wikiRatchetNames explains the CX-exclusive ratchets omission",
+    "Stag is not in cxLockChipNames",
+    "npx tsc --noEmit passes without errors"
+  ],
+  "verification": [
+    "Run npx tsc --noEmit",
+    "Run npx tsx -e to verify module loads"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 review issues fixed. Total parts reduced from 264 to 261 (removed 3 duplicates: GloryValkyrie blade, WyvernHover blade, Stag lock chip). Hover Wyvern now correctly gets UX series from uxBladeNames membership. TypeScript compiles cleanly."
+}
