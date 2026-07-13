@@ -759,7 +759,8 @@ export const metaParts: MetaPartSeed[] = [
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
     series: PartSeries.UX_EXPANDED,
-    notes: "UX expanded line blade. High-stamina attacker with wide contact points."
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "UX-20 ratchet-integrated blade. High-stamina attacker with wide contact points."
   },
   {
     slug: "hells-nether",
