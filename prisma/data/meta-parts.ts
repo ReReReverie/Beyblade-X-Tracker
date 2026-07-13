@@ -49,6 +49,7 @@ const uxExpandedBladeNames = new Set([
   "Glory Valk",
   "Hells Nether",
   "Rampart Aegis",
+  "Rocket Griffon",
   "Seize Jaguar",
   "Valor Bison"
 ]);
@@ -140,10 +141,10 @@ export const metaParts: MetaPartSeed[] = [
     slug: "hover-wyvern",
     name: "Hover Wyvern",
     type: "BLADE",
-    manufacturer: "HASBRO",
+    manufacturer: "TAKARA_TOMY",
     weightGrams: "34.50",
     metaTier: "S",
-    notes: "Hasbro-exclusive attack blade with strong Over/Xtreme Zone reversal. Pairs with 1-60/1-70 Rush."
+    notes: "UX attack blade with strong Over/Xtreme Zone reversal. Pairs with 1-60/1-70 Rush. Available from both TT and Hasbro."
   },
   {
     slug: "emperor-blast-heavy",
@@ -754,13 +755,21 @@ export const metaParts: MetaPartSeed[] = [
     notes: "UX-19 ratchet-integrated blade. Splits into Bullet (attack) and Griffon (defense) halves mid-battle."
   },
   {
+    slug: "rocket-griffon",
+    name: "Rocket Griffon",
+    type: "BLADE",
+    manufacturer: "HASBRO",
+    series: PartSeries.UX_EXPANDED,
+    ratchetIntegration: RatchetIntegration.BLADE,
+    notes: "Hasbro-exclusive ratchet-integrated blade. Hasbro equivalent of Bullet Griffon."
+  },
+  {
     slug: "glory-valk",
     name: "Glory Valk",
     type: "BLADE",
     manufacturer: "TAKARA_TOMY",
     series: PartSeries.UX_EXPANDED,
-    ratchetIntegration: RatchetIntegration.BLADE,
-    notes: "UX-20 ratchet-integrated blade. High-stamina attacker with wide contact points."
+    notes: "UX-20 blade. High-stamina attacker with wide contact points. Takara Tomy only, no Hasbro version currently."
   },
   {
     slug: "hells-nether",
@@ -903,7 +912,6 @@ const wikiBladeNames = [
   "SilverWolf",
   "WizardRod",
   // Unique Line ratchet-integrated (UX_EXPANDED - TT)
-  "BulletGriffon",
   "HellsNether",
   // BX_EXPANDED (Expand Blades)
   "CyclopsEye",
