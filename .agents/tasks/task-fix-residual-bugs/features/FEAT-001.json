@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix all 4 residual bugs from PRs #10 and #11: (1) Add UX_EXPANDED and BX_EXPANDED to the Option.series TypeScript type in dashboard-forms.tsx, (2) Update the BX/UX tab filter to include UX_EXPANDED and BX_EXPANDED blades, (3) Fix phantom selection UX bug by clearing blade/ratchet/bit selections when they no longer appear in filtered options after a manufacturer filter switch, (4) Add cleanup logic in seed-catalog.ts to delete orphaned rows with slugs 'whales-wave' and 'bit-disc-ball'.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "In components/dashboard-forms.tsx, update the Option type's series field from '\"BX\" | \"UX\" | \"CX\" | \"CX_EXPANDED\" | null' to '\"BX\" | \"UX\" | \"CX\" | \"CX_EXPANDED\" | \"UX_EXPANDED\" | \"BX_EXPANDED\" | null'.",
     "In components/dashboard-forms.tsx, update the bxUxBlades filter (line ~114) from 'part.series === \"BX\" || part.series === \"UX\"' to also include 'part.series === \"UX_EXPANDED\" || part.series === \"BX_EXPANDED\"' so expanded-line blades with role BLADE appear in the BX/UX tab.",
@@ -36,5 +36,5 @@
     "Run 'npx next lint' to check for lint issues"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "ESLint/next lint has a pre-existing compatibility issue with @rushstack/eslint-patch and ESLint 9.39.4 (fails with 'Failed to patch ESLint because the calling module was not recognized'). This is unrelated to the changes made. TypeScript compilation (npx tsc --noEmit) passes cleanly. Node.js had to be installed via mise (node@22) as it was not pre-installed in the sandbox."
 }
