@@ -1467,6 +1467,7 @@ textarea {
 /* ─── Google Sign-In & Auth Page ─────────────────────────────────────── */
 
 .signin-page {
+  margin-inline: auto;
   max-width: 480px;
 }
 
