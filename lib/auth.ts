@@ -15,7 +15,7 @@ const providers: NextAuthOptions["providers"] = [
       password: { label: "Password", type: "password" }
     },
     async authorize(credentials) {
-      const login = credentials?.login?.toLowerCase().trim();
+      const login = credentials?.login?.trim();
       const password = credentials?.password;
       if (!login || !password) return null;
 
