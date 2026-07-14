@@ -3,21 +3,21 @@ import { prisma } from "../lib/prisma";
 import { seedCatalog } from "./seed-catalog";
 
 async function main() {
-  const username = (process.env.DEFAULT_ADMIN_USERNAME || "admin").toLowerCase();
+  const username = process.env.DEFAULT_ADMIN_USERNAME || "admin";
   const password = process.env.DEFAULT_ADMIN_PASSWORD || "123456789";
   const email = process.env.DEFAULT_ADMIN_EMAIL || "admin@local.test";
 
   await prisma.user.upsert({
     where: { username },
     update: {
-      name: "rereverie",
+      name: "ReReReVerie-admin",
       email,
       role: "ADMIN",
       passwordHash: await hash(password, 12)
     },
     create: {
       username,
-      name: "rereverie",
+      name: "ReReReVerie-admin",
       email,
       role: "ADMIN",
       passwordHash: await hash(password, 12)
