@@ -5,7 +5,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 
-/* ─── Providers ─────────────────────────────────────────────────────── */
+const defaultAdminUsername = process.env.DEFAULT_ADMIN_USERNAME || "admin";
+const adminLoginAliases = new Set(["admin", "rereverie", defaultAdminUsername]);
 
 const providers: NextAuthOptions["providers"] = [
   CredentialsProvider({
@@ -19,11 +20,22 @@ const providers: NextAuthOptions["providers"] = [
       const password = credentials?.password;
       if (!login || !password) return null;
 
-      const user = await prisma.user.findFirst({
-        where: {
-          OR: [{ email: login }, { username: login }]
-        }
-      });
+      let user = null;
+
+      if (adminLoginAliases.has(login)) {
+        user = await prisma.user.findFirst({
+          where: { username: defaultAdminUsername }
+        });
+      }
+
+      if (!user) {
+        user = await prisma.user.findFirst({
+          where: {
+            OR: [{ email: login }, { username: login }]
+          }
+        });
+      }
+
       if (!user?.passwordHash) return null;
 
       const valid = await compare(password, user.passwordHash);
@@ -34,16 +46,13 @@ const providers: NextAuthOptions["providers"] = [
   })
 ];
 
-const googleEnabled =
-  process.env.GOOGLE_CLIENT_ID &&
-  process.env.GOOGLE_CLIENT_SECRET;
+const googleEnabled = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
 
 if (googleEnabled) {
   providers.push(
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Allow users who signed up via credentials to later link their Google account
       allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
@@ -56,46 +65,28 @@ if (googleEnabled) {
   );
 }
 
-/* ─── Auth Options ──────────────────────────────────────────────────── */
-
 export const authOptions: NextAuthOptions = {
   ...(googleEnabled ? { adapter: PrismaAdapter(prisma) } : {}),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/signin" // Redirect OAuth errors back to sign-in page with ?error= param
+    error: "/auth/signin"
   },
   providers,
   callbacks: {
-    /**
-     * Control whether a sign-in attempt is allowed.
-     * For Google OAuth: if the email already exists as a credentials-only account
-     * and allowDangerousEmailAccountLinking is true, NextAuth will auto-link.
-     * This callback provides a hook for additional custom logic if needed.
-     */
-    async signIn({ user, account, profile }) {
-      // Always allow credentials sign-in (already validated in authorize)
+    async signIn({ account, profile }) {
       if (account?.provider === "credentials") return true;
-
-      // For Google OAuth — ensure the email is verified by Google
       if (account?.provider === "google") {
         const googleProfile = profile as Profile & { email_verified?: boolean };
-        if (!googleProfile?.email_verified) {
-          return false; // Reject unverified Google emails
-        }
-        return true;
+        return Boolean(googleProfile?.email_verified);
       }
-
       return true;
     },
-
     async jwt({ token, user, account }) {
-      // On initial sign-in (credentials or OAuth), populate token
       if (user) {
         token.sub = user.id;
       }
 
-      // On OAuth sign-in, the adapter may have just created the user — fetch fresh data
       if (account && token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
@@ -104,7 +95,6 @@ export const authOptions: NextAuthOptions = {
         token.role = dbUser?.role || "USER";
         token.username = dbUser?.username || null;
       } else if (user) {
-        // Credentials sign-in — user object already resolved
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { role: true, username: true }
@@ -115,7 +105,6 @@ export const authOptions: NextAuthOptions = {
 
       return token;
     },
-
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub || "";

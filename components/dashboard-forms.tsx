@@ -27,6 +27,10 @@ function optionsByRole(parts: Option[], role: PartRole) {
   return parts.filter((part) => part.role === role);
 }
 
+function sortOptions(options: Option[]) {
+  return [...options].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 const maxUploadBytes = 1 * 1024 * 1024;
 
 function clearProfileCache() {
@@ -115,16 +119,16 @@ export function ComboForm({ blades, ratchets, bits }: { blades: Option[]; ratche
     return options.filter((part) => part.manufacturer === manufacturerFilter);
   }
 
-  const filteredBlades = filterByManufacturer(blades);
-  const filteredRatchets = filterByManufacturer(ratchets);
-  const filteredBits = filterByManufacturer(bits);
+  const filteredBlades = sortOptions(filterByManufacturer(blades));
+  const filteredRatchets = sortOptions(filterByManufacturer(ratchets));
+  const filteredBits = sortOptions(filterByManufacturer(bits));
 
-  const bxUxBlades = filteredBlades.filter((part) => part.role === "BLADE" && (part.series === "BX" || part.series === "UX" || part.series === "UX_EXPANDED" || part.series === "BX_EXPANDED"));
-  const lockChips = optionsByRole(filteredBlades, "LOCK_CHIP");
-  const mainBlades = optionsByRole(filteredBlades, "MAIN_BLADE");
-  const assistBlades = optionsByRole(filteredBlades, "ASSIST_BLADE");
-  const overBlades = optionsByRole(filteredBlades, "OVER_BLADE");
-  const metalBlades = optionsByRole(filteredBlades, "METAL_BLADE");
+  const bxUxBlades = sortOptions(filteredBlades.filter((part) => part.role === "BLADE" && (part.series === "BX" || part.series === "UX" || part.series === "UX_EXPANDED" || part.series === "BX_EXPANDED")));
+  const lockChips = sortOptions(optionsByRole(filteredBlades, "LOCK_CHIP"));
+  const mainBlades = sortOptions(optionsByRole(filteredBlades, "MAIN_BLADE"));
+  const assistBlades = sortOptions(optionsByRole(filteredBlades, "ASSIST_BLADE"));
+  const overBlades = sortOptions(optionsByRole(filteredBlades, "OVER_BLADE"));
+  const metalBlades = sortOptions(optionsByRole(filteredBlades, "METAL_BLADE"));
   const selectedBlade = blades.find((part) => part.id === selectedBladeId);
   const selectedOverBlade = blades.find((part) => part.id === selectedOverBladeId);
   const selectedBit = bits.find((part) => part.id === selectedBitId);
@@ -436,5 +440,6 @@ export function PhotoForm({ parts, combos }: { parts: Option[]; combos: Option[]
     </form>
   );
 }
+
 
 

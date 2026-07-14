@@ -6,23 +6,45 @@ async function main() {
   const username = process.env.DEFAULT_ADMIN_USERNAME || "admin";
   const password = process.env.DEFAULT_ADMIN_PASSWORD || "123456789";
   const email = process.env.DEFAULT_ADMIN_EMAIL || "admin@local.test";
+  const passwordHash = await hash(password, 12);
+  const name = "ReReReverie-admin";
 
-  await prisma.user.upsert({
-    where: { username },
-    update: {
-      name: "ReReReVerie-admin",
-      email,
-      role: "ADMIN",
-      passwordHash: await hash(password, 12)
-    },
-    create: {
-      username,
-      name: "ReReReVerie-admin",
-      email,
-      role: "ADMIN",
-      passwordHash: await hash(password, 12)
-    }
-  });
+  const [userByUsername, userByEmail] = await Promise.all([
+    prisma.user.findUnique({ where: { username } }),
+    prisma.user.findUnique({ where: { email } })
+  ]);
+
+  if (userByUsername) {
+    await prisma.user.update({
+      where: { id: userByUsername.id },
+      data: {
+        name,
+        role: "ADMIN",
+        passwordHash,
+        email: userByUsername.email === email || !userByEmail || userByEmail.id === userByUsername.id ? email : userByUsername.email
+      }
+    });
+  } else if (userByEmail) {
+    await prisma.user.update({
+      where: { id: userByEmail.id },
+      data: {
+        username,
+        name,
+        role: "ADMIN",
+        passwordHash
+      }
+    });
+  } else {
+    await prisma.user.create({
+      data: {
+        username,
+        name,
+        email,
+        role: "ADMIN",
+        passwordHash
+      }
+    });
+  }
 
   const catalog = await seedCatalog();
 
