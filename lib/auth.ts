@@ -15,16 +15,13 @@ const providers: NextAuthOptions["providers"] = [
       password: { label: "Password", type: "password" }
     },
     async authorize(credentials) {
-      const login = credentials?.login?.toLowerCase().trim();
+      const login = credentials?.login?.trim();
       const password = credentials?.password;
       if (!login || !password) return null;
 
       const user = await prisma.user.findFirst({
         where: {
-          OR: [
-            { email: { equals: login, mode: "insensitive" } },
-            { username: { equals: login, mode: "insensitive" } }
-          ]
+          OR: [{ email: login }, { username: login }]
         }
       });
       if (!user?.passwordHash) return null;
