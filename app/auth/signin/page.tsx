@@ -31,7 +31,7 @@ export default function SignInPage() {
 
 function SignInFormSkeleton({ googleEnabled }: { googleEnabled: boolean }) {
   return (
-    <div className="signin-container">
+    <div className="signin-container" aria-hidden="true">
       {googleEnabled && (
         <>
           <div className="skeleton skeleton--button" style={{ width: "100%", height: "52px" }} />
