@@ -35,7 +35,6 @@ const providers: NextAuthOptions["providers"] = [
 ];
 
 const googleEnabled =
-  process.env.GOOGLE_AUTH_ENABLED === "true" &&
   process.env.GOOGLE_CLIENT_ID &&
   process.env.GOOGLE_CLIENT_SECRET;
 
