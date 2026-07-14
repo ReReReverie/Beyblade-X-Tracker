@@ -21,7 +21,10 @@ const providers: NextAuthOptions["providers"] = [
 
       const user = await prisma.user.findFirst({
         where: {
-          OR: [{ email: login }, { username: login }]
+          OR: [
+            { email: { equals: login, mode: "insensitive" } },
+            { username: { equals: login, mode: "insensitive" } }
+          ]
         }
       });
       if (!user?.passwordHash) return null;
