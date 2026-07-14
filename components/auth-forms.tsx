@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { notifyAuthSessionChanged } from "@/components/auth-session-events";
 import { hideLoadingOverlay, showLoadingOverlay } from "@/components/loading-overlay-events";
 
@@ -37,19 +37,9 @@ function GoogleIcon() {
 
 export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  // Capture NextAuth error from URL (e.g., OAuthAccountNotLinked)
-  const urlError = searchParams.get("error");
-  const oauthError =
-    urlError === "OAuthAccountNotLinked"
-      ? "This email is already associated with a password account. Please sign in with your credentials."
-      : urlError
-        ? "Authentication failed. Please try again."
-        : "";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,7 +105,7 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
           Password
           <input name="password" type="password" required autoComplete="current-password" />
         </label>
-        {(error || oauthError) && <p className="danger">{error || oauthError}</p>}
+        {error && <p className="danger">{error}</p>}
         <button type="submit" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </button>
