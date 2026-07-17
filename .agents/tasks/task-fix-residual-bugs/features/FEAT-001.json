@@ -1,0 +1,40 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix all 4 residual bugs from PRs #10 and #11: (1) Add UX_EXPANDED and BX_EXPANDED to the Option.series TypeScript type in dashboard-forms.tsx, (2) Update the BX/UX tab filter to include UX_EXPANDED and BX_EXPANDED blades, (3) Fix phantom selection UX bug by clearing blade/ratchet/bit selections when they no longer appear in filtered options after a manufacturer filter switch, (4) Add cleanup logic in seed-catalog.ts to delete orphaned rows with slugs 'whales-wave' and 'bit-disc-ball'.",
+  "status": "completed",
+  "steps": [
+    "In components/dashboard-forms.tsx, update the Option type's series field from '\"BX\" | \"UX\" | \"CX\" | \"CX_EXPANDED\" | null' to '\"BX\" | \"UX\" | \"CX\" | \"CX_EXPANDED\" | \"UX_EXPANDED\" | \"BX_EXPANDED\" | null'.",
+    "In components/dashboard-forms.tsx, update the bxUxBlades filter (line ~114) from 'part.series === \"BX\" || part.series === \"UX\"' to also include 'part.series === \"UX_EXPANDED\" || part.series === \"BX_EXPANDED\"' so expanded-line blades with role BLADE appear in the BX/UX tab.",
+    "In prisma/schema.prisma, add UX_EXPANDED and BX_EXPANDED values to the PartSeries enum (after CX_EXPANDED).",
+    "In prisma/data/meta-parts.ts, fix 'Bullet Griffon' metaPart entry: change series from PartSeries.UX to PartSeries.UX_EXPANDED. Remove 'Bullet Griffon' from cxExpandedBladeNames set (make it empty). Create a new uxExpandedBladeNames set containing 'Bullet Griffon'. Create a bxExpandedBladeNames set containing 'Dran Strike'. Update the applyMetaPartMetadata function's series assignment to check uxExpandedBladeNames (returning PartSeries.UX_EXPANDED) and bxExpandedBladeNames (returning PartSeries.BX_EXPANDED) before the existing fallbacks.",
+    "In prisma/data/meta-parts.ts, fix the uxBladeNames set: change 'Whales Wave' to 'Whale Wave'.",
+    "In prisma/data/meta-parts.ts, fix wikiBladeNames array: the entry 'WhaleWave' is already there (produces 'Whale Wave') which is correct. No change needed there.",
+    "In prisma/data/meta-parts.ts, fix wikiBitNames array: change 'Disk Ball' to 'Discball' (one word).",
+    "In prisma/data/meta-parts.ts, remove the metaPart entry with slug 'bit-disc-ball' (Disc Ball) from the metaParts array entirely since it creates a duplicate.",
+    "In prisma/data/meta-parts.ts, add a 'Glory Valk' entry to the metaParts array with series: PartSeries.UX_EXPANDED, manufacturer: TAKARA_TOMY, type: BLADE.",
+    "In prisma/seed-catalog.ts, add a cleanup step in the seedCatalog() function that deletes orphaned PartCatalog rows with slugs 'whales-wave' and 'bit-disc-ball' before the upsert loop (using prisma.partCatalog.deleteMany with a slug filter).",
+    "In app/dashboard/page.tsx, remove the '(${formatManufacturer(part.manufacturer)})' suffix from the name field for blades, ratchets, and bits mappings. Instead, pass the manufacturer as a separate field on the option object.",
+    "In components/dashboard-forms.tsx, add a 'manufacturer' field to the Option type as '\"HASBRO\" | \"TAKARA_TOMY\" | \"FAKE\" | \"UNKNOWN\" | null'. Add a manufacturer filter state (All / Takara Tomy / Hasbro) to the ComboForm component. Filter blades, ratchets, and bits by the selected manufacturer before rendering dropdowns. When the manufacturer filter changes, clear any selected blade/ratchet/bit IDs whose options are no longer visible (fixing the phantom selection bug)."
+  ],
+  "acceptance_criteria": [
+    "npx tsc --noEmit passes with no errors (TypeScript compiles cleanly with UX_EXPANDED and BX_EXPANDED in the Option.series type)",
+    "The bxUxBlades filter includes parts with series UX_EXPANDED and BX_EXPANDED so they show up in the BX/UX tab",
+    "A manufacturer filter toggle (All / Takara Tomy / Hasbro) exists in the ComboForm and filters blade/ratchet/bit dropdowns",
+    "When the manufacturer filter changes, any selected part IDs that are no longer visible are cleared (no phantom selections)",
+    "The seed script deletes rows with slug 'whales-wave' and 'bit-disc-ball' before upserting",
+    "The metaParts entry for 'bit-disc-ball' (Disc Ball) is removed from meta-parts.ts",
+    "Bullet Griffon has series UX_EXPANDED (not UX)",
+    "Glory Valk is added with series UX_EXPANDED",
+    "Dran Strike is classified under BX_EXPANDED via bxExpandedBladeNames",
+    "uxBladeNames uses 'Whale Wave' (not 'Whales Wave')",
+    "wikiBitNames uses 'Discball' (not 'Disk Ball')"
+  ],
+  "verification": [
+    "Run 'npx prisma generate' to regenerate the Prisma client with the new enum values",
+    "Run 'npx tsc --noEmit' to confirm TypeScript compiles without errors",
+    "Run 'npx next lint' to check for lint issues"
+  ],
+  "blocked_reason": null,
+  "findings": "ESLint/next lint has a pre-existing compatibility issue with @rushstack/eslint-patch and ESLint 9.39.4 (fails with 'Failed to patch ESLint because the calling module was not recognized'). This is unrelated to the changes made. TypeScript compilation (npx tsc --noEmit) passes cleanly. Node.js had to be installed via mise (node@22) as it was not pre-installed in the sandbox. Post-review fix: added 'bit-disk-ball' to seed-catalog.ts deleteMany cleanup array - the old wiki entry 'Disk Ball' (with a k) produced this slug via slugifyWikiName. The eslint-disable for exhaustive-deps in the phantom-selection useEffect was left as-is; the pattern is intentionally correct (only fire on filter change, read current selections at that moment) and the tradeoff is acceptable."
+}

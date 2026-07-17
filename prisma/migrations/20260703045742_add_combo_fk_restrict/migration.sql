@@ -1,0 +1,8 @@
+-- AddForeignKey
+ALTER TABLE "Combo" ADD CONSTRAINT "Combo_bladePartId_fkey" FOREIGN KEY ("bladePartId") REFERENCES "Part"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Combo" ADD CONSTRAINT "Combo_ratchetPartId_fkey" FOREIGN KEY ("ratchetPartId") REFERENCES "Part"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Combo" ADD CONSTRAINT "Combo_bitPartId_fkey" FOREIGN KEY ("bitPartId") REFERENCES "Part"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

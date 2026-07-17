@@ -1,0 +1,23 @@
+{
+  "project_type": "Next.js 15 app with TypeScript, Prisma ORM, Tailwind CSS",
+  "language": "TypeScript",
+  "build_system": "npm with Next.js build pipeline, prisma generate + migrate deploy + next build",
+  "test_framework": "No test files exist in the project - no test framework configured",
+  "build_command": "npx next build (skip prisma parts - no DB available)",
+  "test_command": "npx tsc --noEmit (TypeScript type checking is the primary verification)",
+  "verification_instructions": "Run npx tsc --noEmit to confirm no TypeScript errors. Run npx next lint to confirm no lint issues.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "npm install, then npx prisma generate to generate the Prisma client",
+  "environment_constraints": "No database available in sandbox - cannot run migrations or seed. No test framework configured. Verification is limited to TypeScript compilation and linting.",
+  "contribution_requirements": "Open a topic branch, run lint/tests locally, open a PR against main.",
+  "key_patterns": "Option type in dashboard-forms.tsx defines series as a union type. The ComboForm uses tab-based filtering to show BX/UX blades vs CX parts. catalogParts from Prisma are mapped to Option objects in app/dashboard/page.tsx with manufacturer name appended in parentheses. seed-catalog.ts upserts by slug but never deletes stale entries.",
+  "relevant_files": [
+    "components/dashboard-forms.tsx",
+    "prisma/data/meta-parts.ts",
+    "prisma/seed-catalog.ts",
+    "prisma/schema.prisma",
+    "app/dashboard/page.tsx",
+    "lib/format.ts"
+  ],
+  "directory_structure": "app/ (Next.js app router), components/ (React client components), lib/ (utilities/data), prisma/ (schema, seeds, data, migrations, scripts)"
+}

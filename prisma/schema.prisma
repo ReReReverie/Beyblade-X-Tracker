@@ -1,0 +1,515 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PartType {
+  BLADE
+  RATCHET
+  BIT
+}
+
+enum PartRole {
+  BLADE
+  RATCHET
+  BIT
+  LOCK_CHIP
+  MAIN_BLADE
+  ASSIST_BLADE
+  OVER_BLADE
+  METAL_BLADE
+}
+
+enum Manufacturer {
+  HASBRO
+  TAKARA_TOMY
+  FAKE
+  UNKNOWN
+}
+
+enum PartSeries {
+  BX
+  UX
+  CX
+  CX_EXPANDED
+  UX_EXPANDED
+  BX_EXPANDED
+}
+
+enum RatchetIntegration {
+  NONE
+  BLADE
+  BIT
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ReportKind {
+  BUG
+  REQUEST
+}
+
+enum BattleFormat {
+  ONE_V_ONE
+  THREE_V_THREE
+}
+
+enum FeaturedSlot {
+  DAY
+  WEEK
+  MONTH
+  SPONSOR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  username      String?   @unique
+  role          Role      @default(USER)
+  emailVerified DateTime?
+  image         String?
+  bio           String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  parts    Part[]
+  combos   Combo[]
+  decks    Deck[]
+  battles  Battle[]
+  stars    ComboStar[]
+  puts     ComboPut[]
+  comments ComboComment[]
+  chatUsages ChatUsage[]
+  careerEntries CareerEntry[]
+  reports  Report[]
+
+  // @@index([username]) — REMOVED: already covered by @unique on username
+  @@index([createdAt])
+  @@index([role, createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PartCatalog {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  name         String
+  type         PartType
+  role         PartRole?
+  manufacturer Manufacturer @default(TAKARA_TOMY)
+  series       PartSeries?
+  ratchetIntegration RatchetIntegration @default(NONE)
+  weightGrams  Decimal?     @db.Decimal(6, 2)
+  imageUrl     String?
+  metaTier     String?
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  parts Part[]
+
+  @@unique([name, type])
+  @@index([type])
+  @@index([role])
+  @@index([series])
+  // @@index([metaTier]) — REMOVED: covered by composite below
+  @@index([metaTier, type, name])
+}
+
+model Part {
+  id              String       @id @default(cuid())
+  ownerId         String
+  catalogPartId   String?
+  name            String
+  type            PartType
+  role            PartRole?
+  manufacturer    Manufacturer @default(UNKNOWN)
+  series          PartSeries?
+  ratchetIntegration RatchetIntegration @default(NONE)
+  weightGrams     Decimal?     @db.Decimal(6, 2)
+  conditionRating Decimal      @db.Decimal(3, 1)
+  visibility      Visibility   @default(PUBLIC)
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  catalogPart PartCatalog? @relation(fields: [catalogPartId], references: [id], onDelete: SetNull)
+  combosAsBlade Combo[]     @relation("ComboBlade")
+  combosAsRatchet Combo[]   @relation("ComboRatchet")
+  combosAsBit Combo[]       @relation("ComboBit")
+  photos      PartPhoto[]
+  comboParts  ComboPart[]
+
+  @@index([ownerId, type])
+  @@index([ownerId, createdAt])
+  @@index([catalogPartId])
+  // @@index([role]) — REMOVED: low-cardinality enum, rarely queried alone
+  // @@index([series]) — REMOVED: low-cardinality enum, rarely queried alone
+  // @@index([visibility]) — REMOVED: covered by [visibility, createdAt]
+  @@index([visibility, createdAt])
+  // @@index([manufacturer]) — REMOVED: low-cardinality enum, not queried alone
+  // @@index([createdAt]) — REMOVED: covered by [ownerId, createdAt] and [visibility, createdAt]
+}
+
+model PartPhoto {
+  id         String     @id @default(cuid())
+  partId     String
+  ownerId    String
+  url        String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  visibility Visibility @default(PUBLIC)
+  createdAt  DateTime   @default(now())
+
+  part Part @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
+  @@index([ownerId, createdAt])
+  @@index([partId, visibility, createdAt])
+  // @@index([visibility]) — REMOVED: low cardinality, rarely queried alone
+}
+
+model Combo {
+  id         String     @id @default(cuid())
+  ownerId    String
+  name       String
+  visibility Visibility @default(PUBLIC)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  bladePartId  String
+  ratchetPartId String?
+  bitPartId    String
+
+  owner      User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bladePart  Part         @relation("ComboBlade", fields: [bladePartId], references: [id], onDelete: Restrict)
+  ratchetPart Part?       @relation("ComboRatchet", fields: [ratchetPartId], references: [id], onDelete: SetNull)
+  bitPart    Part         @relation("ComboBit", fields: [bitPartId], references: [id], onDelete: Restrict)
+  parts      ComboPart[]
+  photos     ComboPhoto[]
+  features   FeaturedCombo[]
+  battlesA   Battle[]     @relation("BattleComboA")
+  battlesB   Battle[]     @relation("BattleComboB")
+  wins       Battle[]     @relation("BattleWinner")
+  stars      ComboStar[]
+  puts       ComboPut[]
+  comments   ComboComment[]
+  deckSlots  DeckSlot[]
+
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
+  @@index([ownerId, createdAt])
+  @@index([ownerId, bitPartId, ratchetPartId])
+  // @@index([visibility]) — REMOVED: covered by [visibility, createdAt]
+  @@index([visibility, createdAt])
+  // @@index([createdAt]) — REMOVED: covered by composites above
+  @@index([bladePartId])
+  @@index([bitPartId])
+}
+
+model Deck {
+  id         String     @id @default(cuid())
+  ownerId    String
+  name       String
+  visibility Visibility @default(PUBLIC)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  slots    DeckSlot[]
+  battlesA Battle[]   @relation("BattleDeckA")
+  battlesB Battle[]   @relation("BattleDeckB")
+  wins     Battle[]   @relation("BattleDeckWinner")
+
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
+  @@index([ownerId, createdAt])
+  // @@index([visibility]) — REMOVED: covered by [visibility, createdAt]
+  @@index([visibility, createdAt])
+  // @@index([createdAt]) — REMOVED: covered by composites above
+}
+
+model DeckSlot {
+  id      String @id @default(cuid())
+  deckId  String
+  comboId String
+  slot    Int
+
+  deck  Deck  @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Restrict)
+
+  @@unique([deckId, slot])
+  @@unique([deckId, comboId])
+  @@index([comboId])
+}
+
+model ComboStar {
+  id        String   @id @default(cuid())
+  comboId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([comboId, userId])
+  // @@index([comboId]) — REMOVED: leading column of @@unique above
+  @@index([userId])
+  // @@index([userId, comboId]) — REMOVED: lookups use @@unique([comboId, userId])
+  @@index([createdAt])
+}
+
+model ComboPut {
+  id        String   @id @default(cuid())
+  comboId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([comboId, userId])
+  // @@index([comboId]) — REMOVED: leading column of @@unique above
+  @@index([userId])
+  // @@index([userId, comboId]) — REMOVED: lookups use @@unique([comboId, userId])
+  @@index([createdAt])
+}
+
+model ComboComment {
+  id        String   @id @default(cuid())
+  comboId   String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  combo  Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([comboId, createdAt])
+  @@index([authorId])
+}
+
+model FeaturedCombo {
+  id          String       @id @default(cuid())
+  comboId     String
+  slot        FeaturedSlot
+  title       String
+  sponsorName String?
+  posterUrl   String?
+  startsAt    DateTime     @default(now())
+  endsAt      DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+
+  @@index([slot, startsAt, endsAt])
+  // @@index([startsAt, endsAt]) — REMOVED: the slot composite covers range scans
+  @@index([comboId])
+  @@index([endsAt])
+}
+
+model ChatUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  day       DateTime
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+  // @@index([day]) — REMOVED: all queries filter by userId first via @@unique
+}
+
+model CareerEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  tournamentName String
+  placement      String?
+  wins           Int      @default(0)
+  losses         Int      @default(0)
+  draws          Int      @default(0)
+  playedAt       DateTime @default(now())
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+}
+
+model VisitorActivity {
+  id        String   @id @default(cuid())
+  visitorId String   @unique
+  userId    String?
+  path      String
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  // @@index([lastSeen]) — REMOVED: covered by [userId, lastSeen]
+  // @@index([userId]) — REMOVED: covered by [userId, lastSeen]
+  @@index([userId, lastSeen])
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reporterId String?
+  kind       ReportKind
+  status     ReportStatus @default(OPEN)
+  title      String
+  details    String
+  path       String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  reporter User? @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  // @@index([status]) — REMOVED: covered by [status, createdAt]
+  @@index([status, createdAt])
+  // @@index([kind]) — REMOVED: covered by [kind, status, createdAt]
+  @@index([kind, status, createdAt])
+  // @@index([createdAt]) — REMOVED: covered by composites above
+  @@index([reporterId])
+}
+
+model ComboPart {
+  id      String   @id @default(cuid())
+  comboId String
+  partId  String
+  role    PartRole
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  part  Part  @relation(fields: [partId], references: [id], onDelete: Restrict)
+
+  @@unique([comboId, role])
+  @@index([partId])
+  @@index([comboId, partId])
+}
+
+model ComboPhoto {
+  id         String     @id @default(cuid())
+  comboId    String
+  ownerId    String
+  url        String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  visibility Visibility @default(PUBLIC)
+  createdAt  DateTime   @default(now())
+
+  combo Combo @relation(fields: [comboId], references: [id], onDelete: Cascade)
+
+  // @@index([ownerId]) — REMOVED: covered by [ownerId, createdAt]
+  @@index([ownerId, createdAt])
+  @@index([comboId, visibility, createdAt])
+  // @@index([visibility]) — REMOVED: low cardinality, rarely queried alone
+}
+
+model Battle {
+  id         String     @id @default(cuid())
+  ownerId    String
+  format     BattleFormat @default(ONE_V_ONE)
+  comboAId   String?
+  comboBId   String?
+  winnerId   String?
+  comboARpm  Int?
+  comboBRpm  Int?
+  deckAId    String?
+  deckBId    String?
+  deckWinnerId String?
+  visibility Visibility @default(PUBLIC)
+  playedAt   DateTime   @default(now())
+  notes      String?
+  createdAt  DateTime   @default(now())
+
+  owner  User  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  comboA Combo? @relation("BattleComboA", fields: [comboAId], references: [id], onDelete: Restrict)
+  comboB Combo? @relation("BattleComboB", fields: [comboBId], references: [id], onDelete: Restrict)
+  winner Combo? @relation("BattleWinner", fields: [winnerId], references: [id], onDelete: Restrict)
+  deckA Deck? @relation("BattleDeckA", fields: [deckAId], references: [id], onDelete: Restrict)
+  deckB Deck? @relation("BattleDeckB", fields: [deckBId], references: [id], onDelete: Restrict)
+  deckWinner Deck? @relation("BattleDeckWinner", fields: [deckWinnerId], references: [id], onDelete: Restrict)
+
+  // Owner queries (profile, usage enforcement)
+  @@index([ownerId, createdAt])
+  @@index([ownerId, playedAt])
+
+  // Public feed / listing queries (visibility + time ordering)
+  @@index([visibility, playedAt])
+
+  // Combo battle history (the most common query pattern)
+  @@index([comboAId, visibility, playedAt])
+  @@index([comboBId, visibility, playedAt])
+
+  // Winner stats
+  @@index([winnerId, visibility])
+
+  // Deck battle history
+  @@index([deckAId, visibility])
+  @@index([deckBId, visibility])
+  @@index([deckWinnerId, visibility])
+}
