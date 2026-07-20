@@ -90,6 +90,11 @@ export function CareerEntryForm() {
   }
 
   async function lookupTournament() {
+    const confirmed = window.confirm(
+      "Is this tournament complete? Fetching it will use one of your monthly API requests."
+    );
+    if (!confirmed) return;
+
     setError("");
     setLookupLoading(true);
     resetChallonge();
@@ -100,7 +105,12 @@ export function CareerEntryForm() {
         body: JSON.stringify({ url: challongeUrl })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Lookup failed.");
+      if (!res.ok) {
+        if (data.usage) {
+          setApiUsage((current) => current ? { ...current, ...data.usage } : data.usage);
+        }
+        throw new Error(data.error || "Lookup failed.");
+      }
       setTournamentName(data.tournamentName || "");
       setParticipants(data.participants || []);
       setMatches(data.matches || []);
@@ -213,18 +223,24 @@ export function CareerEntryForm() {
         <>
           <div className="challonge-info" style={{ marginBottom: "0.75rem", fontSize: "0.85rem" }}>
             {apiUsage ? (
-              <p style={{ marginBottom: "0.4rem" }}>
-                <strong>
-                  {apiUsage.personal.limit != null
-                    ? `Your requests: ${apiUsage.personal.used}/${apiUsage.personal.limit} this month`
-                    : `Your requests: ${apiUsage.personal.used} (unlimited)`
-                  }
-                </strong>
-                {apiUsage.personal.remaining === 0 ? <span className="danger"> — limit reached</span> : null}
-              </p>
+              <>
+                <p style={{ marginBottom: "0.4rem" }}>
+                  <strong>All users: {apiUsage.global.used}/{apiUsage.global.limit} API requests this month</strong>
+                  {apiUsage.global.remaining === 0 ? <span className="danger"> — All API requests have been used up for the month.</span> : null}
+                </p>
+                <p style={{ marginBottom: "0.4rem" }}>
+                  <strong>
+                    {apiUsage.personal.limit != null
+                      ? `Your requests: ${apiUsage.personal.used}/${apiUsage.personal.limit} this month`
+                      : `Your requests: ${apiUsage.personal.used} (unlimited)`
+                    }
+                  </strong>
+                  {apiUsage.personal.remaining === 0 ? <span className="danger"> — personal limit reached</span> : null}
+                </p>
+              </>
             ) : null}
             <p className="meta" style={{ marginBottom: "0.3rem" }}>
-              Each user is limited to <strong>5 Challonge lookups per month</strong> to accommodate all users fairly. Need more? Contact an admin — extra requests depend on overall monthly usage.
+              Each user is limited to <strong>5 Challonge lookups per month</strong>, with a shared limit of <strong>500 API requests per month</strong> for all users.
             </p>
             <details style={{ marginTop: "0.3rem" }}>
               <summary className="meta" style={{ cursor: "pointer" }}>Tips &amp; requirements</summary>

@@ -64,7 +64,7 @@ export async function consumeChallongeRequest(userId: string, isAdmin: boolean):
   if (globalUsed >= GLOBAL_MONTHLY_LIMIT) {
     return {
       allowed: false,
-      reason: "Global monthly API limit reached (500). No more Challonge lookups available until next month.",
+      reason: "All API requests have been used up for the month. Please try again next month.",
       global: { used: globalUsed, limit: GLOBAL_MONTHLY_LIMIT, remaining: 0 },
       personal: { used: 0, limit: isAdmin ? null : PERSONAL_MONTHLY_LIMIT, remaining: isAdmin ? null : PERSONAL_MONTHLY_LIMIT }
     };
