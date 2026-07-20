@@ -5,7 +5,7 @@ import { ComboDetailTabs } from "@/components/combo-detail-tabs";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
-import { formatManufacturer, pct } from "@/lib/format";
+import { formatManufacturer, pct } from "@/lib/format-client";
 
 type ComboDetailResponse = {
   combo: {

@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PartType, Manufacturer, Visibility } from "@prisma/client";
-import { formatPartType, formatManufacturer, formatVisibility } from "@/lib/format";
+import { formatPartType, formatManufacturer, formatVisibility } from "@/lib/format-client";
 import { DeleteButton } from "@/components/delete-button";
 
 type PartWithPhotos = {
   id: string;
   name: string;
-  type: PartType;
-  manufacturer: Manufacturer;
-  weightGrams: string | number;
+  type: string;
+  manufacturer: string;
+  weightGrams: string | number | null;
   conditionRating: string | number;
-  visibility: Visibility;
+  visibility: string;
   notes: string | null;
   photos: { id: string; url: string }[];
 };

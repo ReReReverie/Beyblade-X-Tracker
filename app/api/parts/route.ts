@@ -26,6 +26,9 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    if (error instanceof Error && (error.message.includes("limit reached") || error.message.includes("Daily"))) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
     console.error("Part create failed", error);
     return NextResponse.json({ error: "Could not save part." }, { status: 500 });
   }
@@ -82,7 +85,8 @@ export async function PATCH(request: Request) {
     if (isShared && comboId) {
       // Verify the combo belongs to this user
       const combo = await prisma.combo.findFirst({
-        where: { id: comboId, ownerId }
+        where: { id: comboId, ownerId },
+        select: { id: true, bladePartId: true, ratchetPartId: true, bitPartId: true }
       });
       if (!combo) {
         return NextResponse.json({ error: "Combo not found or unauthorized." }, { status: 404 });
@@ -99,8 +103,8 @@ export async function PATCH(request: Request) {
         data: {
           ownerId,
           catalogPartId: existing.catalogPartId,
-          name: existing.name,
-          type: existing.type,
+          name: (updateData.name as string) ?? existing.name,
+          type: (updateData.type as any) ?? existing.type,
           role: existing.role,
           manufacturer: (updateData.manufacturer as any) ?? existing.manufacturer,
           series: existing.series,
@@ -117,6 +121,18 @@ export async function PATCH(request: Request) {
         where: { id: comboPart.id },
         data: { partId: clonedPart.id }
       });
+
+      // Also update the combo's direct FK fields if they reference the old part
+      const comboFkUpdate: Record<string, string> = {};
+      if (combo.bladePartId === id) comboFkUpdate.bladePartId = clonedPart.id;
+      if (combo.ratchetPartId === id) comboFkUpdate.ratchetPartId = clonedPart.id;
+      if (combo.bitPartId === id) comboFkUpdate.bitPartId = clonedPart.id;
+      if (Object.keys(comboFkUpdate).length > 0) {
+        await prisma.combo.update({
+          where: { id: comboId },
+          data: comboFkUpdate
+        });
+      }
 
       return NextResponse.json({ part: clonedPart });
     }

@@ -79,6 +79,11 @@ enum FeaturedSlot {
   SPONSOR
 }
 
+enum CareerEntryMode {
+  MANUAL
+  CHALLONGE
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -385,17 +390,24 @@ model ChatUsage {
 }
 
 model CareerEntry {
-  id             String   @id @default(cuid())
-  userId         String
-  tournamentName String
-  placement      String?
-  wins           Int      @default(0)
-  losses         Int      @default(0)
-  draws          Int      @default(0)
-  playedAt       DateTime @default(now())
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                     String           @id @default(cuid())
+  userId                 String
+  tournamentName         String
+  placement              String?
+  wins                   Int              @default(0)
+  losses                 Int              @default(0)
+  draws                  Int              @default(0)
+  playedAt               DateTime         @default(now())
+  notes                  String?
+  mode                   CareerEntryMode  @default(MANUAL)
+  challongeUrl           String?
+  trackedParticipantName String?
+  challongeSnapshot      Json?
+  challongeSyncError     String?
+  challongeSyncedAt      DateTime?
+  challongeSyncFrozen    Boolean          @default(false)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -512,4 +524,16 @@ model Battle {
   @@index([deckAId, visibility])
   @@index([deckBId, visibility])
   @@index([deckWinnerId, visibility])
+}
+
+model ChallongeApiUsage {
+  id        String   @id @default(cuid())
+  month     DateTime
+  userId    String?
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([month, userId])
+  @@index([userId, month])
 }

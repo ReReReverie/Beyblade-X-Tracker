@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Part, PartType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
+import { enforceComboCreation, enforceBattleCreation, enforcePartCreation } from "@/lib/usage";
 
 const dailyLimit = 10;
 const geminiModel = process.env.GEMINI_MODEL || "gemini-1.5-flash";
@@ -213,6 +214,7 @@ async function guessWithGemini(input: string): Promise<ComboGuess | null> {
 // ─── Combo & Battle Creation Helpers ────────────────────────────────────────
 
 async function createPartFromChat(userId: string, name: string, type: PartType) {
+  await enforcePartCreation(userId);
   return prisma.part.create({
     data: {
       ownerId: userId,
@@ -288,6 +290,7 @@ async function findOrCreateCombo(userId: string, input: string, parts: Part[], g
   });
   if (duplicate) return { id: duplicate.id, name: duplicate.name, created: false, createdParts };
 
+  await enforceComboCreation(userId);
 
   const combo = await prisma.combo.create({
     data: {
@@ -711,6 +714,8 @@ async function handleLogBattle(userId: string, input: string, remaining: number)
   }
 
   const winnerId = battleInput.scoreA > battleInput.scoreB ? comboA.id : comboB.id;
+
+  await enforceBattleCreation(userId);
 
   const battle = await prisma.battle.create({
     data: {

@@ -27,6 +27,7 @@ export async function DELETE(request: Request) {
     prisma.comboPut.deleteMany({ where: { comboId: id } }),
     prisma.comboPhoto.deleteMany({ where: { comboId: id } }),
     prisma.comboPart.deleteMany({ where: { comboId: id } }),
+    prisma.featuredCombo.deleteMany({ where: { comboId: id } }),
     prisma.battle.deleteMany({
       where: {
         OR: [{ comboAId: id }, { comboBId: id }, { winnerId: id }]

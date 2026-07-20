@@ -14,6 +14,16 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid combo." }, { status: 400 });
 
+  // Verify the combo exists and is public (or owned by the user)
+  const combo = await prisma.combo.findFirst({
+    where: {
+      id: parsed.data.comboId,
+      OR: [{ visibility: "PUBLIC" }, { ownerId: session.user.id }]
+    },
+    select: { id: true }
+  });
+  if (!combo) return NextResponse.json({ error: "Combo not found." }, { status: 404 });
+
   const existing = await prisma.comboStar.findUnique({
     where: { comboId_userId: { comboId: parsed.data.comboId, userId: session.user.id } }
   });

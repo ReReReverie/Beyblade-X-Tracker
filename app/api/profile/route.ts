@@ -38,6 +38,10 @@ export async function PATCH(request: Request) {
       if (!rawImage.type.startsWith("image/")) {
         return NextResponse.json({ error: "Use a JPG, PNG, or WEBP image." }, { status: 400 });
       }
+      const maxBytes = 1 * 1024 * 1024; // 1 MB
+      if (rawImage.size > maxBytes) {
+        return NextResponse.json({ error: "Image must be under 1 MB." }, { status: 400 });
+      }
 
       const upload = await uploadImage(Buffer.from(await rawImage.arrayBuffer()), `profile-${session.user.id}-${Date.now()}`);
       imageUrl = upload.secure_url;
@@ -71,8 +75,22 @@ export async function POST(request: Request) {
   const parsed = careerEntrySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid career entry." }, { status: 400 });
 
+  const { challongeUrl, trackedParticipantName, challongeSnapshot, ...rest } = parsed.data;
+  const isChallonge = Boolean(challongeUrl);
+
   const entry = await prisma.careerEntry.create({
-    data: { userId: session.user.id, ...parsed.data }
+    data: {
+      userId: session.user.id,
+      ...rest,
+      ...(isChallonge
+        ? {
+            mode: "CHALLONGE",
+            challongeUrl,
+            trackedParticipantName,
+            challongeSnapshot: challongeSnapshot ?? undefined
+          }
+        : {})
+    }
   });
 
   return NextResponse.json({ entry });

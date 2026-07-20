@@ -1,6 +1,8 @@
-import type { Battle } from "@prisma/client";
-
-export type BattlePoint = Omit<Pick<Battle, "id" | "comboAId" | "comboBId" | "winnerId" | "playedAt">, "playedAt"> & {
+export type BattlePoint = {
+  id: string;
+  comboAId: string | null;
+  comboBId: string | null;
+  winnerId: string | null;
   playedAt: Date | string;
 };
 

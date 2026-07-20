@@ -114,7 +114,10 @@ export const careerEntrySchema = z.object({
   losses: z.coerce.number().int().min(0).max(999).default(0),
   draws: z.coerce.number().int().min(0).max(999).default(0),
   playedAt: z.coerce.date(),
-  notes: z.string().trim().max(1000).optional()
+  notes: z.string().trim().max(1000).optional(),
+  challongeUrl: z.string().trim().url().max(500).optional(),
+  trackedParticipantName: z.string().trim().max(120).optional(),
+  challongeSnapshot: z.any().optional()
 });
 
 

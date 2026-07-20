@@ -2,6 +2,18 @@ import { prisma } from "@/lib/prisma";
 
 export type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
 
+/** Convert Prisma Decimal values and Date objects to plain JSON-safe values. */
+function serializeForClient(data: unknown): any {
+  return JSON.parse(JSON.stringify(data, (_key, value) => {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === "object" && value !== null && "toNumber" in value && typeof value.toNumber === "function") {
+      return value.toNumber();
+    }
+    if (typeof value === "bigint") return Number(value);
+    return value;
+  }));
+}
+
 export function parseProfileTab(tab: string | null | undefined): ProfileTab {
   return tab === "posts" || tab === "starred" || tab === "lineup" || tab === "career" ? tab : "overview";
 }
@@ -57,7 +69,10 @@ function getTabData(userId: string, tab: ProfileTab) {
 
   if (tab === "lineup") {
     return prisma.combo.findMany({
-      where: { puts: { some: { userId } }, visibility: "PUBLIC" },
+      where: {
+        puts: { some: { userId } },
+        OR: [{ visibility: "PUBLIC" }, { ownerId: userId }]
+      },
       include: profileComboInclude(userId, true),
       orderBy: { createdAt: "desc" },
       take: 10
@@ -78,12 +93,12 @@ function getTabData(userId: string, tab: ProfileTab) {
 export async function getProfileTabPayload(userId: string, tab: ProfileTab) {
   const tabData = await getTabData(userId, tab);
 
-  return {
+  return serializeForClient({
     myCombos: tab === "posts" ? tabData : undefined,
     starredCombos: tab === "starred" ? tabData : undefined,
     putCombos: tab === "lineup" ? tabData : undefined,
     careerEntries: tab === "career" ? tabData : undefined
-  };
+  });
 }
 
 export async function getProfilePayload(userId: string, tab: ProfileTab, fallbackRole?: string) {
@@ -96,7 +111,7 @@ export async function getProfilePayload(userId: string, tab: ProfileTab, fallbac
     getTabData(userId, tab)
   ]);
 
-  return {
+  const payload = {
     user: {
       id: userId,
       name: user?.name,
@@ -112,6 +127,8 @@ export async function getProfilePayload(userId: string, tab: ProfileTab, fallbac
     putCombos: tab === "lineup" ? tabData : undefined,
     careerEntries: tab === "career" ? tabData : undefined
   };
+
+  return serializeForClient(payload);
 }
 
 

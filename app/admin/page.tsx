@@ -5,6 +5,7 @@ import { AdminComboDeleteButton } from "@/components/admin-combo-delete-button";
 import { FeaturedComboDeleteButton } from "@/components/featured-combo-delete-button";
 import { FeaturedComboForm } from "@/components/featured-combo-form";
 import { authOptions } from "@/lib/auth";
+import { getChallongeUsage } from "@/lib/challonge-usage";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +16,12 @@ export default async function AdminPage() {
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   const activeSince = new Date(Date.now() - 2 * 60 * 1000);
-  const [activeUsers, totalUsers, openBugs, openRequests, activity, publicCombos, adminCombos, features, users] = await Promise.all([
+  const [activeUsers, totalUsers, openBugs, openRequests, challongeUsage, activity, publicCombos, adminCombos, features, users] = await Promise.all([
     prisma.visitorActivity.count({ where: { lastSeen: { gte: activeSince } } }),
     prisma.user.count(),
     prisma.report.count({ where: { kind: "BUG", status: "OPEN" } }),
     prisma.report.count({ where: { kind: "REQUEST", status: "OPEN" } }),
+    getChallongeUsage(session.user.id, true),
     prisma.visitorActivity.findMany({ orderBy: { lastSeen: "desc" }, take: 20 }),
     prisma.combo.findMany({ where: { visibility: "PUBLIC" }, orderBy: { createdAt: "desc" }, take: 100, select: { id: true, name: true } }),
     prisma.combo.findMany({
@@ -70,6 +72,7 @@ export default async function AdminPage() {
             <h2>Stats</h2>
             <p>{activeUsers} active now - {totalUsers} total users</p>
             <p>{openBugs} open bugs - {openRequests} open requests</p>
+            <p>Challonge API: {challongeUsage.global.remaining}/{challongeUsage.global.limit} global remaining this month</p>
           </div>
           <div className="card"><FeaturedComboForm combos={publicCombos} /></div>
         </div>

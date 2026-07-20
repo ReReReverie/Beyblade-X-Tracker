@@ -23,6 +23,20 @@ const dashboardComboInclude = {
   _count: { select: { wins: true, battlesA: true, battlesB: true } }
 };
 
+function serializePartForClient(part: any) {
+  return {
+    id: part.id,
+    name: part.name,
+    type: part.type,
+    manufacturer: part.manufacturer,
+    weightGrams: part.weightGrams == null ? null : Number(part.weightGrams),
+    conditionRating: Number(part.conditionRating),
+    visibility: part.visibility,
+    notes: part.notes,
+    photos: (part.photos || []).map((photo: any) => ({ id: photo.id, url: photo.url }))
+  };
+}
+
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/auth/signin");
@@ -179,8 +193,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     { id: "log", label: "Log" },
     { id: "parts", label: "Parts" },
     { id: "combos", label: "Combos" },
-    { id: "history", label: "History" },
-    { id: "profile", label: "Profile" }
+    { id: "history", label: "History" }
   ];
 
   return (
@@ -223,7 +236,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <h2>Your parts</h2>
           <div className="list">
             {parts.map((part) => (
-              <PartCard key={part.id} part={part} />
+              <PartCard key={part.id} part={serializePartForClient(part)} />
             ))}
           </div>
         </section>
@@ -252,9 +265,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                         name: entry.part.name,
                         type: entry.part.type,
                         role: entry.role,
-                        weightGrams: entry.part.weightGrams,
+                        weightGrams: entry.part.weightGrams == null ? null : Number(entry.part.weightGrams),
                         manufacturer: entry.part.manufacturer,
-                        catalogWeightGrams: entry.part.catalogPart?.weightGrams ?? null,
+                        catalogWeightGrams: entry.part.catalogPart?.weightGrams == null ? null : Number(entry.part.catalogPart.weightGrams),
                         catalogManufacturer: entry.part.catalogPart?.manufacturer ?? null,
                       }))}
                     />

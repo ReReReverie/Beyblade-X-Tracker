@@ -29,3 +29,24 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ comment });
 }
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing comment id." }, { status: 400 });
+
+  const comment = await prisma.comboComment.findUnique({ where: { id }, select: { id: true, authorId: true } });
+  if (!comment) return NextResponse.json({ error: "Comment not found." }, { status: 404 });
+
+  // Allow deletion by comment author or admin
+  if (comment.authorId !== session.user.id && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Not allowed." }, { status: 403 });
+  }
+
+  await prisma.comboComment.delete({ where: { id } });
+  revalidateTag("public-combo-detail");
+
+  return NextResponse.json({ ok: true });
+}

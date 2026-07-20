@@ -17,13 +17,15 @@ export function PutComboButton({ comboId, initialCount, initiallyPut }: { comboI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comboId })
       });
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError("Sign in to put combos.");
+        setError(data.error || "Could not update your lineup.");
         return;
       }
-      const data = await response.json();
       setPut(data.put);
       setCount(data.count);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update your lineup.");
     } finally {
       hideLoadingOverlay();
     }

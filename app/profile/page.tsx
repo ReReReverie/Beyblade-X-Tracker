@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { ProfileClient } from "./profile-client";
 import { authOptions } from "@/lib/auth";
 import { getProfilePayload, parseProfileTab } from "@/lib/profile-data";
+import ProfileClient from "./profile-client";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +10,15 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/auth/signin");
 
-  const params = await searchParams;
-  const activeTab = parseProfileTab(params.tab);
+  const { tab } = await searchParams;
+  const activeTab = parseProfileTab(tab || null);
   const initialData = await getProfilePayload(session.user.id, activeTab, session.user.role);
 
-  return <ProfileClient initialData={initialData} initialTab={activeTab} sessionName={session.user.name || session.user.username || session.user.email} />;
+  return (
+    <ProfileClient
+      initialData={initialData}
+      initialTab={activeTab}
+      sessionName={session.user.name}
+    />
+  );
 }
-

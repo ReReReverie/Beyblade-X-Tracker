@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { WRGraph } from "@/components/wr-graph";
-import { pct } from "@/lib/format";
+import { pct } from "@/lib/format-client";
 import type { BattlePoint } from "@/lib/battle-history";
 
 type BattleRow = BattlePoint & {

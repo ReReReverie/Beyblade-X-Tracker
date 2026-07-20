@@ -1097,7 +1097,21 @@ textarea {
 }
 
 .career-row {
-  padding-bottom: 4.1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 1.2rem;
+  align-items: start;
+  padding-bottom: 1rem;
+}
+
+.career-row > div:first-child {
+  min-width: 0;
+}
+
+.career-row .delete-control--compact {
+  position: static;
+  justify-items: end;
+  align-self: end;
 }
 
 .comments {
@@ -1428,7 +1442,7 @@ textarea {
 }
 
 .career-row {
-  min-height: 164px;
+  min-height: auto;
 }
 
 .combo-part-edit {
@@ -1456,6 +1470,18 @@ textarea {
 
 @media (max-width: 600px) {
   .combo-part-edit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .career-row {
+    grid-template-columns: 1fr;
+  }
+
+  .career-row .delete-control--compact {
+    justify-self: end;
+  }
+
+  .challonge-results {
     grid-template-columns: 1fr;
   }
 }
@@ -1541,4 +1567,77 @@ textarea {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+
+/* ─── Challonge Results Display ──────────────────────────────────────── */
+
+.challonge-results {
+  display: grid;
+  gap: 0.5rem 1.5rem;
+  margin-top: 0.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, max-content));
+  align-items: start;
+}
+
+.challonge-results > a {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.challonge-results .career-stage-section {
+  grid-column: 1 / -1;
+}
+
+.career-result {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.career-result strong {
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.career-stage-section {
+  margin-top: 0.3rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.career-standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.career-standings-table th,
+.career-standings-table td {
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border, #e2e2e2);
+}
+
+.career-standings-table th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted, #888);
+}
+
+.career-standings-table td:nth-child(3),
+.career-standings-table td:nth-child(4),
+.career-standings-table th:nth-child(3),
+.career-standings-table th:nth-child(4) {
+  text-align: center;
+  width: 2.5rem;
+}
+
+.career-standings-highlight {
+  background: var(--highlight, #fffbe6);
+  font-weight: 600;
 }

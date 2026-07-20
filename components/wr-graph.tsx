@@ -1,7 +1,7 @@
 "use client";
 
 import { battleTime, type BattlePoint } from "@/lib/battle-history";
-import { pct } from "@/lib/format";
+import { pct } from "@/lib/format-client";
 
 function recentWindow(points: BattlePoint[]) {
   const sorted = [...points].sort((a, b) => battleTime(a) - battleTime(b));

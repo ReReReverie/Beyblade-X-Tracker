@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { hideLoadingOverlay } from "@/components/loading-overlay-events";
-import { CareerDeleteButton as CareerDeleteButtonComponent, CareerEntryForm as CareerEntryFormComponent, ProfileEditForm as ProfileEditFormComponent } from "@/components/profile-forms";
-import { PutComboButton as PutComboButtonComponent } from "@/components/put-combo-button";
-import { StarButton as StarButtonComponent } from "@/components/star-button";
-import { formatManufacturer, formatVisibility, pct } from "@/lib/format";
-import type { ProfileTab } from "@/lib/profile-data";
-import { comboCondition, comboWeight } from "@/lib/stats";
+import { ChallongeResultsDisplay } from "@/components/challonge/ChallongeResultsDisplay";
+import { ErrorBoundary as ChallongeErrorBoundary } from "@/components/challonge/ErrorBoundary";
+import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/components/profile-forms";
+import { PutComboButton } from "@/components/put-combo-button";
+import { StarButton } from "@/components/star-button";
+import { formatManufacturer, formatVisibility, pct } from "@/lib/format-client";
+import { comboCondition, comboWeight } from "@/lib/stats-client";
+
+type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
 
 type ProfilePayload = {
   user: { id: string; name?: string | null; username?: string | null; email?: string | null; image?: string | null; bio?: string | null };
@@ -34,11 +37,6 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
 
 const cacheVersion = "v4";
 const ttlMs = 5 * 60 * 1000;
-const ProfileEditForm = ProfileEditFormComponent || null;
-const CareerEntryForm = CareerEntryFormComponent || null;
-const CareerDeleteButton = CareerDeleteButtonComponent || null;
-const StarButton = StarButtonComponent || null;
-const PutComboButton = PutComboButtonComponent || null;
 
 function cacheKey(userId: string, tab: ProfileTab) {
   return `profile-cache:${cacheVersion}:${userId}:${tab}`;
@@ -171,7 +169,7 @@ function LoadingRows({ tab }: { tab: ProfileTab }) {
   );
 }
 
-export function ProfileClient({
+export default function ProfileClient({
   initialData,
   initialTab,
   sessionName,
@@ -282,7 +280,7 @@ export function ProfileClient({
       ) : null}
       {activeTab === "posts" ? activeTabLoaded ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : <LoadingRows tab={activeTab} /> : null}
       {activeTab === "starred" ? activeTabLoaded ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : <LoadingRows tab={activeTab} /> : null}
-      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a public combo to add it here." /></section> : <LoadingRows tab={activeTab} /> : null}
+      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a combo to add it here." /></section> : <LoadingRows tab={activeTab} /> : null}
       {activeTab === "career" ? (
         activeTabLoaded ? (
           <section className="tabs profile-tab-panel">
@@ -294,7 +292,34 @@ export function ProfileClient({
                   <div>
                     <span className="tag">{new Date(entry.playedAt).toLocaleDateString()}</span>
                     <h3>{entry.tournamentName}</h3>
-                    <p className="meta">{entry.wins}-{entry.losses}{entry.draws ? `-${entry.draws}` : ""}{entry.placement ? ` - ${entry.placement}` : ""}</p>
+                    {entry.challongeUrl ? (
+                      <>
+                        <ChallongeErrorBoundary>
+                          <ChallongeResultsDisplay
+                            snapshot={entry.challongeSnapshot}
+                            trackedParticipantName={entry.trackedParticipantName}
+                            challongeUrl={entry.challongeUrl}
+                            placement={entry.placement}
+                          />
+                        </ChallongeErrorBoundary>
+                        {entry.challongeSyncError ? (
+                          <p className="danger">{entry.challongeSyncError}</p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <div className="challonge-results">
+                        <div className="career-result">
+                          <span className="meta">Record</span>
+                          <strong>{entry.wins}W - {entry.losses}L{entry.draws ? ` - ${entry.draws}D` : ""}</strong>
+                        </div>
+                        {entry.placement ? (
+                          <div className="career-result">
+                            <span className="meta">Final Standing</span>
+                            <strong>{entry.placement}</strong>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
                     {entry.notes ? <p>{entry.notes}</p> : null}
                   </div>
                   {CareerDeleteButton ? <CareerDeleteButton id={entry.id} /> : null}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
-import { formatManufacturer, pct } from "@/lib/format";
+import { formatManufacturer, pct } from "@/lib/format-client";
 import type { PublicCombo, PublicDeck, PublicFeature } from "@/lib/public-data";
 
 type OverviewResponse = {
