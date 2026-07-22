@@ -11,6 +11,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  await prisma.rateLimitBucket.deleteMany({
+    where: { windowStart: { lt: new Date(Date.now() - 2 * 60 * 60 * 1000) } }
+  });
+
   const inactiveCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
   // Use a single efficient query instead of loading all active IDs into memory.

@@ -17,7 +17,7 @@ function extractTournamentSlug(url: string): { slug: string; subdomain?: string 
     const parsed = new URL(url.trim());
     const hostname = parsed.hostname;
 
-    if (!hostname.endsWith("challonge.com")) return null;
+    if (hostname !== "challonge.com" && !hostname.endsWith(".challonge.com")) return null;
 
     const parts = hostname.split(".");
     const subdomain = parts.length === 3 && parts[0] !== "www" ? parts[0] : undefined;

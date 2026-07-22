@@ -4,8 +4,14 @@ import { seedCatalog } from "./seed-catalog";
 
 async function main() {
   const username = process.env.DEFAULT_ADMIN_USERNAME || "admin";
-  const password = process.env.DEFAULT_ADMIN_PASSWORD || "123456789";
+  const password = process.env.DEFAULT_ADMIN_PASSWORD || "";
   const email = process.env.DEFAULT_ADMIN_EMAIL || "admin@local.test";
+  if (!password) {
+    throw new Error("DEFAULT_ADMIN_PASSWORD must be configured before seeding.");
+  }
+  if ((process.env.NODE_ENV === "production" || process.env.VERCEL === "1") && (password === "123456789" || password.length < 12)) {
+    throw new Error("Use a unique admin password with at least 12 characters in production.");
+  }
   const passwordHash = await hash(password, 12);
   const name = "ReReReverie-admin";
 

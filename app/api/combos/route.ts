@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { PartRole, PartType } from "@prisma/client";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { applyCacheHeaders, publicCacheControl } from "@/lib/cache";
+import { applyCacheHeaders, privateCacheControl } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { enforceComboCreation } from "@/lib/usage";
@@ -232,7 +232,7 @@ export async function GET(request: Request) {
     take
   });
 
-  return applyCacheHeaders(NextResponse.json({ combos, page, take }), publicCacheControl);
+  return applyCacheHeaders(NextResponse.json({ combos, page, take }), privateCacheControl);
 }
 
 export async function DELETE(request: Request) {
