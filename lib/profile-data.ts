@@ -83,7 +83,21 @@ function getTabData(userId: string, tab: ProfileTab) {
     return prisma.careerEntry.findMany({
       where: { userId },
       orderBy: { playedAt: "desc" },
-      take: 10
+      take: 10,
+      select: {
+        id: true,
+        tournamentName: true,
+        placement: true,
+        wins: true,
+        losses: true,
+        draws: true,
+        playedAt: true,
+        notes: true,
+        challongeUrl: true,
+        trackedParticipantName: true,
+        challongeSnapshot: true,
+        challongeSyncError: true
+      }
     });
   }
 
