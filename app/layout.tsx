@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link className="brand" href="/">
               Beyblade X Tracker
             </Link>
-            <Suspense fallback={<div className="navlinks"><a className="button secondary" href="/combos">Public combos</a></div>}>
+            <Suspense fallback={<div className="navlinks"><Link className="button secondary" href="/combos">Public combos</Link></div>}>
               <NavLinks />
             </Suspense>
           </nav>

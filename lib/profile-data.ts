@@ -2,16 +2,65 @@ import { prisma } from "@/lib/prisma";
 
 export type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
 
-/** Convert Prisma Decimal values and Date objects to plain JSON-safe values. */
-function serializeForClient(data: unknown): any {
-  return JSON.parse(JSON.stringify(data, (_key, value) => {
-    if (value instanceof Date) return value.toISOString();
-    if (typeof value === "object" && value !== null && "toNumber" in value && typeof value.toNumber === "function") {
-      return value.toNumber();
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
+export class ProfileNotFoundError extends Error {
+  constructor() {
+    super("Profile not found.");
+    this.name = "ProfileNotFoundError";
+  }
+}
+
+/** Convert Prisma values into a plain, JSON-safe object before it crosses the API boundary. */
+export function serializeForClient<T>(data: T): T {
+  return serializeJsonValue(data, new Set<object>()) as T;
+}
+
+function serializeJsonValue(value: unknown, stack: Set<object>): JsonValue | undefined {
+  if (value === undefined || typeof value === "function" || typeof value === "symbol") return undefined;
+  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (value instanceof Date) {
+    try {
+      return value.toISOString();
+    } catch {
+      return null;
     }
-    if (typeof value === "bigint") return Number(value);
-    return value;
-  }));
+  }
+
+  if (isDecimalLike(value)) {
+    try {
+      const numberValue = value.toNumber();
+      return Number.isFinite(numberValue) ? numberValue : String(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  if (stack.has(value)) return null;
+  stack.add(value);
+  try {
+    if (Array.isArray(value)) {
+      return value.map((item) => serializeJsonValue(item, stack) ?? null);
+    }
+
+    // React Server Components require ordinary objects with Object.prototype.
+    // Object.create(null) values are rejected at the server-to-client boundary.
+    const result: Record<string, JsonValue> = {};
+    for (const [key, child] of Object.entries(value)) {
+      const serialized = serializeJsonValue(child, stack);
+      if (serialized !== undefined) result[key] = serialized;
+    }
+    return result;
+  } finally {
+    stack.delete(value);
+  }
+}
+
+function isDecimalLike(value: object): value is { toNumber: () => number } {
+  return typeof (value as { toNumber?: unknown }).toNumber === "function";
 }
 
 export function parseProfileTab(tab: string | null | undefined): ProfileTab {
@@ -105,7 +154,11 @@ function getTabData(userId: string, tab: ProfileTab) {
 }
 
 export async function getProfileTabPayload(userId: string, tab: ProfileTab) {
-  const tabData = await getTabData(userId, tab);
+  const [user, tabData] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+    getTabData(userId, tab)
+  ]);
+  if (!user) throw new ProfileNotFoundError();
 
   return serializeForClient({
     myCombos: tab === "posts" ? tabData : undefined,
@@ -124,6 +177,7 @@ export async function getProfilePayload(userId: string, tab: ProfileTab, fallbac
     getProfileStats(userId),
     getTabData(userId, tab)
   ]);
+  if (!user) throw new ProfileNotFoundError();
 
   const payload = {
     user: {

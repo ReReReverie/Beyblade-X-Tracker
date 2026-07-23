@@ -1,7 +1,7 @@
 "use client";
 
 interface ChallongeParticipant {
-  id: number | string;
+  id: string;
   name: string;
   wins: number;
   losses: number;
@@ -9,15 +9,16 @@ interface ChallongeParticipant {
 }
 
 interface ChallongeMatch {
-  id: number | string;
-  player1Id: number | string | null;
-  player2Id: number | string | null;
-  winnerId: number | string | null;
-  groupId: number | string | null;
+  id: string;
+  player1Id: string | null;
+  player2Id: string | null;
+  winnerId: string | null;
+  groupId: string | null;
   scores: string | null;
 }
 
 interface ChallongeSnapshot {
+  trackedParticipantId?: string | null;
   participants?: ChallongeParticipant[];
   matches?: ChallongeMatch[];
 }
@@ -27,35 +28,55 @@ interface ChallongeResultsDisplayProps {
   trackedParticipantName: string | null | undefined;
   challongeUrl: string | null | undefined;
   placement: string | null | undefined;
+  wins?: number | null;
+  losses?: number | null;
 }
 
-function normalizeParticipant(p: any): ChallongeParticipant {
+function normalizeParticipant(p: unknown): ChallongeParticipant {
+  const participant = p && typeof p === "object" ? p as Record<string, unknown> : {};
   return {
-    id: p?.id ?? 0,
-    name: typeof p?.name === "string" ? p.name : "",
-    wins: typeof p?.wins === "number" ? p.wins : 0,
-    losses: typeof p?.losses === "number" ? p.losses : 0,
-    groupPlayerIds: Array.isArray(p?.groupPlayerIds) ? p.groupPlayerIds : undefined
+    id: participant.id == null ? "" : String(participant.id),
+    name: typeof participant.name === "string" ? participant.name : "",
+    wins: typeof participant.wins === "number" ? participant.wins : 0,
+    losses: typeof participant.losses === "number" ? participant.losses : 0,
+    groupPlayerIds: Array.isArray(participant.groupPlayerIds)
+      ? participant.groupPlayerIds.map((id: unknown) => String(id))
+      : undefined
   };
 }
 
-function normalizeMatch(m: any): ChallongeMatch {
+function normalizeMatch(m: unknown): ChallongeMatch {
+  const match = m && typeof m === "object" ? m as Record<string, unknown> : {};
   return {
-    id: m?.id ?? 0,
-    player1Id: m?.player1Id ?? null,
-    player2Id: m?.player2Id ?? null,
-    winnerId: m?.winnerId ?? null,
-    groupId: m?.groupId ?? null,
-    scores: typeof m?.scores === "string" ? m.scores : null
+    id: match.id == null ? "" : String(match.id),
+    player1Id: match.player1Id == null ? null : String(match.player1Id),
+    player2Id: match.player2Id == null ? null : String(match.player2Id),
+    winnerId: match.winnerId == null ? null : String(match.winnerId),
+    groupId: match.groupId == null ? null : String(match.groupId),
+    scores: typeof match.scores === "string" ? match.scores : null
   };
 }
 
-function normalizeSnapshot(raw: any): { participants: ChallongeParticipant[]; matches: ChallongeMatch[] } {
-  if (!raw || typeof raw !== "object") return { participants: [], matches: [] };
+function normalizeSnapshot(raw: unknown): { trackedParticipantId: string | null; participants: ChallongeParticipant[]; matches: ChallongeMatch[] } {
+  if (!raw || typeof raw !== "object") return { trackedParticipantId: null, participants: [], matches: [] };
+  const snapshot = raw as Record<string, unknown>;
   return {
-    participants: Array.isArray(raw.participants) ? raw.participants.map(normalizeParticipant) : [],
-    matches: Array.isArray(raw.matches) ? raw.matches.map(normalizeMatch) : []
+    trackedParticipantId: snapshot.trackedParticipantId == null ? null : String(snapshot.trackedParticipantId),
+    participants: Array.isArray(snapshot.participants) ? snapshot.participants.map(normalizeParticipant) : [],
+    matches: Array.isArray(snapshot.matches) ? snapshot.matches.map(normalizeMatch) : []
   };
+}
+
+function computeOverallRecord(trackedId: string, matches: ChallongeMatch[]) {
+  let wins = 0;
+  let losses = 0;
+  for (const match of matches) {
+    const isPlayer = match.player1Id === trackedId || match.player2Id === trackedId;
+    if (!isPlayer || match.winnerId == null) continue;
+    if (match.winnerId === trackedId) wins++;
+    else losses++;
+  }
+  return { wins, losses };
 }
 
 function getGroupLetter(index: number): string {
@@ -69,7 +90,7 @@ function getOrdinal(n: number): string {
 }
 
 interface GroupStandingEntry {
-  id: number | string;
+  id: string;
   name: string;
   wins: number;
   losses: number;
@@ -86,7 +107,7 @@ interface StageResult {
 }
 
 function computeStageResults(
-  trackedId: number | string,
+  trackedId: string,
   participants: ChallongeParticipant[],
   matches: ChallongeMatch[],
   placement: string | null | undefined
@@ -112,7 +133,7 @@ function computeStageResults(
       groupLabel = `Group ${getGroupLetter(groupIndex >= 0 ? groupIndex : 0)}`;
 
       // Collect all players in this group
-      const groupPlayerIds = new Set<number | string>();
+      const groupPlayerIds = new Set<string>();
       for (const m of groupMatches) {
         if (m.groupId === groupId) {
           if (m.player1Id != null) groupPlayerIds.add(m.player1Id);
@@ -121,7 +142,7 @@ function computeStageResults(
       }
 
       // Compute W/L per player from group matches in this specific group
-      const wlMap = new Map<number | string, { wins: number; losses: number }>();
+      const wlMap = new Map<string, { wins: number; losses: number }>();
       for (const pid of groupPlayerIds) {
         wlMap.set(pid, { wins: 0, losses: 0 });
       }
@@ -176,32 +197,45 @@ export function ChallongeResultsDisplay({
   snapshot,
   trackedParticipantName,
   challongeUrl,
-  placement
+  placement,
+  wins,
+  losses
 }: ChallongeResultsDisplayProps) {
-  if (!snapshot) {
-    return <p className="meta">Tournament data has not synced yet.</p>;
-  }
-
   const normalized = normalizeSnapshot(snapshot);
   const participants = normalized.participants;
   const matches = normalized.matches;
 
-  const tracked = trackedParticipantName
-    ? participants.find((p) => p.name.toLowerCase() === trackedParticipantName.toLowerCase())
+  const trackedById = normalized.trackedParticipantId
+    ? participants.find((p) => p.id === normalized.trackedParticipantId)
     : null;
+  const normalizedTrackedName = typeof trackedParticipantName === "string"
+    ? trackedParticipantName.trim().toLowerCase()
+    : "";
+  const tracked = trackedById || (normalizedTrackedName
+    ? participants.find((p) => p.name.toLowerCase() === normalizedTrackedName)
+    : null);
 
-  if (!tracked) {
-    return <p className="meta">Tracked participant not found in tournament data.</p>;
-  }
-
-  const overallWins = tracked.wins;
-  const overallLosses = tracked.losses;
+  // A legacy snapshot may retain the tracked ID while omitting its participant
+  // entry; the ID is still enough to calculate the record from match results.
+  const trackedId = tracked?.id || normalized.trackedParticipantId;
+  const overallRecord = trackedId ? computeOverallRecord(trackedId, matches) : { wins: 0, losses: 0 };
+  const overallWins = typeof wins === "number" ? wins : overallRecord.wins || tracked?.wins || 0;
+  const overallLosses = typeof losses === "number" ? losses : overallRecord.losses || tracked?.losses || 0;
   const isPending = overallWins === 0 && overallLosses === 0;
 
-  const { groupLabel, groupStandings, groupRank, finalsWins, finalsLosses, finalStanding } =
-    computeStageResults(tracked.id, participants, matches, placement);
+  const stageResult = trackedId ? computeStageResults(trackedId, participants, matches, placement) : null;
+  const groupLabel = typeof stageResult?.groupLabel === "string" ? stageResult.groupLabel : null;
+  const groupStandings: GroupStandingEntry[] = Array.isArray(stageResult?.groupStandings)
+    ? stageResult.groupStandings
+    : [];
+  const groupRank = typeof stageResult?.groupRank === "number" ? stageResult.groupRank : 0;
+  const finalsWins = typeof stageResult?.finalsWins === "number" ? stageResult.finalsWins : 0;
+  const finalsLosses = typeof stageResult?.finalsLosses === "number" ? stageResult.finalsLosses : 0;
+  const finalStanding = typeof stageResult?.finalStanding === "string" && stageResult.finalStanding.trim()
+    ? stageResult.finalStanding
+    : placement || "Pending";
 
-  const hasGroupStage = groupLabel && groupStandings.length > 0;
+  const hasGroupStage = Boolean(groupLabel && groupStandings.length > 0);
   const hasFinalsMatches = finalsWins > 0 || finalsLosses > 0;
 
   return (
@@ -214,6 +248,13 @@ export function ChallongeResultsDisplay({
           {isPending ? <span className="meta"> (pending)</span> : null}
         </strong>
       </div>
+
+      {!snapshot ? <p className="meta">Tournament data has not synced yet.</p> : null}
+      {snapshot && !tracked ? <p className="meta">Tracked participant not found in tournament data.</p> : null}
+
+      {(hasGroupStage || hasFinalsMatches || finalStanding !== "Pending") ? (
+        <details className="challonge-results__details">
+          <summary>Show final standings and match details</summary>
 
       {/* Group stage standings */}
       {hasGroupStage ? (
@@ -260,6 +301,8 @@ export function ChallongeResultsDisplay({
         <span className="meta">Final Standing</span>
         <strong>{finalStanding}</strong>
       </div>
+        </details>
+      ) : null}
 
       {challongeUrl ? (
         <a

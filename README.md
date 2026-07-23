@@ -1,10 +1,13 @@
 ﻿# Beyblade X Tracker
 
+**Version: v1.1.0**
+
 A public, shareable Next.js app to track Beyblade X parts, combos, photos, battles, and simple win/loss results.
 
 ## Table of Contents
 
 - [Development](#development)
+- [Version 1.1 highlights](#version-11-highlights)
 - [Usage](#usage)
 - [Local setup](#local-setup)
 - [API](#api)
@@ -21,6 +24,25 @@ npm run dev
 ```
 
 The app runs at http://localhost:3000 by default.
+
+## Version 1.1 highlights
+
+Version 1.1 stabilizes the Profile and Challonge workflows and completes the updated frontend/API integration.
+
+- **Profile:** URL-backed Overview, Posts, Starred, Lineup, and Career tabs with safe loading and error states, browser back/forward support, request cancellation, and server/client-safe serialized data.
+- **Challonge:** Public tournament lookup now loads the full participant roster, lets users select the exact player to track, normalizes group-stage participant IDs, calculates the selected player’s record, and keeps standings and match details compact behind a dropdown.
+- **Public combo library:** Server-side search, sorting, pagination, validated query parameters, safe image URLs, and accurate empty states.
+- **Security and API reliability:** Consistent `401`, `403`, `404`, `409`, and `429` handling, protected profile/mutation/admin routes, origin and rate-limit validation, and safer client/server boundaries.
+- **Operations:** Database health and backup scripts, profile serialization checks, route-level loading and error boundaries, and the ESLint 8 migration.
+
+Useful release checks:
+
+```bash
+npm run db:check
+npm run profile:check
+npm run lint
+npx tsc --noEmit
+```
 
 ## Usage
 

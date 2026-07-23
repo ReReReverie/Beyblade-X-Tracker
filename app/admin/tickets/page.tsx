@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminTicketsPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/auth/signin");
+  if (!session?.user?.id) redirect("/");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   const reports = await prisma.report.findMany({

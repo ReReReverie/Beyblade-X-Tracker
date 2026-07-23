@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hideLoadingOverlay } from "@/components/loading-overlay-events";
+import { ApiError, apiRequest } from "@/lib/api-client";
 import { ChallongeResultsDisplay } from "@/components/challonge/ChallongeResultsDisplay";
 import { ErrorBoundary as ChallongeErrorBoundary } from "@/components/challonge/ErrorBoundary";
 import { CareerDeleteButton, CareerEntryForm, ProfileEditForm } from "@/components/profile-forms";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
-import { formatManufacturer, formatVisibility, pct } from "@/lib/format-client";
+import { formatManufacturer, formatStableDate, formatVisibility, normalizeImageUrl, pct } from "@/lib/format-client";
 import { comboCondition, comboWeight } from "@/lib/stats-client";
 
 type ProfileTab = "overview" | "posts" | "starred" | "lineup" | "career";
@@ -35,18 +36,58 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
   { id: "career", label: "Career" }
 ];
 
-const cacheVersion = "v4";
+const profileTabIds = tabs.map((tab) => tab.id);
+
+function isProfileTab(value: string | null | undefined): value is ProfileTab {
+  return typeof value === "string" && profileTabIds.includes(value as ProfileTab);
+}
+
+function parseProfileTab(value: string | null | undefined): ProfileTab {
+  return isProfileTab(value) ? value : "overview";
+}
+
+function relativeUrl(url: URL) {
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function isAbortError(error: unknown) {
+  return typeof error === "object" && error !== null && "name" in error && (error as { name?: unknown }).name === "AbortError";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isProfileTabPayload(value: unknown): value is ProfileTabPayload {
+  if (!isRecord(value)) return false;
+
+  for (const key of ["myCombos", "starredCombos", "putCombos", "careerEntries"]) {
+    if (value[key] !== undefined && !Array.isArray(value[key])) return false;
+  }
+  if (value.user !== undefined && !isRecord(value.user)) return false;
+  if (value.stats !== undefined && !isRecord(value.stats)) return false;
+  return true;
+}
+
+const cacheVersion = "v5";
 const ttlMs = 5 * 60 * 1000;
+
+function isCacheableTab(tab: ProfileTab) {
+  return tab !== "career";
+}
 
 function cacheKey(userId: string, tab: ProfileTab) {
   return `profile-cache:${cacheVersion}:${userId}:${tab}`;
 }
 
 function readCache(userId: string, tab: ProfileTab): ProfileTabPayload | null {
+  if (!isCacheableTab(tab)) return null;
+
   try {
     const raw = sessionStorage.getItem(cacheKey(userId, tab));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { savedAt: number; data: ProfileTabPayload };
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed) || typeof parsed.savedAt !== "number" || !isProfileTabPayload(parsed.data)) return null;
     if (Date.now() - parsed.savedAt > ttlMs) return null;
     return parsed.data;
   } catch {
@@ -55,12 +96,14 @@ function readCache(userId: string, tab: ProfileTab): ProfileTabPayload | null {
 }
 
 function writeCache(userId: string, tab: ProfileTab, data: ProfileTabPayload) {
+  if (!isCacheableTab(tab)) return;
+
   try {
     sessionStorage.setItem(cacheKey(userId, tab), JSON.stringify({ savedAt: Date.now(), data }));
   } catch {}
 }
 
-function mergeProfilePayload(current: ProfilePayload, incoming: ProfileTabPayload): ProfilePayload {
+function mergeProfilePayload(current: ProfilePayload, incoming: ProfileTabPayload, includeCareerEntries = true): ProfilePayload {
   return {
     ...current,
     user: incoming.user ? { ...current.user, ...incoming.user } : current.user,
@@ -68,7 +111,7 @@ function mergeProfilePayload(current: ProfilePayload, incoming: ProfileTabPayloa
     myCombos: incoming.myCombos ?? current.myCombos,
     starredCombos: incoming.starredCombos ?? current.starredCombos,
     putCombos: incoming.putCombos ?? current.putCombos,
-    careerEntries: incoming.careerEntries ?? current.careerEntries
+    careerEntries: includeCareerEntries ? incoming.careerEntries ?? current.careerEntries : current.careerEntries
   };
 }
 
@@ -85,7 +128,7 @@ function ComboList({ combos, userId, empty }: { combos: any[]; userId: string; e
         const comboWeightValue = comboWeight(combo);
         return (
           <div className="card" key={combo.id}>
-            {combo.photos?.[0] ? <img className="photo" src={combo.photos[0].url} alt="" /> : null}
+            {combo.photos?.[0] ? <img className="photo" src={normalizeImageUrl(combo.photos[0].url) || combo.photos[0].url} alt="" /> : null}
             <Link href={`/combos/${combo.id}`} prefetch={false}><h3>{combo.name}</h3></Link>
             <p className="meta">Creator: {combo.owner?.name || combo.owner?.username || "Unknown"}</p>
             <p className="meta">
@@ -169,6 +212,25 @@ function LoadingRows({ tab }: { tab: ProfileTab }) {
   );
 }
 
+function TabError({ tab, message, onRetry }: { tab: ProfileTab; message: string; onRetry: () => void }) {
+  const label = tabs.find((candidate) => candidate.id === tab)?.label || "section";
+
+  return (
+    <section className="band" role="alert" aria-live="assertive">
+      <span className="tag tag--filled">{label} unavailable</span>
+      <h2>We could not load this section.</h2>
+      <p className="danger">{message}</p>
+      <button type="button" onClick={onRetry}>Try again</button>
+    </section>
+  );
+}
+
+type PendingProfileRequest = {
+  controller: AbortController;
+  tab: ProfileTab;
+  token: number;
+};
+
 export default function ProfileClient({
   initialData,
   initialTab,
@@ -182,61 +244,147 @@ export default function ProfileClient({
 }) {
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab);
   const [data, setData] = useState<ProfilePayload>(initialData);
-  const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(() => new Set(initialReady ? [initialTab] : []));
-  const [error, setError] = useState("");
-  const requestRef = useRef<AbortController | null>(null);
+  const initialLoadedTabs = new Set<ProfileTab>(initialReady ? [initialTab] : []);
+  const loadedTabsRef = useRef<Set<ProfileTab>>(initialLoadedTabs);
+  const [loadedTabs, setLoadedTabs] = useState<Set<ProfileTab>>(() => new Set(initialLoadedTabs));
+  const [tabError, setTabError] = useState<{ tab: ProfileTab; message: string } | null>(null);
+  const requestRef = useRef<PendingProfileRequest | null>(null);
+  const requestTokenRef = useRef(0);
+  const initialTabRef = useRef(initialTab);
   const userId = initialData.user.id;
 
-  async function loadTab(tab: ProfileTab) {
-    const cached = readCache(userId, tab);
-    if (cached) {
-      setData((current) => mergeProfilePayload(current, cached));
-      setLoadedTabs((current) => new Set(current).add(tab));
-      return;
-    }
+  const markTabLoaded = useCallback((tab: ProfileTab) => {
+    const next = new Set(loadedTabsRef.current);
+    next.add(tab);
+    loadedTabsRef.current = next;
+    setLoadedTabs(next);
+  }, []);
 
-    requestRef.current?.abort();
+  const cancelPendingRequest = useCallback((tab?: ProfileTab) => {
+    const pending = requestRef.current;
+    if (!pending || (tab && pending.tab !== tab)) return;
+
+    requestTokenRef.current += 1;
+    pending.controller.abort();
+    requestRef.current = null;
+  }, []);
+
+  const loadTab = useCallback(async (tab: ProfileTab) => {
+    cancelPendingRequest();
+    const token = ++requestTokenRef.current;
     const controller = new AbortController();
-    requestRef.current = controller;
-    setError("");
+    requestRef.current = { controller, tab, token };
+    setTabError(null);
+
+    const isCurrentRequest = () => requestRef.current?.token === token && requestTokenRef.current === token && !controller.signal.aborted;
+
     try {
-      const response = await fetch(`/api/profile?tab=${tab}&partial=1`, { cache: "no-store", signal: controller.signal });
-      if (!response.ok) throw new Error("Could not load profile data.");
-      const fresh = (await response.json()) as ProfileTabPayload;
-      if (controller.signal.aborted) return;
+      const cached = readCache(userId, tab);
+      if (!isCurrentRequest()) return;
+      if (cached) {
+        setData((current) => mergeProfilePayload(current, cached, false));
+        markTabLoaded(tab);
+        return;
+      }
+
+      const fresh = await apiRequest<unknown>(`/api/profile?tab=${encodeURIComponent(tab)}&partial=1`, {
+        cache: "no-store",
+        signal: controller.signal
+      });
+      if (!isCurrentRequest() || !isProfileTabPayload(fresh)) {
+        if (isCurrentRequest()) throw new Error("Could not load profile data.");
+        return;
+      }
       setData((current) => mergeProfilePayload(current, fresh));
-      setLoadedTabs((current) => new Set(current).add(tab));
+      markTabLoaded(tab);
       writeCache(userId, tab, fresh);
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      setError(err instanceof Error ? err.message : "Could not load profile data.");
+      if (!isCurrentRequest() || isAbortError(err)) return;
+      if (err instanceof ApiError && err.status === 429) {
+        setTabError({ tab, message: "Too many tab requests. Please wait a moment and try again." });
+      } else {
+        setTabError({ tab, message: err instanceof Error ? err.message : "Could not load profile data." });
+      }
     } finally {
-      if (requestRef.current === controller) {
+      if (requestRef.current?.token === token) {
         requestRef.current = null;
       }
     }
-  }
+  }, [cancelPendingRequest, markTabLoaded, userId]);
 
   useEffect(() => {
-    if (initialReady) writeCache(userId, initialTab, initialData);
+    if (initialReady && isCacheableTab(initialTab)) writeCache(userId, initialTab, initialData);
   }, [initialData, initialReady, initialTab, userId]);
 
   useEffect(() => {
-    if (!loadedTabs.has(activeTab)) void loadTab(activeTab);
-    return () => { requestRef.current?.abort(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (initialTabRef.current === initialTab) return;
 
+    initialTabRef.current = initialTab;
+    cancelPendingRequest();
+    const nextLoadedTabs = new Set<ProfileTab>(initialReady ? [initialTab] : []);
+    loadedTabsRef.current = nextLoadedTabs;
+    setLoadedTabs(nextLoadedTabs);
+    setData(initialData);
+    setActiveTab(initialTab);
+    setTabError(null);
+  }, [cancelPendingRequest, initialData, initialReady, initialTab]);
+
+  useEffect(() => {
+    function syncTabFromUrl() {
+      const url = new URL(window.location.href);
+      const requested = url.searchParams.get("tab");
+      const nextTab = parseProfileTab(requested);
+      if (requested !== nextTab) {
+        url.searchParams.set("tab", nextTab);
+        window.history.replaceState(window.history.state, "", relativeUrl(url));
+      }
+
+      cancelPendingRequest();
+      setTabError(null);
+      setActiveTab(nextTab);
+    }
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+      cancelPendingRequest();
+    };
+  }, [cancelPendingRequest]);
+
+  useEffect(() => {
+    if (loadedTabsRef.current.has(activeTab)) {
+      if (requestRef.current?.tab !== activeTab) cancelPendingRequest();
+      return;
+    }
+    if (requestRef.current?.tab === activeTab) return;
+
+    void loadTab(activeTab);
+    return () => cancelPendingRequest(activeTab);
+  }, [activeTab, cancelPendingRequest, loadTab]);
 
   function selectTab(tab: ProfileTab) {
     hideLoadingOverlay();
+    const url = new URL(window.location.href);
+    const requested = url.searchParams.get("tab");
+    if (tab === activeTab && requested === tab) return;
+
+    cancelPendingRequest();
     setActiveTab(tab);
-    window.history.replaceState(null, "", `/profile?tab=${tab}`);
-    if (loadedTabs.has(tab)) return;
-    void loadTab(tab);
+    url.searchParams.set("tab", tab);
+    const nextUrl = relativeUrl(url);
+    if (tab === activeTab) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    } else {
+      window.history.pushState(window.history.state, "", nextUrl);
+    }
   }
 
   const activeTabLoaded = loadedTabs.has(activeTab);
+  const activeTabError = tabError?.tab === activeTab ? tabError.message : null;
+  const retryActiveTab = useCallback(() => {
+    void loadTab(activeTab);
+  }, [activeTab, loadTab]);
   const title = useMemo(() => data.user.name || data.user.username || sessionName || data.user.email || "My profile", [data, sessionName]);
 
   return (
@@ -244,7 +392,7 @@ export default function ProfileClient({
       <section className="band profile-shell">
         <span className="tag tag--filled">Profile</span>
         <div className="profile-head">
-          {data.user.image ? <img className="profile-avatar" src={data.user.image} alt="" /> : <div className="profile-avatar" aria-hidden="true" />}
+          {data.user.image ? <img className="profile-avatar" src={normalizeImageUrl(data.user.image) || data.user.image} alt="" /> : <div className="profile-avatar" aria-hidden="true" />}
           <div className="profile-head__body">
             <h1>{title}</h1>
             {data.user.bio ? <p>{data.user.bio}</p> : <p className="meta">Add a short description to introduce your Beyblade career.</p>}
@@ -253,12 +401,11 @@ export default function ProfileClient({
       </section>
       <nav className="dashboard-tabs profile-tabs" aria-label="Profile sections">
         {tabs.map((tab) => (
-          <button className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} type="button" onClick={() => selectTab(tab.id)} key={tab.id}>
+          <button className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} type="button" onClick={() => selectTab(tab.id)} aria-current={activeTab === tab.id ? "page" : undefined} key={tab.id}>
             {tab.label}
           </button>
         ))}
       </nav>
-      {error ? <p className="danger">{error}</p> : null}
       {activeTab === "overview" ? (
         activeTabLoaded ? (
           <section className="tabs profile-tab-panel">
@@ -276,11 +423,11 @@ export default function ProfileClient({
               </div>
             </div>
           </section>
-        ) : <LoadingRows tab={activeTab} />
+        ) : activeTabError ? <TabError tab={activeTab} message={activeTabError} onRetry={retryActiveTab} /> : <LoadingRows tab={activeTab} />
       ) : null}
-      {activeTab === "posts" ? activeTabLoaded ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : <LoadingRows tab={activeTab} /> : null}
-      {activeTab === "starred" ? activeTabLoaded ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : <LoadingRows tab={activeTab} /> : null}
-      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a combo to add it here." /></section> : <LoadingRows tab={activeTab} /> : null}
+      {activeTab === "posts" ? activeTabLoaded ? <section className="list"><h2>My posts / combos</h2><ComboList combos={data.myCombos || []} userId={userId} empty="You have not created any combos yet." /></section> : activeTabError ? <TabError tab={activeTab} message={activeTabError} onRetry={retryActiveTab} /> : <LoadingRows tab={activeTab} /> : null}
+      {activeTab === "starred" ? activeTabLoaded ? <section className="list"><h2>Combos I starred</h2><ComboList combos={data.starredCombos || []} userId={userId} empty="You have not starred any combos yet." /></section> : activeTabError ? <TabError tab={activeTab} message={activeTabError} onRetry={retryActiveTab} /> : <LoadingRows tab={activeTab} /> : null}
+      {activeTab === "lineup" ? activeTabLoaded ? <section className="list"><h2>Combos in my lineup</h2><ComboList combos={data.putCombos || []} userId={userId} empty="Use Put combo on a combo to add it here." /></section> : activeTabError ? <TabError tab={activeTab} message={activeTabError} onRetry={retryActiveTab} /> : <LoadingRows tab={activeTab} /> : null}
       {activeTab === "career" ? (
         activeTabLoaded ? (
           <section className="tabs profile-tab-panel">
@@ -290,7 +437,7 @@ export default function ProfileClient({
               {data.careerEntries?.length ? data.careerEntries.map((entry) => (
                 <div className="card career-row" key={entry.id}>
                   <div>
-                    <span className="tag">{new Date(entry.playedAt).toLocaleDateString()}</span>
+                    <span className="tag">{formatStableDate(entry.playedAt)}</span>
                     <h3>{entry.tournamentName}</h3>
                     {entry.challongeUrl ? (
                       <>
@@ -300,6 +447,8 @@ export default function ProfileClient({
                             trackedParticipantName={entry.trackedParticipantName}
                             challongeUrl={entry.challongeUrl}
                             placement={entry.placement}
+                            wins={entry.wins}
+                            losses={entry.losses}
                           />
                         </ChallongeErrorBoundary>
                         {entry.challongeSyncError ? (
@@ -327,7 +476,7 @@ export default function ProfileClient({
               )) : <p className="meta">No tournament records yet.</p>}
             </div>
           </section>
-        ) : <LoadingRows tab={activeTab} />
+        ) : activeTabError ? <TabError tab={activeTab} message={activeTabError} onRetry={retryActiveTab} /> : <LoadingRows tab={activeTab} />
       ) : null}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { hideLoadingOverlayEvent, showLoadingOverlayEvent } from "@/components/loading-overlay-events";
 
 const MAX_OVERLAY_MS = 1000;
@@ -9,22 +9,22 @@ export function ButtonLoadingOverlay() {
   const [visible, setVisible] = useState(false);
   const hideTimer = useRef<number | null>(null);
 
-  function clearHideTimer() {
+  const clearHideTimer = useCallback(() => {
     if (hideTimer.current === null) return;
     window.clearTimeout(hideTimer.current);
     hideTimer.current = null;
-  }
+  }, []);
 
-  function hideOverlay() {
+  const hideOverlay = useCallback(() => {
     clearHideTimer();
     setVisible(false);
-  }
+  }, [clearHideTimer]);
 
-  function showOverlay() {
+  const showOverlay = useCallback(() => {
     clearHideTimer();
     setVisible(true);
     hideTimer.current = window.setTimeout(hideOverlay, MAX_OVERLAY_MS);
-  }
+  }, [clearHideTimer, hideOverlay]);
 
   useEffect(() => {
     window.addEventListener("pageshow", hideOverlay);
@@ -38,7 +38,7 @@ export function ButtonLoadingOverlay() {
       window.removeEventListener(hideLoadingOverlayEvent, hideOverlay);
       hideOverlay();
     };
-  }, []);
+  }, [hideOverlay, showOverlay]);
 
   if (!visible) return null;
 

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/auth/signin");
+  if (!session?.user?.id) redirect("/");
 
   const reports = await prisma.report.findMany({
     where: { reporterId: session.user.id },

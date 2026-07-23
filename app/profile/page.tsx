@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/auth/signin");
+  if (!session?.user?.id) redirect("/");
 
   const { tab } = await searchParams;
   const activeTab = parseProfileTab(tab || null);

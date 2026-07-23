@@ -1306,6 +1306,172 @@ textarea {
   50% { opacity: 1; }
 }
 
+
+.public-library {
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.public-library__header {
+  align-items: end;
+  border-bottom: 2px solid var(--ink);
+  display: grid;
+  gap: clamp(1rem, 4vw, 3rem);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 530px);
+  padding-bottom: 1.25rem;
+}
+
+.public-library__header h1 {
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  margin: 0.55rem 0 0.35rem;
+}
+
+.public-library__header p {
+  font-size: 0.9rem;
+}
+
+.public-library__controls {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.public-library__search {
+  display: block;
+  text-transform: none;
+}
+
+.public-library__search input {
+  box-shadow: var(--shadow);
+  min-height: 50px;
+  text-transform: none;
+}
+
+.public-library__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+button.library-filter {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  box-shadow: none;
+  color: var(--ink);
+  min-height: 34px;
+  padding: 0.4rem 0.7rem;
+}
+
+button.library-filter--active {
+  background: var(--safety);
+  color: var(--base);
+}
+
+button.library-filter:hover {
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.public-library__section {
+  gap: 0.8rem;
+}
+
+.public-library__section > h2 {
+  margin-bottom: 0;
+}
+
+.public-combo-grid {
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.public-library .public-combo-card {
+  gap: 0.5rem;
+  min-height: 0;
+  padding: 0.8rem;
+}
+
+.public-library .public-combo-card__main {
+  gap: 0.45rem;
+}
+
+.public-library .public-combo-card__main h2 {
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+}
+
+.public-library .public-combo-card .photo,
+.public-combo-card__visual {
+  aspect-ratio: auto;
+  background: var(--base);
+  border: 2px solid var(--ink);
+  height: 58px;
+  object-fit: cover;
+  padding: 0.8rem;
+  width: 100%;
+}
+
+.public-combo-card__visual {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.public-library .public-combo-card__stats {
+  gap: 0.35rem;
+}
+
+.public-library .public-combo-card__stats span {
+  padding: 0.3rem 0.4rem;
+}
+
+.public-library .public-combo-card__stats strong {
+  font-size: clamp(0.85rem, 1.4vw, 1rem);
+}
+
+.public-library .public-combo-card__parts {
+  font-size: 0.7rem;
+  margin-top: 0;
+  padding-top: 0.55rem;
+}
+
+.public-library .public-combo-card__actions {
+  gap: 0.5rem;
+}
+
+.public-library .public-combo-card__actions button {
+  min-height: 32px;
+  padding: 0.4rem 0.6rem;
+}
+
+.public-deck-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.public-deck-grid .card {
+  padding: 1rem;
+}
+
+.public-deck-grid .card h2 {
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  margin-bottom: 0.55rem;
+}
+
+.sr-only {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+  clip: rect(0, 0, 0, 0);
+}
+
+@media (max-width: 820px) {
+  .public-library__header {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 820px) {
   .hero,
   .tabs,
@@ -1490,7 +1656,7 @@ textarea {
 
 
 
-/* ─── Google Sign-In & Auth Page ─────────────────────────────────────── */
+/* â”€â”€â”€ Google Sign-In & Auth Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .signin-page {
   margin-inline: auto;
@@ -1570,7 +1736,7 @@ textarea {
 }
 
 
-/* ─── Challonge Results Display ──────────────────────────────────────── */
+/* â”€â”€â”€ Challonge Results Display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .challonge-results {
   display: grid;
@@ -1583,6 +1749,26 @@ textarea {
 .challonge-results > a {
   grid-column: 1 / -1;
   justify-self: start;
+}
+
+.challonge-results__details {
+  grid-column: 1 / -1;
+  margin-top: 0.2rem;
+  width: 100%;
+}
+
+.challonge-results__details summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 0;
+}
+
+.challonge-results__details[open] {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .challonge-results .career-stage-section {

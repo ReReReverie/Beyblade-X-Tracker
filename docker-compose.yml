@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: beyuser
       POSTGRES_PASSWORD: beypass
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - beyblade_x_pgdata:/var/lib/postgresql/data
     command: ["postgres", "-c", "shared_buffers=128MB", "-c", "work_mem=4MB", "-c", "max_connections=30"]
@@ -16,3 +16,5 @@ services:
 
 volumes:
   beyblade_x_pgdata:
+    name: beyblade-x-tracker_beyblade_x_pgdata
+    external: true

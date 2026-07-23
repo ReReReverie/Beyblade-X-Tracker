@@ -51,6 +51,60 @@ export type PublicFeature = {
   combo: PublicCombo;
 };
 
+export type PublicComboSort = "newest" | "winRate" | "battles";
+
+export type PublicComboOverviewQueryInput = {
+  q?: string | string[];
+  sort?: string | string[];
+  page?: string | string[];
+};
+
+export type PublicComboOverviewParams = {
+  query: string;
+  sort: PublicComboSort;
+  page: number;
+  pageSize: number;
+};
+
+export type PublicComboOverviewPagination = {
+  query: string;
+  sort: PublicComboSort;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+export type PublicCombosOverviewData = {
+  combos: PublicCombo[];
+  decks: PublicDeck[];
+  features: PublicFeature[];
+  pagination: PublicComboOverviewPagination;
+};
+
+export const PUBLIC_COMBO_PAGE_SIZE = 12;
+
+function firstQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export function parsePublicComboOverviewParams(input: PublicComboOverviewQueryInput = {}): PublicComboOverviewParams {
+  const query = firstQueryValue(input.q)?.trim().slice(0, 100) || "";
+  const sortValue = firstQueryValue(input.sort);
+  const sort: PublicComboSort = sortValue === "winRate" || sortValue === "battles" ? sortValue : "newest";
+  const pageValue = firstQueryValue(input.page);
+  const parsedPage = pageValue && /^\d+$/.test(pageValue) ? Number(pageValue) : 1;
+
+  return {
+    query,
+    sort,
+    page: Number.isSafeInteger(parsedPage) ? Math.min(Math.max(parsedPage, 1), 100_000) : 1,
+    pageSize: PUBLIC_COMBO_PAGE_SIZE
+  };
+}
+
 const publicDataTimingEnabled = process.env.PUBLIC_DATA_TIMING === "true";
 
 async function timed<T>(label: string, action: () => Promise<T>) {
@@ -129,6 +183,29 @@ function serializeCombo(combo: any): PublicCombo {
   };
 }
 
+function comboBattleCount(combo: PublicCombo) {
+  return combo.battlesACount + combo.battlesBCount;
+}
+
+function comboWinRate(combo: PublicCombo) {
+  const total = comboBattleCount(combo);
+  return total === 0 ? 0 : combo.winsCount / total;
+}
+
+function sortPublicCombos(combos: PublicCombo[], sort: PublicComboSort) {
+  if (sort === "newest") return combos;
+
+  return combos
+    .map((combo, index) => ({ combo, index }))
+    .sort((a, b) => {
+      const difference = sort === "winRate"
+        ? comboWinRate(b.combo) - comboWinRate(a.combo)
+        : comboBattleCount(b.combo) - comboBattleCount(a.combo);
+      return difference || a.index - b.index;
+    })
+    .map(({ combo }) => combo);
+}
+
 function serializeBattle(battle: { id: string; comboAId: string | null; comboBId: string | null; winnerId: string | null; playedAt: Date }): PublicBattle {
   return { ...battle, playedAt: battle.playedAt.toISOString() };
 }
@@ -155,10 +232,28 @@ async function getPublicHomeDataUncached() {
   return { combos: publicCombos, battleHistory: battleHistory.map(serializeBattle) };
 }
 
-async function getPublicCombosOverviewDataUncached() {
+async function getPublicCombosOverviewDataUncached(params: PublicComboOverviewParams): Promise<PublicCombosOverviewData> {
   const now = new Date();
-  const [combos, decks, activeFeatures] = await Promise.all([
+  const comboSearch = params.query
+    ? {
+        OR: [
+          { name: { contains: params.query, mode: "insensitive" as const } },
+          { owner: { OR: [
+            { name: { contains: params.query, mode: "insensitive" as const } },
+            { username: { contains: params.query, mode: "insensitive" as const } }
+          ] } },
+          { parts: { some: { part: { name: { contains: params.query, mode: "insensitive" as const } } } } }
+        ]
+      }
+    : {};
+  const publicComboWhere = { visibility: "PUBLIC" as const, ...comboSearch };
+  const [combos, featuredSeedCombos, decks, activeFeatures] = await Promise.all([
     timed("overview combos query", () => prisma.combo.findMany({
+      where: publicComboWhere,
+      select: comboSelect,
+      orderBy: { createdAt: "desc" }
+    })),
+    timed("overview feature seed query", () => prisma.combo.findMany({
       where: { visibility: "PUBLIC" },
       select: comboSelect,
       orderBy: { createdAt: "desc" },
@@ -197,18 +292,23 @@ async function getPublicCombosOverviewDataUncached() {
     }))
   ]);
 
-  const publicCombos = combos.map(serializeCombo);
+  const publicCombos = sortPublicCombos(combos.map(serializeCombo), params.sort);
+  const total = publicCombos.length;
+  const totalPages = Math.max(1, Math.ceil(total / params.pageSize));
+  const page = Math.min(params.page, totalPages);
+  const pagedCombos = publicCombos.slice((page - 1) * params.pageSize, page * params.pageSize);
+  const featureSeed = featuredSeedCombos.map(serializeCombo);
   const manualFeatureBySlot = new Map(activeFeatures.map((feature) => [feature.slot, feature]));
   const automaticFeatures: PublicFeature[] = [];
   for (const { slot, title } of autoSlots) {
-    if (!manualFeatureBySlot.has(slot) && publicCombos.length) {
-      const combo = publicCombos[periodIndex(slot, now) % publicCombos.length];
+    if (!manualFeatureBySlot.has(slot) && featureSeed.length) {
+      const combo = featureSeed[periodIndex(slot, now) % featureSeed.length];
       automaticFeatures.push({ id: `auto-${slot}`, slot, title, sponsorName: null, posterUrl: null, combo });
     }
   }
 
   return {
-    combos: publicCombos,
+    combos: pagedCombos,
     decks: decks.map((deck) => ({
       id: deck.id,
       name: deck.name,
@@ -228,7 +328,17 @@ async function getPublicCombosOverviewDataUncached() {
         combo: serializeCombo(feature.combo)
       })),
       ...automaticFeatures
-    ]
+    ],
+    pagination: {
+      query: params.query,
+      sort: params.sort,
+      page,
+      pageSize: params.pageSize,
+      total,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages
+    }
   };
 }
 
@@ -237,8 +347,12 @@ export const getPublicHomeData = unstable_cache(getPublicHomeDataUncached, ["pub
   tags: ["public-home-data", "public-combos"]
 });
 
-export const getPublicCombosOverviewData = unstable_cache(getPublicCombosOverviewDataUncached, ["public-combos-overview-data"], {
+export const getPublicCombosOverviewData = unstable_cache(
+  (params: PublicComboOverviewParams = parsePublicComboOverviewParams()) => getPublicCombosOverviewDataUncached(params),
+  ["public-combos-overview-data"],
+  {
   revalidate: 300,
   tags: ["public-combos-overview-data", "public-combos"]
-});
+  }
+);
 

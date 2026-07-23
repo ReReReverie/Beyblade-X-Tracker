@@ -5,7 +5,7 @@ import { ComboDetailTabs } from "@/components/combo-detail-tabs";
 import { ComboVisibilityForm } from "@/components/combo-visibility-form";
 import { PutComboButton } from "@/components/put-combo-button";
 import { StarButton } from "@/components/star-button";
-import { formatManufacturer, pct } from "@/lib/format-client";
+import { formatManufacturer, normalizeImageUrl, pct } from "@/lib/format-client";
 
 type ComboDetailResponse = {
   combo: {
@@ -99,23 +99,26 @@ export function ComboDetailClient({ data }: { data: ComboDetailResponse }) {
       </section>
       <section className="combo-detail__right list">
         <h2>Parts</h2>
-        {combo.parts.map(({ part, role }) => (
-          <div className="card part-card" key={part.id}>
-            {part.photos[0] ? (
-              <img className="photo" src={part.photos[0].url.replace("http://", "https://")} alt={part.name} />
-            ) : (
-              <div className="photo" aria-hidden="true" />
-            )}
-            <div>
-              <span className="tag">{formatPartRole(role)}</span>
-              <h3>{part.name}</h3>
-              <p className="meta">
-                {formatManufacturer(part.manufacturer)} - {part.weightGrams !== null ? part.weightGrams.toFixed(2) : "N/A"} g - Condition {part.conditionRating}/10
-              </p>
-              {part.notes ? <p>{part.notes}</p> : null}
+        {combo.parts.length ? combo.parts.map(({ part, role }) => {
+          const imageUrl = normalizeImageUrl(part.photos[0]?.url);
+          return (
+            <div className="card part-card" key={part.id}>
+              {imageUrl ? (
+                <img className="photo" src={imageUrl} alt={part.name} />
+              ) : (
+                <div className="photo" aria-hidden="true" />
+              )}
+              <div>
+                <span className="tag">{formatPartRole(role)}</span>
+                <h3>{part.name}</h3>
+                <p className="meta">
+                  {formatManufacturer(part.manufacturer)} - {part.weightGrams !== null ? part.weightGrams.toFixed(2) : "N/A"} g - Condition {part.conditionRating}/10
+                </p>
+                {part.notes ? <p>{part.notes}</p> : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        }) : <p className="meta">This combo has no public parts to display.</p>}
       </section>
     </div>
   );

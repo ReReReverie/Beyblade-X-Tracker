@@ -1,12 +1,18 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-const publicApiPrefixes = [
-  "/api/auth/",
-  "/api/auth/signup",
-  "/api/activity",
-  "/api/cron/cleanup-inactive"
-];
+const handlerAuthenticatedApiPaths = new Set([
+  "/api/cron/cleanup-inactive",
+  "/api/internal/rate-limit"
+]);
+
+const publicApiReadPaths = new Set([
+  "/api/home",
+  "/api/combos",
+  "/api/combos/overview",
+  "/api/parts",
+  "/api/health/db"
+]);
 
 const anonymousRateRules: Record<string, { rule: string; limit: number; windowMs: number }> = {
   "/api/auth/signup": { rule: "signup", limit: 3, windowMs: 15 * 60 * 1000 },
@@ -26,14 +32,17 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const anonymousRule = anonymousRateRules[pathname];
 
-  if (pathname === "/api/internal/rate-limit") {
+  // These endpoints authenticate themselves with a separate shared secret. They
+  // must reach their handlers or the middleware would either recurse (rate
+  // limiter) or reject a valid cron request before it can check its secret.
+  if (handlerAuthenticatedApiPaths.has(pathname)) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
-  const isPublicApi = publicApiPrefixes.some((prefix) => pathname.startsWith(prefix));
+  const isAuthApi = pathname === "/api/auth" || pathname.startsWith("/api/auth/");
+  const isPublicApi = isPublicApiRequest(pathname, request.method);
 
-  if (request.method !== "GET" && !pathname.startsWith("/api/auth/") && pathname !== "/api/cron/cleanup-inactive") {
+  if (request.method !== "GET" && !isAuthApi) {
     const originResponse = validateOrigin(request);
     if (originResponse) return originResponse;
   }
@@ -43,10 +52,11 @@ export async function middleware(request: NextRequest) {
     if (response) return response;
   }
 
-  if (!pathname.startsWith("/api/") || isPublicApi) {
+  if (!pathname.startsWith("/api/") || isAuthApi || isPublicApi) {
     return NextResponse.next();
   }
 
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
   if (!token?.sub) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
@@ -75,11 +85,15 @@ async function callRateLimiter(
         "x-rate-limit-limit": String(limit),
         "x-rate-limit-window-ms": String(windowMs),
         "x-rate-limit-user-id": userId,
-        "x-rate-limit-client-ip": request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown"
+        "x-rate-limit-client-ip": getClientIp(request)
       }
     });
 
-    if (response.status !== 429) return null;
+    if (response.ok) return null;
+
+    if (response.status !== 429) {
+      return NextResponse.json({ error: "Rate limiter unavailable." }, { status: 503 });
+    }
 
     const limited = NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
     for (const header of ["Retry-After", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"]) {
@@ -88,17 +102,31 @@ async function callRateLimiter(
     }
     return limited;
   } catch {
-    return null;
+    return NextResponse.json({ error: "Rate limiter unavailable." }, { status: 503 });
   }
 }
 
+function isPublicApiRequest(pathname: string, method: string) {
+  if (pathname === "/api/activity") return true;
+  if (pathname.startsWith("/api/auth/")) return true;
+  if (method !== "GET") return false;
+  return publicApiReadPaths.has(pathname) || /^\/api\/combos\/[^/]+$/.test(pathname);
+}
+
+function getClientIp(request: NextRequest) {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
+}
+
 function validateOrigin(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (!origin) return null;
+  const origin = request.headers.get("origin")?.trim();
+  const referer = request.headers.get("referer")?.trim();
+  if (!origin && !referer) return null;
 
   const configuredOrigin = process.env.APP_ORIGIN || process.env.NEXTAUTH_URL || "http://localhost:3000";
   try {
-    if (new URL(origin).origin !== new URL(configuredOrigin).origin) {
+    const requestOrigin = origin ? new URL(origin).origin : new URL(referer!).origin;
+    if (requestOrigin !== new URL(configuredOrigin).origin) {
       return NextResponse.json({ error: "Cross-origin request rejected." }, { status: 403 });
     }
   } catch {

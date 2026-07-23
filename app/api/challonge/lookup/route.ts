@@ -92,13 +92,35 @@ export async function POST(request: Request) {
     const rawParticipants: any[] = tournament.participants || [];
     const participants = rawParticipants.map((entry: any) => {
       const p = entry.participant || entry;
+      const groupPlayerIds = Array.isArray(p.group_player_ids)
+        ? p.group_player_ids
+            .map((value: any) => typeof value === "object" && value !== null ? value.id ?? value.group_player_id : value)
+            .filter((value: any) => value !== null && value !== undefined)
+            .map((value: any) => String(value))
+        : [];
       return {
         id: String(p.id),
         name: p.display_name || p.name || p.username || `Participant ${p.id}`,
         seed: p.seed ?? null,
-        finalRank: p.final_rank ?? null
+        finalRank: p.final_rank ?? null,
+        groupPlayerIds
       };
     });
+
+    // Challonge uses group-player IDs for round-robin/group matches and
+    // participant IDs for bracket matches. Resolve both to one stable ID.
+    const groupPlayerToParticipant = new Map<string, string>();
+    for (const participant of participants) {
+      for (const groupPlayerId of participant.groupPlayerIds) {
+        groupPlayerToParticipant.set(groupPlayerId, participant.id);
+      }
+    }
+
+    function resolveParticipantId(value: unknown) {
+      if (value === null || value === undefined) return null;
+      const id = String(value);
+      return groupPlayerToParticipant.get(id) || id;
+    }
 
     // Parse matches
     const rawMatches: any[] = tournament.matches || [];
@@ -106,9 +128,9 @@ export async function POST(request: Request) {
       const m = entry.match || entry;
       return {
         id: String(m.id),
-        player1Id: m.player1_id != null ? String(m.player1_id) : null,
-        player2Id: m.player2_id != null ? String(m.player2_id) : null,
-        winnerId: m.winner_id != null ? String(m.winner_id) : null,
+        player1Id: resolveParticipantId(m.player1_id),
+        player2Id: resolveParticipantId(m.player2_id),
+        winnerId: resolveParticipantId(m.winner_id),
         groupId: m.group_id != null ? String(m.group_id) : null,
         state: m.state ?? null
       };

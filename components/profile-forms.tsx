@@ -1,18 +1,76 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { Fragment, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ApiError, apiRequest, getApiErrorMessage } from "@/lib/api-client";
 
 async function sendJson(url: string, method: string, data?: unknown) {
-  const response = await fetch(url, {
+  await apiRequest(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : undefined,
     body: data ? JSON.stringify(data) : undefined
   });
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || "Save failed.");
+}
+
+type ApiUsage = {
+  global: { used: number; limit: number; remaining: number };
+  personal: { used: number; limit: number | null; remaining: number | null };
+  resetsAt: string;
+};
+
+type ChallongeParticipant = {
+  id: string;
+  name: string;
+  seed: number | null;
+  finalRank: number | null;
+  groupPlayerIds?: string[];
+};
+
+type ChallongeMatch = {
+  id: string;
+  player1Id: string | null;
+  player2Id: string | null;
+  winnerId: string | null;
+  groupId: string | null;
+};
+
+type ChallongeLookupResponse = {
+  tournamentName?: string;
+  participants?: ChallongeParticipant[];
+  matches?: ChallongeMatch[];
+  usage?: ApiUsage;
+};
+
+type ManualCareerEntry = {
+  tournamentName: string;
+  playedAt: string;
+  placement: string;
+  wins: string;
+  losses: string;
+  draws: string;
+  notes: string;
+};
+
+const initialManualEntry: ManualCareerEntry = {
+  tournamentName: "",
+  playedAt: "",
+  placement: "",
+  wins: "0",
+  losses: "0",
+  draws: "0",
+  notes: ""
+};
+
+function normalizeChallongeId(value: unknown) {
+  return value === null || value === undefined || value === "" ? null : String(value);
+}
+
+function usageFromError(error: unknown) {
+  if (!(error instanceof ApiError) || !error.body || typeof error.body !== "object" || !("usage" in error.body)) {
+    return null;
   }
+  const usage = (error.body as { usage?: unknown }).usage;
+  return usage && typeof usage === "object" ? usage as ApiUsage : null;
 }
 
 function clearProfileCache() {
@@ -33,18 +91,14 @@ export function ProfileEditForm({ name, image, bio }: { name?: string | null; im
     setError("");
     const form = new FormData(event.currentTarget);
     try {
-      const response = await fetch("/api/profile", {
+      await apiRequest("/api/profile", {
         method: "PATCH",
         body: form
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error || "Save failed.");
-      }
       clearProfileCache();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(getApiErrorMessage(err, "Save failed."));
     }
   }
 
@@ -65,18 +119,24 @@ export function CareerEntryForm() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"manual" | "challonge">("manual");
+  const [manualEntry, setManualEntry] = useState<ManualCareerEntry>(initialManualEntry);
   const [challongeUrl, setChallongeUrl] = useState("");
   const [lookupLoading, setLookupLoading] = useState(false);
   const [tournamentName, setTournamentName] = useState("");
-  const [participants, setParticipants] = useState<{ id: string; name: string; finalRank: number | null }[]>([]);
-  const [matches, setMatches] = useState<any[]>([]);
+  const [participants, setParticipants] = useState<ChallongeParticipant[]>([]);
+  const [matches, setMatches] = useState<ChallongeMatch[]>([]);
   const [selectedParticipant, setSelectedParticipant] = useState("");
   const [lookupDone, setLookupDone] = useState(false);
-  const [apiUsage, setApiUsage] = useState<{ global: { used: number; limit: number; remaining: number }; personal: { used: number; limit: number | null; remaining: number | null }; resetsAt: string } | null>(null);
+  const [apiUsage, setApiUsage] = useState<ApiUsage | null>(null);
+  const safeManualEntry = manualEntry && typeof manualEntry === "object"
+    ? { ...initialManualEntry, ...manualEntry }
+    : initialManualEntry;
+  const safeChallongeUrl = challongeUrl || "";
+  const safeSelectedParticipant = selectedParticipant || "";
 
   useEffect(() => {
     if (mode === "challonge" && !apiUsage) {
-      fetch("/api/challonge/lookup").then(r => r.json()).then(setApiUsage).catch(() => {});
+      void apiRequest<ApiUsage>("/api/challonge/lookup").then(setApiUsage).catch(() => {});
     }
   }, [mode, apiUsage]);
 
@@ -99,29 +159,39 @@ export function CareerEntryForm() {
     setLookupLoading(true);
     resetChallonge();
     try {
-      const res = await fetch("/api/challonge/lookup", {
+      const data = await apiRequest<ChallongeLookupResponse>("/api/challonge/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: challongeUrl })
+        body: JSON.stringify({ url: safeChallongeUrl })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.usage) {
-          setApiUsage((current) => current ? { ...current, ...data.usage } : data.usage);
-        }
-        throw new Error(data.error || "Lookup failed.");
-      }
+      const loadedParticipants = (data.participants || [])
+        .filter((participant) => participant && participant.id && participant.name?.trim())
+        .map((participant) => ({
+          ...participant,
+          id: String(participant.id),
+          name: participant.name.trim()
+        }));
+      const loadedMatches = (data.matches || []).map((match) => ({
+        ...match,
+        id: String(match.id),
+        player1Id: normalizeChallongeId(match.player1Id),
+        player2Id: normalizeChallongeId(match.player2Id),
+        winnerId: normalizeChallongeId(match.winnerId),
+        groupId: normalizeChallongeId(match.groupId)
+      }));
       setTournamentName(data.tournamentName || "");
-      setParticipants(data.participants || []);
-      setMatches(data.matches || []);
+      setParticipants(loadedParticipants);
+      setMatches(loadedMatches);
       setLookupDone(true);
-      if (!data.participants?.length) {
+      if (!loadedParticipants.length) {
         setError("No participants found in this tournament.");
       }
       // Refresh usage counter
-      fetch("/api/challonge/lookup").then(r => r.json()).then(setApiUsage).catch(() => {});
+      void apiRequest<ApiUsage>("/api/challonge/lookup").then(setApiUsage).catch(() => {});
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lookup failed.");
+      const usage = usageFromError(err);
+      if (usage) setApiUsage((current) => current ? { ...current, ...usage } : usage);
+      setError(getApiErrorMessage(err, "Lookup failed."));
     } finally {
       setLookupLoading(false);
     }
@@ -130,7 +200,6 @@ export function CareerEntryForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const formElement = event.currentTarget;
 
     if (mode === "challonge") {
       if (!selectedParticipant) {
@@ -138,7 +207,11 @@ export function CareerEntryForm() {
         return;
       }
       // Compute wins/losses from matches
-      const tracked = participants.find((p) => p.id === selectedParticipant);
+      const tracked = participants.find((p) => String(p.id) === selectedParticipant);
+      if (!tracked) {
+        setError("The selected participant is no longer available. Fetch the tournament again.");
+        return;
+      }
       let wins = 0;
       let losses = 0;
       for (const m of matches) {
@@ -151,39 +224,41 @@ export function CareerEntryForm() {
 
       const payload = {
         tournamentName,
-        challongeUrl,
-        trackedParticipantName: tracked?.name || "",
+        challongeUrl: safeChallongeUrl,
+        trackedParticipantName: tracked.name,
         wins,
         losses,
         draws: 0,
         placement,
         playedAt: new Date().toISOString(),
-        challongeSnapshot: { participants, matches }
+        challongeSnapshot: {
+          trackedParticipantId: safeSelectedParticipant,
+          participants,
+          matches
+        }
       };
 
       try {
         await sendJson("/api/profile", "POST", payload);
-        formElement.reset();
         resetChallonge();
         setChallongeUrl("");
         setMode("manual");
         clearProfileCache();
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Save failed.");
+        setError(getApiErrorMessage(err, "Save failed."));
       }
       return;
     }
 
     // Manual mode
-    const form = new FormData(formElement);
     try {
-      await sendJson("/api/profile", "POST", Object.fromEntries(form));
-      formElement.reset();
+      await sendJson("/api/profile", "POST", manualEntry);
+      setManualEntry(initialManualEntry);
       clearProfileCache();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(getApiErrorMessage(err, "Save failed."));
     }
   }
 
@@ -208,19 +283,19 @@ export function CareerEntryForm() {
       </div>
 
       {mode === "manual" ? (
-        <>
-          <label>Tournament<input name="tournamentName" required /></label>
-          <label>Date<input name="playedAt" type="date" required defaultValue="" /></label>
-          <label>Placement<input name="placement" placeholder="Top 8, 1st, 3-2 Swiss" /></label>
+        <Fragment key="manual">
+          <label>Tournament<input name="tournamentName" value={safeManualEntry.tournamentName ?? ""} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), tournamentName: event.target.value }))} required /></label>
+          <label>Date<input name="playedAt" type="date" value={safeManualEntry.playedAt ?? ""} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), playedAt: event.target.value }))} required /></label>
+          <label>Placement<input name="placement" value={safeManualEntry.placement ?? ""} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), placement: event.target.value }))} placeholder="Top 8, 1st, 3-2 Swiss" /></label>
           <div className="form-grid">
-            <label>Wins<input name="wins" type="number" min="0" defaultValue="0" /></label>
-            <label>Losses<input name="losses" type="number" min="0" defaultValue="0" /></label>
-            <label>Draws<input name="draws" type="number" min="0" defaultValue="0" /></label>
+            <label>Wins<input name="wins" type="number" min="0" value={safeManualEntry.wins ?? "0"} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), wins: event.target.value }))} /></label>
+            <label>Losses<input name="losses" type="number" min="0" value={safeManualEntry.losses ?? "0"} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), losses: event.target.value }))} /></label>
+            <label>Draws<input name="draws" type="number" min="0" value={safeManualEntry.draws ?? "0"} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), draws: event.target.value }))} /></label>
           </div>
-          <label>Notes<textarea name="notes" /></label>
-        </>
+          <label>Notes<textarea name="notes" value={safeManualEntry.notes ?? ""} onChange={(event) => setManualEntry((current) => ({ ...initialManualEntry, ...(current || {}), notes: event.target.value }))} /></label>
+        </Fragment>
       ) : (
-        <>
+        <Fragment key="challonge">
           <div className="challonge-info" style={{ marginBottom: "0.75rem", fontSize: "0.85rem" }}>
             {apiUsage ? (
               <>
@@ -259,7 +334,7 @@ export function CareerEntryForm() {
           <label>
             Challonge URL
             <input
-              value={challongeUrl}
+              value={safeChallongeUrl}
               onChange={(e) => setChallongeUrl(e.target.value)}
               placeholder="https://challonge.com/your_tournament"
               required
@@ -269,34 +344,47 @@ export function CareerEntryForm() {
             className="button secondary button-small"
             type="button"
             onClick={lookupTournament}
-            disabled={lookupLoading || !challongeUrl.trim() || (apiUsage?.personal.remaining === 0) || (apiUsage?.global.remaining === 0)}
+            disabled={lookupLoading || !safeChallongeUrl.trim() || (apiUsage?.personal.remaining === 0) || (apiUsage?.global.remaining === 0)}
           >
             {lookupLoading ? "Looking up\u2026" : "Fetch tournament"}
           </button>
 
-          {lookupDone && tournamentName ? (
+          {lookupDone ? (
             <>
               <div className="card" style={{ padding: "0.75rem", marginTop: "0.5rem" }}>
-                <p><strong>{tournamentName}</strong></p>
+                <p><strong>{tournamentName || "Tournament loaded"}</strong></p>
                 <p className="meta">{participants.length} participant{participants.length === 1 ? "" : "s"}</p>
               </div>
 
               {participants.length > 0 ? (
-                <label>
-                  Track participant
-                  <select
-                    value={selectedParticipant}
-                    onChange={(e) => setSelectedParticipant(e.target.value)}
-                    required
-                  >
-                    <option value="">— Select who to track —</option>
-                    {participants.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}{p.finalRank ? ` (placed ${p.finalRank})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <>
+                  <label>
+                    Track participant
+                    <select
+                      value={safeSelectedParticipant}
+                      onChange={(e) => setSelectedParticipant(e.target.value)}
+                      required
+                    >
+                      <option value="">— Select who to track —</option>
+                      {participants.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}{p.finalRank ? ` (placed ${p.finalRank})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="card" style={{ padding: "0.75rem", marginTop: "0.5rem" }}>
+                    <p><strong>Players loaded from Challonge</strong></p>
+                    <ul className="meta" style={{ margin: "0.35rem 0 0", paddingLeft: "1.25rem" }}>
+                      {participants.map((participant) => (
+                        <li key={participant.id}>
+                          {participant.name}
+                          {participant.finalRank ? ` — placed ${participant.finalRank}` : participant.seed ? ` — seed ${participant.seed}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
               ) : null}
 
               {selectedParticipant ? (
@@ -306,7 +394,7 @@ export function CareerEntryForm() {
               ) : null}
             </>
           ) : null}
-        </>
+        </Fragment>
       )}
 
       {error ? <p className="danger">{error}</p> : null}
@@ -330,7 +418,7 @@ export function CareerDeleteButton({ id }: { id: string }) {
       clearProfileCache();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed.");
+      setError(getApiErrorMessage(err, "Delete failed."));
     } finally {
       setLoading(false);
     }

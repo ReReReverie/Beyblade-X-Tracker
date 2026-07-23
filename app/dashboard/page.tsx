@@ -17,6 +17,17 @@ export const dynamic = "force-dynamic";
 
 type DashboardTab = "log" | "parts" | "combos" | "history" | "profile";
 
+function parseDashboardTab(value: string | string[] | undefined): DashboardTab {
+  const requested = Array.isArray(value) ? value[0] : value;
+  return requested === "parts" || requested === "combos" || requested === "history" || requested === "profile"
+    ? requested
+    : "log";
+}
+
+function dashboardTabUrl(tab: DashboardTab) {
+  return `/dashboard?tab=${encodeURIComponent(tab)}`;
+}
+
 const dashboardComboInclude = {
   parts: { include: { part: { include: { catalogPart: true } } }, orderBy: { role: "asc" as const } },
   photos: { take: 1, orderBy: { createdAt: "desc" as const } },
@@ -37,17 +48,15 @@ function serializePartForClient(part: any) {
   };
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/auth/signin");
+  if (!session?.user?.id) redirect("/");
 
   const userId = session.user.id;
   const params = await searchParams;
   const requestedTab = params.tab;
-  const activeTab: DashboardTab =
-    requestedTab === "parts" || requestedTab === "combos" || requestedTab === "history" || requestedTab === "profile"
-      ? requestedTab
-      : "log";
+  const activeTab = parseDashboardTab(requestedTab);
+  if (typeof requestedTab !== "string" || requestedTab !== activeTab) redirect(dashboardTabUrl(activeTab));
   const [partsCount, combosCount, battlesCount] = await Promise.all([
     prisma.part.count({ where: { ownerId: userId } }),
     prisma.combo.count({ where: { ownerId: userId } }),
@@ -212,7 +221,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </section>
       <nav className="dashboard-tabs" aria-label="Create sections">
         {tabLinks.map((tab) => (
-          <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={`/dashboard?tab=${tab.id}`} prefetch={false} key={tab.id}>
+          <Link className={activeTab === tab.id ? "button dashboard-tab dashboard-tab--active" : "button secondary dashboard-tab"} href={dashboardTabUrl(tab.id)} prefetch={false} aria-current={activeTab === tab.id ? "page" : undefined} key={tab.id}>
             {tab.label}
           </Link>
         ))}
