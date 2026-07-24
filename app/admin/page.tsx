@@ -73,7 +73,10 @@ export default async function AdminPage() {
             <h2>Stats</h2>
             <p>{activeUsers} active now - {totalUsers} total users</p>
             <p>{openBugs} open bugs - {openRequests} open requests</p>
-            <p>Challonge API: {challongeUsage.global.remaining}/{challongeUsage.global.limit} global remaining this month</p>
+            <p>
+              Challonge API: {challongeUsage.global.used}/{challongeUsage.global.limit} used this month
+              ({challongeUsage.global.remaining} remaining)
+            </p>
           </div>
           <div className="card"><FeaturedComboForm combos={publicCombos} /></div>
         </div>
