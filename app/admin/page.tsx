@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { AdminComboDeleteButton } from "@/components/admin-combo-delete-button";
+import { AdminUserDeleteButton } from "@/components/admin-user-delete-button";
 import { FeaturedComboDeleteButton } from "@/components/featured-combo-delete-button";
 import { FeaturedComboForm } from "@/components/featured-combo-form";
 import { authOptions } from "@/lib/auth";
@@ -93,8 +94,8 @@ export default async function AdminPage() {
               ))}
             </div>
           </section>
-          <section>
-            <h2>Combo cleanup</h2>
+          <details className="admin-disclosure" open>
+            <summary>Combo cleanup</summary>
             <div className="list">
               {adminCombos.map((combo) => (
                 <div className="card part-row" key={combo.id}>
@@ -112,10 +113,10 @@ export default async function AdminPage() {
                 </div>
               ))}
             </div>
-          </section>
+          </details>
 
-          <section>
-            <h2>Recent activity</h2>
+          <details className="admin-disclosure">
+            <summary>Recent activity</summary>
             <div className="list">
               {activity.map((item) => (
                 <div className="card part-row" key={item.id}>
@@ -124,10 +125,10 @@ export default async function AdminPage() {
                 </div>
               ))}
             </div>
-          </section>
+          </details>
 
-          <section>
-            <h2>Recent users</h2>
+          <details className="admin-disclosure" open>
+            <summary>Accounts</summary>
             <div className="list">
               {users.map((user) => (
                 <div className="card part-row" key={user.id}>
@@ -138,10 +139,16 @@ export default async function AdminPage() {
                       Parts {user._count.parts} - Combos {user._count.combos} - Battles {user._count.battles} - Joined {user.createdAt.toLocaleString()}
                     </p>
                   </div>
+                  {user.role === "USER" ? (
+                    <AdminUserDeleteButton
+                      id={user.id}
+                      label={user.name || user.username || user.email || "this account"}
+                    />
+                  ) : <span className="meta">Admin account protected</span>}
                 </div>
               ))}
             </div>
-          </section>
+          </details>
         </div>
       </section>
     </div>

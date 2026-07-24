@@ -18,6 +18,9 @@ export default function SignInPage() {
       </Suspense>
       <SignInForm googleEnabled={true} />
       <p>
+        If you lose your password, it cannot be recovered. Please keep it somewhere secure.
+      </p>
+      <p>
         New here? <Link href="/auth/signup">Create an account</Link>
       </p>
     </section>

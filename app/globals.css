@@ -1145,6 +1145,37 @@ textarea {
   transform: none;
 }
 
+.admin-disclosure {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-disclosure summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-size: 1.35rem;
+  font-weight: 800;
+  gap: 0.6rem;
+  list-style: none;
+}
+
+.admin-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-disclosure summary::before {
+  content: "+";
+  display: inline-block;
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 1rem;
+}
+
+.admin-disclosure[open] summary::before {
+  content: "−";
+}
+
 .chat-bubble {
   align-items: center;
   background: var(--ink);

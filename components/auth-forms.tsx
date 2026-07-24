@@ -124,38 +124,43 @@ export function SignUpForm() {
     setError("");
     setLoading(true);
     showLoadingOverlay();
-    const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.get("name"),
-        username: form.get("username"),
-        email: form.get("email"),
-        password: form.get("password")
-      })
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setError(data.error || "Could not create account.");
+    try {
+      const form = new FormData(event.currentTarget);
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.get("name"),
+          username: form.get("username"),
+          email: form.get("email"),
+          password: form.get("password")
+        })
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Could not create account.");
+        return;
+      }
+
+      const result = await signIn("credentials", {
+        login: form.get("username"),
+        password: form.get("password"),
+        redirect: false
+      });
+      if (result?.error) {
+        setError("Account created, but automatic sign in failed. Please sign in.");
+        return;
+      }
+      notifyAuthSessionChanged();
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Signup request failed:", error);
+      setError("Could not reach the server. Please try again.");
+    } finally {
       setLoading(false);
       hideLoadingOverlay();
-      return;
     }
-    const result = await signIn("credentials", {
-      login: form.get("username"),
-      password: form.get("password"),
-      redirect: false
-    });
-    setLoading(false);
-    hideLoadingOverlay();
-    if (result?.error) {
-      setError("Account created, but automatic sign in failed. Please sign in.");
-      return;
-    }
-    notifyAuthSessionChanged();
-    router.push("/");
-    router.refresh();
   }
 
   return (
